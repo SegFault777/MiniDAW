@@ -26,17 +26,22 @@ jobs:
           modules: qtmultimedia
           cache: true
 
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Configure
-        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --parallel
 
       - name: Deploy Qt runtime
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force dist/LiteDAW | Out-Null
-          Copy-Item build/Release/LiteDAW.exe dist/LiteDAW/
+          Copy-Item build/LiteDAW.exe dist/LiteDAW/
           windeployqt --release --no-translations --no-system-d3d-compiler dist/LiteDAW/LiteDAW.exe
           Compress-Archive -Path dist/LiteDAW -DestinationPath LiteDAW-windows-x64.zip -Force
 
