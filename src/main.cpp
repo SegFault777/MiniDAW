@@ -1,29 +1,25 @@
+// MiniDAW - a lightweight Logic Pro-inspired digital audio workstation
+// Copyright (C) 2026 MiniDAW contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
 #include <QApplication>
-#include <QPalette>
-#include <QStyleFactory>
 #include "MainWindow.h"
+#include "Theme.h"
+
+#ifndef MINIDAW_VERSION
+#define MINIDAW_VERSION "0.2.0"
+#endif
 
 int main(int argc, char** argv) {
     QApplication app(argc, argv);
-    app.setApplicationName("LiteDAW");
-    app.setStyle(QStyleFactory::create("Fusion"));
-
-    QPalette p;
-    p.setColor(QPalette::Window, QColor(37, 37, 40));
-    p.setColor(QPalette::WindowText, QColor(230, 230, 230));
-    p.setColor(QPalette::Base, QColor(30, 30, 33));
-    p.setColor(QPalette::AlternateBase, QColor(42, 42, 46));
-    p.setColor(QPalette::Text, QColor(230, 230, 230));
-    p.setColor(QPalette::Button, QColor(56, 56, 61));
-    p.setColor(QPalette::ButtonText, QColor(230, 230, 230));
-    p.setColor(QPalette::Highlight, QColor(255, 159, 28));
-    p.setColor(QPalette::HighlightedText, Qt::black);
-    p.setColor(QPalette::ToolTipBase, QColor(50, 50, 55));
-    p.setColor(QPalette::ToolTipText, QColor(230, 230, 230));
-    app.setPalette(p);
+    app.setApplicationName("MiniDAW");
+    app.setApplicationVersion(MINIDAW_VERSION);
+    app.setOrganizationName("MiniDAW");
+    theme::apply(app);
 
     MainWindow w;
-    w.resize(1280, 760);
+    w.resize(1360, 820);
     w.show();
+    // A project path passed on the command line (for example by the file association) is opened directly.
+    if (argc > 1) w.openProject(QString::fromLocal8Bit(argv[1]));
     return app.exec();
 }

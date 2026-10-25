@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # 태그 푸시 시 릴리스 업로드에 필요
+  contents: write   # needed to upload release assets when a tag is pushed
 
 jobs:
   windows:
@@ -40,19 +40,40 @@ jobs:
       - name: Deploy Qt runtime
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force dist/LiteDAW | Out-Null
-          Copy-Item build/LiteDAW.exe dist/LiteDAW/
-          windeployqt --release --no-translations --no-system-d3d-compiler dist/LiteDAW/LiteDAW.exe
-          Compress-Archive -Path dist/LiteDAW -DestinationPath LiteDAW-windows-x64.zip -Force
+          New-Item -ItemType Directory -Force dist/MiniDAW | Out-Null
+          Copy-Item build/MiniDAW.exe dist/MiniDAW/
+          windeployqt --release --no-translations --no-system-d3d-compiler dist/MiniDAW/MiniDAW.exe
+          Compress-Archive -Path dist/MiniDAW -DestinationPath MiniDAW-windows-x64-portable.zip -Force
 
-      - name: Upload artifact
+      - name: Determine version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.2-dev' }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=${{ steps.ver.outputs.version }}" installer/MiniDAW.iss
+
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: LiteDAW-windows-x64
-          path: LiteDAW-windows-x64.zip
+          name: MiniDAW-installer
+          path: installer-out/*.exe
+
+      - name: Upload portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniDAW-portable
+          path: MiniDAW-windows-x64-portable.zip
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: LiteDAW-windows-x64.zip
+          files: |
+            installer-out/*.exe
+            MiniDAW-windows-x64-portable.zip

@@ -1,0 +1,7 @@
+build/
+dist/
+installer-out/
+*.user
+CMakeLists.txt.user
+.vs/
+.idea/
