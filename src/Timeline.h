@@ -5,7 +5,7 @@
 #include <QWidget>
 #include "Engine.h"
 
-class QScrollBar;
+#include <QScrollBar>
 
 /// The "Tracks" area: ruler, track headers, regions, cycle range and volume automation.
 class Timeline : public QWidget {

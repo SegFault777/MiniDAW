@@ -67,18 +67,25 @@ published next to every installer.
 
 ## Building from source
 
-Requirements: Windows 10/11, Visual Studio 2022 Build Tools (MSVC), CMake 3.21+,
-Ninja and Qt 6.5 or newer (Qt 6.8 recommended) with the *Qt Multimedia* module.
+MiniDAW is built by a single shell script, `build.sh` (no CMake required).
 
-```bat
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=C:/Qt/6.8.0/msvc2022_64
-cmake --build build
-windeployqt --release build\MiniDAW.exe
+Requirements: Windows 10/11, Visual Studio 2022 or newer (MSVC x64 tools), Git Bash (or MSYS2),
+Qt 6.5 or newer (Qt 6.8 recommended) with the *Qt Multimedia* module, and optionally
+[Inno Setup 6](https://jrsoftware.org/isinfo.php) for the installer.
+
+```bash
+# In Git Bash started from the "x64 Native Tools Command Prompt" (so that cl.exe is on PATH):
+export QT_DIR=C:/Qt/6.8.3/msvc2022_64
+./build.sh            # moc + compile + link  -> build/MiniDAW.exe
+./build.sh deploy     # windeployqt           -> dist/MiniDAW and a portable ZIP
+./build.sh installer  # Inno Setup            -> installer-out/MiniDAW-<version>-setup.exe
+./build.sh all        # everything above
+./build.sh clean
 ```
 
-The GitHub Actions workflow in `.github/workflows/build.yml` builds the application, creates the
-installer with [Inno Setup](https://jrsoftware.org/isinfo.php) and attaches both to a release when
-a tag such as `v0.2` is pushed.
+Set `MINIDAW_VERSION` to override the version string. The GitHub Actions workflow in
+`.github/workflows/build.yml` simply runs `bash build.sh all` and attaches the installer and the
+portable ZIP to a release when a tag such as `v0.2` is pushed.
 
 ## Architecture
 

@@ -31,20 +31,6 @@ jobs:
         with:
           arch: x64
 
-      - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Deploy Qt runtime
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force dist/MiniDAW | Out-Null
-          Copy-Item build/MiniDAW.exe dist/MiniDAW/
-          windeployqt --release --no-translations --no-system-d3d-compiler dist/MiniDAW/MiniDAW.exe
-          Compress-Archive -Path dist/MiniDAW -DestinationPath MiniDAW-windows-x64-portable.zip -Force
-
       - name: Determine version
         id: ver
         shell: pwsh
@@ -52,11 +38,15 @@ jobs:
           if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.2-dev' }
           "version=$v" >> $env:GITHUB_OUTPUT
 
-      - name: Build installer (Inno Setup)
+      - name: Install Inno Setup
         shell: pwsh
-        run: |
-          choco install innosetup -y --no-progress
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DMyAppVersion=${{ steps.ver.outputs.version }}" installer/MiniDAW.iss
+        run: choco install innosetup -y --no-progress
+
+      - name: Build, deploy and create installer
+        shell: bash
+        env:
+          MINIDAW_VERSION: ${{ steps.ver.outputs.version }}
+        run: bash build.sh all
 
       - name: Upload installer
         uses: actions/upload-artifact@v4

@@ -17,6 +17,7 @@ All notable changes to this project are documented in this file.
 - GPL-3.0-or-later license, README and changelog.
 
 ### Changed
+- The build is driven by `build.sh` (moc, MSVC and Inno Setup) instead of CMake.
 - Positions are stored in beats so MIDI follows tempo changes.
 - Audio output now runs continuously so instruments can be played while the transport is stopped.
 
