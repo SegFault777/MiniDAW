@@ -21,6 +21,7 @@
 #include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QSettings>
 #include <QSignalBlocker>
 #include <QSpinBox>
@@ -39,7 +40,7 @@
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.5"
+#define MINIDAW_VERSION "0.5_1"
 #endif
 
 namespace {

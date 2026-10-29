@@ -2,6 +2,11 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5_1] - 2026-10-29
+
+### Fixed
+- Build failure in `MainWindow.cpp` (missing `QPushButton` include used by the new Bounce dialog).
+
 ## [0.5] - 2026-10-29
 
 ### Added

@@ -10,7 +10,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 > sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
 > VST is a trademark of Steinberg Media Technologies GmbH.
 
-**Version 0.5** · License: GPL-3.0-or-later
+**Version 0.5_1** · License: GPL-3.0-or-later
 
 ## Features
 
@@ -137,7 +137,7 @@ Without `VST3_SDK_DIR` (or if the SDK fails to build) MiniDAW is built without V
 SDK is available under GPL-3.0, which is compatible with MiniDAW's license. Set `MINIDAW_VERSION` to
 override the version string. The GitHub Actions workflow in `.github/workflows/build.yml` runs
 `bash build.sh all` and attaches the installer and the portable ZIP to a release when a tag such as
-`v0.5` is pushed.
+`v0.5_1` is pushed.
 
 ## Architecture
 

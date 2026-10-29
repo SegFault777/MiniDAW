@@ -18,7 +18,7 @@
 #   * VST3_SDK_DIR points to a checkout of https://github.com/steinbergmedia/vst3sdk (with submodules).
 #     When it is set and builds cleanly, MiniDAW is built with VST3 hosting. Otherwise the build
 #     continues without it.
-#   * MINIDAW_VERSION overrides the version string (default 0.5).
+#   * MINIDAW_VERSION overrides the version string (default 0.5_1).
 set -euo pipefail
 
 # Git Bash would otherwise rewrite arguments such as /nologo into file paths.
@@ -28,7 +28,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$ROOT/src"
 BUILD="$ROOT/build"
 DIST="$ROOT/dist/MiniDAW"
-VERSION="${MINIDAW_VERSION:-0.5}"
+VERSION="${MINIDAW_VERSION:-0.5_1}"
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 4)}"
 TARGET="${1:-build}"
 
