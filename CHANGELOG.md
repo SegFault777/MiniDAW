@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5] - 2026-10-29
+
+### Added
+- **Cut / Copy / Paste** for regions (`Ctrl+X`, `Ctrl+C`, `Ctrl+V`) and a region context menu. Audio regions
+  paste on Audio tracks, MIDI regions on Software Instrument and Drummer tracks; regions that follow the
+  tempo are re-stretched for the tempo at the paste position.
+- **Duplicate Track** (`Ctrl+Shift+D` and the track-header menu) with independent copies of the instrument
+  and insert effects (including VST3 plug-in state).
+- **Audio input device** selection and **recording latency compensation** (-500 .. +500 ms) in Preferences.
+- **Audio region editing** in the Inspector: gain (-60 .. +24 dB), fade in / fade out, Reverse and Normalize.
+  Fades are drawn on the region, split regions keep the fades on their outer edges, and everything is saved
+  in the project.
+- **Bounce dialog** with whole-project or cycle-range export, 16-bit / 24-bit PCM and 32-bit float WAV,
+  TPDF dither, normalization to a chosen peak level and an optional 2 s reverb / echo tail.
+- Qt-free `dsp/AudioOps` module (fades, gain, reverse, recording offset, WAV encoding) with unit tests.
+
+### Changed
+- Project files are written as version 3 (older versions of MiniDAW ignore the new region fields).
+- Translations (Korean, Japanese, Simplified Chinese, Spanish) cover the new texts.
+
 ## [0.4_1] - 2026-10-29
 
 ### Fixed

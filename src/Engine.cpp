@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <cmath>
 #include "AudioUtil.h"
+#include "dsp/AudioOps.h"
 #include "dsp/MidiFile.h"
 #include "dsp/Stretch.h"
 #include "vst3/Vst3Host.h"
@@ -48,6 +49,12 @@ std::shared_ptr<dsp::Instrument> makeInstrument(const QString& id) {
     if (id == "drumkit") return std::make_shared<dsp::DrumKit>();
     if (id.startsWith("vst3:")) return vst3::createInstrument(id);
     return nullptr;
+}
+
+/// Copies every parameter value that both sets share (by name).
+void copyParams(const dsp::ParamSet& from, dsp::ParamSet& to) {
+    for (const auto& p : from.params)
+        if (dsp::Param* q = to.find(p->name)) q->set(p->get());
 }
 
 /// Rebuilds the playback buffer of an audio region from its source (time-stretch and transpose).
@@ -225,10 +232,14 @@ class AudioInput : public QObject {
     Q_OBJECT
 public:
     explicit AudioInput(Engine* e) : m_e(e) {}
+    void setDevice(const QByteArray& id) { m_id = id; }   // used by the next start()
 public slots:
     void start() {
         stop();
-        const QAudioDevice dev = QMediaDevices::defaultAudioInput();
+        QAudioDevice dev;
+        for (const QAudioDevice& d : QMediaDevices::audioInputs())
+            if (!m_id.isEmpty() && d.id() == m_id) dev = d;
+        if (dev.isNull()) dev = QMediaDevices::defaultAudioInput();   // chosen device unplugged: use the default
         if (dev.isNull()) {
             emit failed(tr("No audio input device was found."));
             return;
@@ -259,6 +270,7 @@ signals:
     void failed(const QString& reason);
 private:
     Engine* m_e;
+    QByteArray m_id;
     QAudioSource* m_src = nullptr;
     QIODevice* m_dev = nullptr;
     QAudioFormat m_fmt;
@@ -312,6 +324,11 @@ Engine::~Engine() {
 
 void Engine::setAudioOutput(const QByteArray& id, int bufferFrames) {
     QMetaObject::invokeMethod(m_out, [this, id, bufferFrames] { m_out->configure(id, bufferFrames); }, Qt::QueuedConnection);
+}
+
+void Engine::setAudioInput(const QByteArray& id, int offsetMs) {
+    m_recOffsetMs = std::clamp(offsetMs, -500, 500);
+    QMetaObject::invokeMethod(m_in, [in = m_in, id] { in->setDevice(id); }, Qt::QueuedConnection);
 }
 
 void Engine::playTestTone() {
@@ -659,6 +676,8 @@ void Engine::splitRegion(int t, int r, double atBeat) {
             b.srcOffset += rf;
             b.srcFrames -= rf;
         }
+        a.fadeOut = 0;   // fades stay on the outer edges of the two halves
+        b.fadeIn = 0;
     }
     {
         QMutexLocker l(&m_mutex);
@@ -684,6 +703,138 @@ int Engine::duplicateRegion(int t, int r) {
     }
     changed(false);
     return idx;
+}
+
+bool Engine::copyRegion(int t, int r) {
+    bool loading = false;
+    {
+        QMutexLocker l(&m_mutex);
+        if (t < 0 || t >= int(m_tracks.size()) || r < 0 || r >= int(m_tracks[size_t(t)].regions.size())) return false;
+        const Region& rg = m_tracks[size_t(t)].regions[size_t(r)];
+        if (!rg.midi && !rg.audio) loading = true;
+        else { m_clip = rg; m_hasClip = true; }
+    }
+    if (loading) emit message(tr("This audio is still loading."));
+    return !loading;
+}
+
+int Engine::pasteRegion(int track, double beat) {
+    Region c;
+    TrackType type = TrackType::Audio;
+    {
+        QMutexLocker l(&m_mutex);
+        if (!m_hasClip || track < 0 || track >= int(m_tracks.size())) return -1;
+        c = m_clip;
+        type = m_tracks[size_t(track)].type;
+    }
+    const bool fits = c.midi ? (c.drummer ? type == TrackType::Drummer : (type == TrackType::Instrument || type == TrackType::Drummer))
+                             : type == TrackType::Audio;
+    if (!fits) {
+        emit message(c.midi ? tr("MIDI regions can be pasted on Software Instrument and Drummer tracks.")
+                            : tr("Audio regions can be pasted on Audio tracks."));
+        return -1;
+    }
+    checkpoint();
+    c.start = std::max(0.0, beat);
+    if (!c.midi && c.source && c.follow) applyFlex(c, tempoMap()->bpmAt(c.start));   // stretch for the tempo at the new place
+    int idx = -1;
+    {
+        QMutexLocker l(&m_mutex);
+        if (track >= int(m_tracks.size())) return -1;
+        auto& regs = m_tracks[size_t(track)].regions;
+        regs.push_back(std::move(c));
+        idx = int(regs.size()) - 1;
+    }
+    changed(false);
+    return idx;
+}
+
+int Engine::duplicateTrack(int i) {
+    Track src;
+    {
+        QMutexLocker l(&m_mutex);
+        if (i < 0 || i >= int(m_tracks.size())) return -1;
+        src = m_tracks[size_t(i)];
+    }
+    checkpoint();
+    Track t = src;   // regions share their audio data; everything else is copied below
+    t.name = tr("%1 copy").arg(src.name);
+    t.armed = false;
+    t.peakL = t.peakR = 0;
+    if (src.instrument) {   // every track needs its own instrument and effect instances
+        t.instrument = makeInstrument(src.instrumentId);
+        if (t.instrument) {
+            copyParams(*src.instrument, *t.instrument);
+            if (src.instrumentId.startsWith("vst3:")) vst3::loadState(*t.instrument, vst3::saveState(*src.instrument));
+        } else {
+            emit message(tr("Instrument plug-in not available: %1").arg(src.instrumentId));
+        }
+    }
+    t.inserts.clear();
+    for (const auto& fx : src.inserts) {
+        auto c = makeEffect(QString::fromUtf8(fx->id()));
+        if (!c) continue;
+        copyParams(*fx, *c);
+        c->bypass = fx->bypass.load();
+        if (QString::fromUtf8(fx->id()).startsWith("vst3:")) vst3::loadState(*c, vst3::saveState(*fx));
+        t.inserts.push_back(c);
+    }
+    int idx;
+    {
+        QMutexLocker l(&m_mutex);
+        t.id = m_nextId++;
+        idx = std::min(i + 1, int(m_tracks.size()));
+        m_tracks.insert(m_tracks.begin() + idx, std::move(t));
+    }
+    changed(true);
+    return idx;
+}
+
+void Engine::setRegionAudio(int t, int r, float gainDb, qint64 fadeInFrames, qint64 fadeOutFrames) {
+    checkpoint();
+    REGION_OP(
+        if (rg.midi) return;
+        rg.gainDb = std::clamp(gainDb, -60.f, 24.f);
+        rg.fadeIn = std::max<qint64>(0, fadeInFrames);
+        rg.fadeOut = std::max<qint64>(0, fadeOutFrames);)
+    changed(false);
+}
+
+void Engine::reverseRegion(int t, int r) {
+    Region c;
+    {
+        QMutexLocker l(&m_mutex);
+        if (t < 0 || t >= int(m_tracks.size()) || r < 0 || r >= int(m_tracks[size_t(t)].regions.size())) return;
+        c = m_tracks[size_t(t)].regions[size_t(r)];
+    }
+    if (c.midi || !c.source || c.srcFrames <= 0) return;
+    checkpoint();
+    auto d = std::make_shared<AudioData>();   // no path yet: it is written next to the project when saved
+    d->name = c.source->name;
+    d->pcm = dsp::reverseFrames(c.source->pcm.data() + c.srcOffset * 2, size_t(c.srcFrames));   // reverse the source so tempo / pitch settings still apply
+    computePeaks(*d);
+    c.source = c.audio = d;
+    c.srcOffset = c.offset = 0;
+    c.srcFrames = c.frames = d->frames();
+    c.pendingPath.clear();
+    static const QString kTag = QStringLiteral(" (reversed)");
+    c.name = c.name.endsWith(kTag) ? c.name.left(c.name.size() - kTag.size()) : c.name + kTag;
+    if (c.flexed()) applyFlex(c, tempoMap()->bpmAt(c.start));   // slow part runs outside the lock
+    {
+        QMutexLocker l(&m_mutex);
+        if (t >= int(m_tracks.size()) || r >= int(m_tracks[size_t(t)].regions.size())) return;
+        m_tracks[size_t(t)].regions[size_t(r)] = std::move(c);
+    }
+    changed(false);
+}
+
+void Engine::normalizeRegion(int t, int r, float targetDb) {
+    checkpoint();
+    REGION_OP(
+        if (rg.midi || !rg.audio || rg.frames <= 0) return;
+        const float pk = dsp::peakOf(rg.audio->pcm.data() + rg.offset * 2, size_t(rg.frames));
+        rg.gainDb = std::clamp(dsp::linearToDb(dsp::normalizeGain(pk, targetDb)), -60.f, 24.f);)
+    changed(false);
 }
 
 void Engine::setRegionNotes(int t, int r, const std::vector<Note>& notes) {
@@ -982,6 +1133,7 @@ void Engine::stopRecording() {
     const double endBeat = positionBeats();
     std::vector<float> take;
     { QMutexLocker r(&m_recMutex); take.swap(m_recBuf); }
+    if (audio) dsp::applyRecordingOffset(take, long(std::lround(double(m_recOffsetMs.load()) * kSampleRate / 1000.0)));
     for (const auto& [pitch, p] : m_recPending)
         m_recNotes.push_back(Note{pitch, p.start, std::max(0.05, endBeat - p.start), p.vel});
     m_recPending.clear();
@@ -1082,9 +1234,12 @@ void Engine::renderBlock(qint64 pos, int frames, float* out, bool running) {
                 const qint64 a = std::max(pos, st), b = std::min<qint64>(pos + frames, st + rg.frames);
                 if (a >= b) continue;
                 const float* s = rg.audio->pcm.data() + (rg.offset + a - st) * 2;
+                const float lin = rg.gainDb == 0.f ? 1.f : dsp::dbToLinear(rg.gainDb);
+                const bool fades = rg.fadeIn > 0 || rg.fadeOut > 0;
                 for (qint64 f = a; f < b; ++f, s += 2) {
-                    tb[(f - pos) * 2] += s[0];
-                    tb[(f - pos) * 2 + 1] += s[1];
+                    const float g = fades ? lin * dsp::fadeGain(f - st, rg.frames, rg.fadeIn, rg.fadeOut) : lin;
+                    tb[(f - pos) * 2] += s[0] * g;
+                    tb[(f - pos) * 2 + 1] += s[1] * g;
                 }
             }
         } else if (t.type == TrackType::Drums && running) {

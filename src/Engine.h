@@ -15,6 +15,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include "dsp/AudioOps.h"
 #include "dsp/DrumKit.h"
 #include "dsp/Drummer.h"
 #include "dsp/Effects.h"
@@ -65,6 +66,8 @@ struct Region {
     bool follow = false;                     // stretch to the project tempo
     double sourceBpm = 0;                    // tempo of the recording (needed for 'follow')
     double semitones = 0;                    // pitch transposition
+    float gainDb = 0;                        // region gain (v0.5)
+    qint64 fadeIn = 0, fadeOut = 0;          // fade lengths in frames of the played audio (v0.5)
     double flexBpm = 0;                      // project tempo that 'audio' was stretched for
     bool flexed() const { return follow || std::abs(semitones) > 0.01; }
 };
@@ -89,6 +92,16 @@ struct Track {
     int preset = 0;
     std::vector<AutoPoint> volAuto;
     float peakL = 0, peakR = 0;
+};
+
+/// Options of "Bounce to WAV" (v0.5).
+struct ExportOptions {
+    bool cycleOnly = false;                              ///< Bounce only the cycle range instead of the whole project.
+    dsp::WavFormat format = dsp::WavFormat::Pcm16;       ///< 16-bit, 24-bit or 32-bit float.
+    bool normalize = false;                              ///< Scale the result so that its peak reaches 'normalizeDb'.
+    float normalizeDb = -1.f;
+    bool dither = false;                                 ///< TPDF dither (16-bit only).
+    bool tail = true;                                    ///< Add 2 s for reverb and echo tails.
 };
 
 class AudioOutput;
@@ -139,6 +152,13 @@ public:
     void removeRegion(int t, int r);
     void splitRegion(int t, int r, double atBeat);
     int duplicateRegion(int t, int r);
+    bool copyRegion(int t, int r);                       ///< Puts a region on the clipboard.
+    bool hasClipboard() const { return m_hasClip; }
+    int pasteRegion(int track, double beat);             ///< Pastes the clipboard region; returns its index or -1.
+    int duplicateTrack(int i);                           ///< Copies a track with its regions, instrument and inserts.
+    void setRegionAudio(int t, int r, float gainDb, qint64 fadeInFrames, qint64 fadeOutFrames);
+    void reverseRegion(int t, int r);                    ///< Reverses the audio of a region (creates a reversed copy).
+    void normalizeRegion(int t, int r, float targetDb = -1.f);   ///< Sets the region gain so that its peak is at targetDb.
     void setRegionNotes(int t, int r, const std::vector<Note>& notes);
     void setRegionFlex(int t, int r, bool follow, double sourceBpm, double semitones);
     void setStep(int track, int row, int step, bool on);
@@ -184,6 +204,9 @@ public:
 
     // ---- Audio device ----
     void setAudioOutput(const QByteArray& deviceId, int bufferFrames);
+    /// Recording input device (empty = system default) and latency compensation in ms:
+    /// positive values move recorded audio earlier, negative values later.
+    void setAudioInput(const QByteArray& deviceId, int offsetMs);
     QString audioStatus() const { return m_audioStatus; }
     void playTestTone();
     void audition(const QString& path);   // plays a file once, independent of the transport
@@ -200,7 +223,8 @@ public:
     void newProject();
     bool saveProject(const QString& path, QString* error);
     bool loadProject(const QString& path, QString* error);
-    bool exportWav(const QString& path, QString* error);
+    bool exportWav(const QString& path, QString* error);   ///< 16-bit WAV of the whole project.
+    bool exportAudio(const QString& path, const ExportOptions& opt, QString* error);
 
     // ---- Called by the audio threads ----
     void fillInt16(qint16* out, int frames);
@@ -256,6 +280,9 @@ private:
     std::atomic<bool> m_metro{false}, m_countIn{false}, m_loopOn{false}, m_dirty{false};
     std::atomic<int> m_flush{0};   // bit 0: release synth notes, bit 1: reset every effect
     std::atomic<float> m_master{0.9f};
+    std::atomic<int> m_recOffsetMs{0};
+    Region m_clip;                 // region clipboard (guarded by m_mutex)
+    std::atomic<bool> m_hasClip{false};
     std::shared_ptr<const AudioData> m_audition;
     qint64 m_auditionPos = 0;
 

@@ -134,3 +134,32 @@ Not a valid MiniDAW project file.	有効なMiniDAWプロジェクトファイル
 There is nothing to bounce.	バウンスする内容がありません。
 Audio error: %1	オーディオエラー: %1
 No audio output device was found.	オーディオ出力デバイスが見つかりません。
+# v0.5
+Cut	切り取り
+Copy	コピー
+Paste	貼り付け
+Duplicate Track	トラックを複製
+Bounce	バウンス
+Range	範囲
+Format	形式
+Whole project	プロジェクト全体
+Cycle range	サイクル範囲
+16-bit PCM	16ビットPCM
+24-bit PCM	24ビットPCM
+32-bit float	32ビット浮動小数点
+Dither (16-bit)	ディザ (16ビット)
+Normalize to	ノーマライズ レベル
+Add reverb / echo tail (2 s)	リバーブ／エコーの余韻を追加 (2秒)
+Set a cycle range first (right-drag on the ruler).	先にサイクル範囲を設定してください (ルーラーを右ドラッグ)。
+This audio is still loading.	このオーディオはまだ読み込み中です。
+MIDI regions can be pasted on Software Instrument and Drummer tracks.	MIDIリージョンはソフトウェア音源トラックとドラマートラックに貼り付けられます。
+Audio regions can be pasted on Audio tracks.	オーディオリージョンはオーディオトラックに貼り付けられます。
+%1 copy	%1 のコピー
+Input device	入力デバイス
+Recording latency compensation	録音レイテンシー補正
+Moves recorded audio earlier (positive) or later (negative) to make up for the latency of your audio interface.	オーディオインターフェースの遅延を補正するため、録音したオーディオを前 (正の値) または後ろ (負の値) へずらします。
+Gain	ゲイン
+Fade In	フェードイン
+Fade Out	フェードアウト
+Reverse	リバース
+Normalize	ノーマライズ

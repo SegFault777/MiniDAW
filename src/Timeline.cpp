@@ -199,6 +199,51 @@ void Timeline::duplicateSelected() {
     }
 }
 
+void Timeline::copySelected() {
+    if (m_selTrack >= 0 && m_selRegion >= 0) m_e->copyRegion(m_selTrack, m_selRegion);
+}
+
+void Timeline::cutSelected() {
+    if (m_selTrack >= 0 && m_selRegion >= 0 && m_e->copyRegion(m_selTrack, m_selRegion)) deleteSelected();
+}
+
+void Timeline::pasteAtPlayhead() {
+    if (m_selTrack < 0 || !m_e->hasClipboard()) return;
+    const int idx = m_e->pasteRegion(m_selTrack, m_e->positionBeats());
+    if (idx >= 0) selectRegion(m_selTrack, idx);
+}
+
+void Timeline::duplicateSelectedTrack() {
+    if (m_selTrack < 0) return;
+    const int idx = m_e->duplicateTrack(m_selTrack);
+    if (idx >= 0) selectTrack(idx);
+}
+
+void Timeline::regionMenu(const QPoint& globalPos, int track, int region, double beat) {
+    QMenu menu(this);
+    const bool has = region >= 0;
+    QAction* cut = menu.addAction(Timeline::tr("Cut"));
+    QAction* copy = menu.addAction(Timeline::tr("Copy"));
+    QAction* paste = menu.addAction(Timeline::tr("Paste"));
+    menu.addSeparator();
+    QAction* dup = menu.addAction(Timeline::tr("Duplicate Region"));
+    QAction* split = menu.addAction(Timeline::tr("Split at Playhead"));
+    QAction* del = menu.addAction(Timeline::tr("Delete"));
+    for (QAction* a : {cut, copy, dup, split, del}) a->setEnabled(has);
+    paste->setEnabled(m_e->hasClipboard());
+    QAction* a = menu.exec(globalPos);
+    if (!a) return;
+    if (a == cut) cutSelected();
+    else if (a == copy) copySelected();
+    else if (a == paste) {
+        const int idx = m_e->pasteRegion(track, beat);   // pasted where the mouse was clicked
+        if (idx >= 0) selectRegion(track, idx);
+    } else if (a == dup) duplicateSelected();
+    else if (a == split) splitAtPlayhead();
+    else if (a == del) deleteSelected();
+    update();
+}
+
 // ---------------------------------------------------------------- painting
 void Timeline::paintEvent(QPaintEvent*) {
     const auto tr = m_e->snapshot();
@@ -287,6 +332,7 @@ void Timeline::paintEvent(QPaintEvent*) {
                 p.setPen(t.color.lighter(170));
                 const int mid = body.center().y(), amp = body.height() / 2 - 1;
                 const auto& pk = rg.audio->peaks;
+                const float lin = rg.gainDb == 0.f ? 1.f : dsp::dbToLinear(rg.gainDb);
                 const double startFrame = tm->beatToFrame(rg.start);
                 const int xa = std::max(r.left() + 1, kHeaderW), xb = std::min(r.right() - 1, W);
                 for (int x = xa; x < xb; ++x) {
@@ -295,11 +341,29 @@ void Timeline::paintEvent(QPaintEvent*) {
                     const size_t i0 = size_t(std::max<qint64>(0, f0) / kPeakStride), i1 = size_t(std::max<qint64>(0, f1) / kPeakStride);
                     float m = 0;
                     for (size_t k = i0; k <= i1 && k < pk.size(); ++k) m = std::max(m, pk[k]);
-                    const int h = int(std::min(1.f, m) * amp);
+                    const int h = int(std::min(1.f, m * lin) * amp);
                     p.drawLine(x, mid - h, x, mid + h);
                 }
             }
+            if (!rg.midi && rg.audio && (rg.fadeIn > 0 || rg.fadeOut > 0) && rg.frames > 0) {   // fade ramps
+                const double total = double(rg.frames);
+                double fi = double(rg.fadeIn), fo = double(rg.fadeOut);
+                if (fi + fo > total) { const double k = total / (fi + fo); fi *= k; fo *= k; }
+                const int wpx = r.width();
+                const int xi = r.left() + int(fi / total * wpx), xo = r.right() - int(fo / total * wpx);
+                p.setPen(QPen(QColor(255, 255, 255, 190), 1.5));
+                p.setBrush(QColor(0, 0, 0, 70));
+                if (fi > 0) {
+                    p.drawPolygon(QPolygon({QPoint(r.left() + 1, body.bottom()), QPoint(r.left() + 1, body.top()), QPoint(xi, body.top())}));
+                    p.drawLine(QPoint(r.left() + 1, body.bottom()), QPoint(xi, body.top()));
+                }
+                if (fo > 0) {
+                    p.drawPolygon(QPolygon({QPoint(r.right() - 1, body.bottom()), QPoint(r.right() - 1, body.top()), QPoint(xo, body.top())}));
+                    p.drawLine(QPoint(xo, body.top()), QPoint(r.right() - 1, body.bottom()));
+                }
+            }
             QString label = rg.name;
+            if (!rg.midi && rg.gainDb != 0.f) label += QString("  %1%2 dB").arg(rg.gainDb > 0 ? "+" : "").arg(double(rg.gainDb), 0, 'f', 1);
             if (rg.follow) label += QString("  ·  %1 bpm").arg(rg.sourceBpm, 0, 'f', 0);
             if (std::fabs(rg.semitones) > 0.01) label += QString("  %1%2 st").arg(rg.semitones > 0 ? "+" : "").arg(rg.semitones, 0, 'f', 0);
             p.setPen(Qt::white);
@@ -500,12 +564,16 @@ void Timeline::mousePressEvent(QMouseEvent* e) {
         if (e->button() == Qt::RightButton) {
             QMenu menu(this);
             QAction* ren = menu.addAction(Timeline::tr("Rename Track…"));
+            QAction* dupTrack = menu.addAction(Timeline::tr("Duplicate Track"));
             QAction* del = menu.addAction(Timeline::tr("Delete Track"));
             QAction* a = menu.exec(e->globalPosition().toPoint());
             if (a == ren) {
                 bool ok = false;
                 const QString n = QInputDialog::getText(this, Timeline::tr("Rename Track"), Timeline::tr("Track name:"), QLineEdit::Normal, t.name, &ok);
                 if (ok && !n.isEmpty()) m_e->renameTrack(ti, n);
+            } else if (a == dupTrack) {
+                const int idx = m_e->duplicateTrack(ti);
+                if (idx >= 0) m_selTrack = idx;
             } else if (a == del) {
                 m_selTrack = -1;
                 m_e->removeTrack(ti);
@@ -550,6 +618,12 @@ void Timeline::mousePressEvent(QMouseEvent* e) {
     const bool changedSel = (ti != m_selTrack);
     m_selTrack = ti;
     m_selRegion = onRegion ? rr : -1;
+    if (e->button() == Qt::RightButton) {   // Cut / Copy / Paste menu
+        update();
+        emit selectionChanged(m_selTrack, m_selRegion);
+        regionMenu(e->globalPosition().toPoint(), ti, m_selRegion, snapBeat(xToBeat(pt.x())));
+        return;
+    }
     if (onRegion && e->button() == Qt::LeftButton) {
         m_e->checkpoint();
         m_drag = edge ? Drag::Resize : Drag::Move;

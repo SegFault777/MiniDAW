@@ -198,3 +198,32 @@ Space: play · R: record · C: cycle · double-click an instrument lane to creat
 Audio (*.wav *.mp3 *.flac *.ogg *.m4a *.aac);;All files (*)	오디오 (*.wav *.mp3 *.flac *.ogg *.m4a *.aac);;모든 파일 (*)
 MIDI files (*.mid *.midi)	MIDI 파일 (*.mid *.midi)
 MIDI files (*.mid)	MIDI 파일 (*.mid)
+# v0.5
+Cut	잘라내기
+Copy	복사
+Paste	붙여넣기
+Duplicate Track	트랙 복제
+Bounce	바운스
+Range	범위
+Format	형식
+Whole project	전체 프로젝트
+Cycle range	사이클 범위
+16-bit PCM	16비트 PCM
+24-bit PCM	24비트 PCM
+32-bit float	32비트 부동소수점
+Dither (16-bit)	디더링 (16비트)
+Normalize to	정규화 레벨
+Add reverb / echo tail (2 s)	리버브 / 에코 꼬리 추가 (2초)
+Set a cycle range first (right-drag on the ruler).	먼저 사이클 범위를 지정하세요 (눈금자에서 오른쪽 버튼으로 드래그).
+This audio is still loading.	이 오디오는 아직 불러오는 중입니다.
+MIDI regions can be pasted on Software Instrument and Drummer tracks.	MIDI 리전은 소프트웨어 악기 트랙과 드러머 트랙에 붙여넣을 수 있습니다.
+Audio regions can be pasted on Audio tracks.	오디오 리전은 오디오 트랙에 붙여넣을 수 있습니다.
+%1 copy	%1 복사본
+Input device	입력 장치
+Recording latency compensation	녹음 지연 보정
+Moves recorded audio earlier (positive) or later (negative) to make up for the latency of your audio interface.	오디오 인터페이스의 지연을 보정하기 위해 녹음된 오디오를 앞으로(양수) 또는 뒤로(음수) 이동합니다.
+Gain	게인
+Fade In	페이드 인
+Fade Out	페이드 아웃
+Reverse	리버스
+Normalize	노멀라이즈

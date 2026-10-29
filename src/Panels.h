@@ -78,6 +78,7 @@ public:
 private:
     void openInsert(int slot);
     void applyFlex();
+    void applyRegionAudio();
     Engine* m_e;
     int m_track = -1, m_region = -1;
     QLabel* m_type;
@@ -94,6 +95,11 @@ private:
     QCheckBox* m_follow;
     QDoubleSpinBox* m_srcBpm;
     QSpinBox* m_semis;
+    QDoubleSpinBox* m_gain;
+    QSpinBox *m_fadeIn, *m_fadeOut;
+    QPushButton *m_reverse, *m_normalize;
+    double m_curGain = 0;
+    int m_curFadeIn = 0, m_curFadeOut = 0;   // values shown in the region box (to ignore edits that changed nothing)
     bool m_updating = false;
 };
 

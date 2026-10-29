@@ -16,6 +16,7 @@
 #include <QMediaDevices>
 #include <QPushButton>
 #include <QSettings>
+#include <QSpinBox>
 #include <QTimer>
 #include <QTabWidget>
 #include <QVBoxLayout>
@@ -45,6 +46,18 @@ PreferencesDialog::PreferencesDialog(Engine* e, QWidget* parent) : QDialog(paren
     for (int n : {256, 512, 1024, 2048, 4096}) m_buffer->addItem(tr("%1 samples (%2 ms)").arg(n).arg(n * 1000 / kSampleRate), n);
     m_buffer->setCurrentIndex(std::max(0, m_buffer->findData(s.value("audio/buffer", 2048).toInt())));
     af->addRow(tr("Buffer size"), m_buffer);
+    m_input = new QComboBox;
+    m_input->addItem(tr("System Default"), QByteArray());
+    for (const QAudioDevice& d : QMediaDevices::audioInputs()) m_input->addItem(d.description(), d.id());
+    const QByteArray savedIn = QByteArray::fromBase64(s.value("audio/input").toString().toLatin1());
+    m_input->setCurrentIndex(std::max(0, m_input->findData(savedIn)));
+    af->addRow(tr("Input device"), m_input);
+    m_recOffset = new QSpinBox;
+    m_recOffset->setRange(-500, 500);
+    m_recOffset->setSuffix(" ms");
+    m_recOffset->setValue(s.value("audio/recOffset", 0).toInt());
+    m_recOffset->setToolTip(tr("Moves recorded audio earlier (positive) or later (negative) to make up for the latency of your audio interface."));
+    af->addRow(tr("Recording latency compensation"), m_recOffset);
     auto* test = new QPushButton(tr("Play Test Tone"));
     af->addRow(QString(), test);
     m_status = new QLabel(m_e->audioStatus());
@@ -139,6 +152,8 @@ void PreferencesDialog::save() {
     QSettings s;
     s.setValue("audio/device", QString::fromLatin1(m_device->currentData().toByteArray().toBase64()));
     s.setValue("audio/buffer", m_buffer->currentData().toInt());
+    s.setValue("audio/input", QString::fromLatin1(m_input->currentData().toByteArray().toBase64()));
+    s.setValue("audio/recOffset", m_recOffset->value());
     s.setValue("midi/device", m_midi->currentIndex() > 0 ? m_midi->currentText() : QString());
     s.setValue("ui/language", m_language->currentData().toString());
     s.setValue("loops/folder", m_loops->text());
@@ -147,4 +162,5 @@ void PreferencesDialog::save() {
     s.setValue("vst3/folders", folders);
     m_languageChanged = m_language->currentData().toString() != m_initialLanguage;
     m_e->setAudioOutput(m_device->currentData().toByteArray(), m_buffer->currentData().toInt());
+    m_e->setAudioInput(m_input->currentData().toByteArray(), m_recOffset->value());
 }

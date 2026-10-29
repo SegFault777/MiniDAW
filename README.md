@@ -10,7 +10,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 > sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
 > VST is a trademark of Steinberg Media Technologies GmbH.
 
-**Version 0.4_1** · License: GPL-3.0-or-later
+**Version 0.5** · License: GPL-3.0-or-later
 
 ## Features
 
@@ -18,10 +18,21 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 - Multitrack **Tracks** area with a ruler that follows the time signature, a smart snap grid,
   zoom (Ctrl + wheel) and scrolling.
 - Four track types: **Audio**, **Software Instrument**, **Drummer** and **Drum Machine**.
-- Regions: move, resize, split at the playhead, duplicate, delete. Drag audio or MIDI files from
+- Regions: move, resize, split at the playhead, duplicate, delete, and **cut / copy / paste** (`Ctrl+X` /
+  `Ctrl+C` / `Ctrl+V`, or right-click a region or an empty part of a lane). Drag audio or MIDI files from
   Explorer or from the Loop Browser straight onto the timeline.
+- **Duplicate Track** (`Ctrl+Shift+D`) copies a track with its regions, instrument and effects.
 - **Cycle** range (right-drag on the ruler), metronome (accents follow the time signature) and an
   optional one-bar **count-in**. **Volume automation** per track. Undo / redo for edits and tempo changes.
+
+### What is new in v0.5
+- **Cut, copy and paste regions** between tracks and projects; pasting follows the tempo at the new position.
+- **Duplicate Track** with its own copy of the instrument and the insert effects.
+- **Audio input device** and **recording latency compensation** in *Preferences > Audio*.
+- **Region gain, fade in / fade out, Reverse and Normalize** for audio regions (Inspector). Fades are drawn
+  on the region and are saved with the project.
+- **Bounce dialog**: whole project or cycle range, 16-bit, 24-bit or 32-bit float WAV, TPDF dither,
+  normalization to a chosen peak level and an optional reverb / echo tail.
 
 ### Tempo, time signature and time stretching (v0.4)
 - **Tempo track** (`G`): click to add tempo points, drag to change them, right-click for *Ramp to Next
@@ -51,7 +62,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
   sends, pan, dB fader with level meter, mute / solo / record-enable and coloured name tags.
 - Insert effects: **Channel EQ**, **Compressor**, **Echo**, **Reverb**, **Overdrive** and any VST3 effect.
 - Two aux sends (Reverb and Echo buses) and a master **Limiter**.
-- **Bounce to WAV** (16-bit, 44.1 kHz).
+- **Bounce to WAV** (16 / 24-bit or 32-bit float, 44.1 kHz; whole project or cycle range).
 
 ### Languages
 English, Korean (한국어), Japanese (日本語), Simplified Chinese (简体中文) and Spanish (Español). The language
@@ -76,6 +87,7 @@ files in `translations/`: add `fr.tsv` (copy `ko.tsv`, translate the right-hand 
 | Tempo track | `G` | Volume automation | `A` |
 | Split at playhead | `Ctrl+T` | Duplicate region | `Ctrl+D` |
 | Delete | `Del` | Musical Typing | `Ctrl+K` |
+| Cut / copy / paste region | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Duplicate track | `Ctrl+Shift+D` |
 | New audio / instrument / drum machine track | `Ctrl+Alt+A` / `S` / `D` | New Drummer track | `Ctrl+Alt+R` |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` | Import audio | `Ctrl+I` |
 | Save / open | `Ctrl+S` / `Ctrl+O` | Bounce | `Ctrl+B` |
@@ -125,7 +137,7 @@ Without `VST3_SDK_DIR` (or if the SDK fails to build) MiniDAW is built without V
 SDK is available under GPL-3.0, which is compatible with MiniDAW's license. Set `MINIDAW_VERSION` to
 override the version string. The GitHub Actions workflow in `.github/workflows/build.yml` runs
 `bash build.sh all` and attaches the installer and the portable ZIP to a release when a tag such as
-`v0.4_1` is pushed.
+`v0.5` is pushed.
 
 ## Architecture
 

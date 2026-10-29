@@ -5,6 +5,7 @@
 
 #include <QAbstractSpinBox>
 #include <QApplication>
+#include <QCheckBox>
 #include <QCloseEvent>
 #include <QComboBox>
 #include <QDialog>
@@ -38,7 +39,7 @@
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.4_1"
+#define MINIDAW_VERSION "0.5"
 #endif
 
 namespace {
@@ -157,6 +158,7 @@ void MainWindow::applySettings() {
     const QByteArray dev = QByteArray::fromBase64(s.value("audio/device").toString().toLatin1());
     const int buf = s.value("audio/buffer", 2048).toInt();
     if (!dev.isEmpty() || buf != 2048) m_engine.setAudioOutput(dev, buf);
+    m_engine.setAudioInput(QByteArray::fromBase64(s.value("audio/input").toString().toLatin1()), s.value("audio/recOffset", 0).toInt());
     m_loops->setFolder(s.value("loops/folder", LoopBrowser::defaultFolder()).toString());
     const QString midi = s.value("midi/device").toString();
     m_midi->close();
@@ -192,6 +194,9 @@ void MainWindow::buildActions() {
     aQuit = make(tr("Quit"), QKeySequence::Quit);
     aUndo = make(tr("Undo"), QKeySequence::Undo);
     aRedo = make(tr("Redo"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z));
+    aCut = make(tr("Cut"), QKeySequence::Cut);
+    aCopy = make(tr("Copy"), QKeySequence::Copy);
+    aPaste = make(tr("Paste"), QKeySequence::Paste);
     aDelete = make(tr("Delete"), QKeySequence(Qt::Key_Delete));
     aDuplicate = make(tr("Duplicate Region"), QKeySequence(Qt::CTRL | Qt::Key_D));
     aSplit = make(tr("Split at Playhead"), QKeySequence(Qt::CTRL | Qt::Key_T));
@@ -202,6 +207,7 @@ void MainWindow::buildActions() {
     aNewInstrument = make(tr("New Software Instrument Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_S));
     aNewDrums = make(tr("New Drum Machine Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_D));
     aNewDrummer = make(tr("New Drummer Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_R));
+    aDuplicateTrack = make(tr("Duplicate Track"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_D));
     aDeleteTrack = make(tr("Delete Track"), QKeySequence(Qt::CTRL | Qt::Key_Backspace));
     aTempoTrack = make(tr("Show Tempo Track"), QKeySequence(Qt::Key_G), true);
     aMeter = make(tr("Time Signature…"), {});
@@ -257,6 +263,10 @@ void MainWindow::buildActions() {
     connect(aQuit, &QAction::triggered, this, &QWidget::close);
     connect(aUndo, &QAction::triggered, this, [this] { m_engine.undo(); });
     connect(aRedo, &QAction::triggered, this, [this] { m_engine.redo(); });
+    connect(aCut, &QAction::triggered, this, [this] { m_timeline->cutSelected(); });
+    connect(aCopy, &QAction::triggered, this, [this] { m_timeline->copySelected(); });
+    connect(aPaste, &QAction::triggered, this, [this] { m_timeline->pasteAtPlayhead(); });
+    connect(aDuplicateTrack, &QAction::triggered, this, [this] { m_timeline->duplicateSelectedTrack(); });
     connect(aDelete, &QAction::triggered, this, &MainWindow::onDelete);
     connect(aDuplicate, &QAction::triggered, this, [this] { m_timeline->duplicateSelected(); });
     connect(aSplit, &QAction::triggered, this, [this] { m_timeline->splitAtPlayhead(); });
@@ -309,6 +319,8 @@ void MainWindow::buildMenus() {
     QMenu* edit = menuBar()->addMenu(tr("&Edit"));
     edit->addActions({aUndo, aRedo});
     edit->addSeparator();
+    edit->addActions({aCut, aCopy, aPaste});
+    edit->addSeparator();
     edit->addActions({aDelete, aDuplicate, aSplit});
     edit->addSeparator();
     edit->addActions({aSnap, aAutomation});
@@ -316,7 +328,7 @@ void MainWindow::buildMenus() {
     QMenu* track = menuBar()->addMenu(tr("&Track"));
     track->addActions({aNewAudio, aNewInstrument, aNewDrummer, aNewDrums});
     track->addSeparator();
-    track->addAction(aDeleteTrack);
+    track->addActions({aDuplicateTrack, aDeleteTrack});
 
     QMenu* transport = menuBar()->addMenu(tr("T&ransport"));
     transport->addActions({aPlay, aStop, aRecord, aRewind});
@@ -634,11 +646,73 @@ void MainWindow::importDialog() {
 
 void MainWindow::exportDialog() {
     m_engine.pause();
+    QSettings s;
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Bounce"));
+    auto* form = new QFormLayout(&dlg);
+    auto* range = new QComboBox;
+    range->addItem(tr("Whole project"), false);
+    range->addItem(tr("Cycle range"), true);
+    range->setCurrentIndex(m_engine.loopOn() ? 1 : s.value("export/cycle", 0).toInt() == 1 ? 1 : 0);
+    auto* format = new QComboBox;
+    format->addItem(tr("16-bit PCM"), int(dsp::WavFormat::Pcm16));
+    format->addItem(tr("24-bit PCM"), int(dsp::WavFormat::Pcm24));
+    format->addItem(tr("32-bit float"), int(dsp::WavFormat::Float32));
+    format->setCurrentIndex(std::clamp(s.value("export/format", 0).toInt(), 0, 2));
+    auto* dither = new QCheckBox(tr("Dither (16-bit)"));
+    dither->setChecked(s.value("export/dither", true).toBool());
+    auto* normalize = new QCheckBox(tr("Normalize to"));
+    normalize->setChecked(s.value("export/normalize", false).toBool());
+    auto* level = new QDoubleSpinBox;
+    level->setRange(-12.0, 0.0);
+    level->setDecimals(1);
+    level->setSingleStep(0.5);
+    level->setSuffix(" dBFS");
+    level->setValue(s.value("export/level", -1.0).toDouble());
+    auto* normRow = new QHBoxLayout;
+    normRow->addWidget(normalize);
+    normRow->addWidget(level);
+    normRow->addStretch(1);
+    auto* tail = new QCheckBox(tr("Add reverb / echo tail (2 s)"));
+    tail->setChecked(s.value("export/tail", true).toBool());
+    form->addRow(tr("Range"), range);
+    form->addRow(tr("Format"), format);
+    form->addRow(QString(), dither);
+    form->addRow(QString(), normRow);
+    form->addRow(QString(), tail);
+    auto sync = [=] {
+        dither->setEnabled(format->currentData().toInt() == int(dsp::WavFormat::Pcm16));
+        level->setEnabled(normalize->isChecked());
+    };
+    connect(format, QOverload<int>::of(&QComboBox::currentIndexChanged), &dlg, sync);
+    connect(normalize, &QCheckBox::toggled, &dlg, sync);
+    sync();
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    bb->button(QDialogButtonBox::Ok)->setText(tr("Bounce"));
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+
+    s.setValue("export/cycle", range->currentIndex());
+    s.setValue("export/format", format->currentIndex());
+    s.setValue("export/dither", dither->isChecked());
+    s.setValue("export/normalize", normalize->isChecked());
+    s.setValue("export/level", level->value());
+    s.setValue("export/tail", tail->isChecked());
+    ExportOptions opt;
+    opt.cycleOnly = range->currentData().toBool();
+    opt.format = dsp::WavFormat(format->currentData().toInt());
+    opt.dither = dither->isChecked() && opt.format == dsp::WavFormat::Pcm16;
+    opt.normalize = normalize->isChecked();
+    opt.normalizeDb = float(level->value());
+    opt.tail = tail->isChecked();
+
     const QString path = QFileDialog::getSaveFileName(this, tr("Bounce to WAV"), "bounce.wav", "WAV (*.wav)");
     if (path.isEmpty()) return;
     QApplication::setOverrideCursor(Qt::WaitCursor);
     QString err;
-    const bool ok = m_engine.exportWav(path, &err);
+    const bool ok = m_engine.exportAudio(path, opt, &err);
     QApplication::restoreOverrideCursor();
     statusBar()->showMessage(ok ? tr("Bounced to %1").arg(path) : tr("Bounce failed: %1").arg(err), 8000);
 }

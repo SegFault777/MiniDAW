@@ -414,6 +414,27 @@ Inspector::Inspector(Engine* e, QWidget* p) : QWidget(p), m_e(e) {
     m_semis->setRange(-24, 24);
     m_semis->setSuffix(tr(" st"));
     rl->addWidget(m_semis, 3, 1);
+    rl->addWidget(new QLabel(tr("Gain")), 4, 0);
+    m_gain = new QDoubleSpinBox;
+    m_gain->setRange(-60, 24);
+    m_gain->setDecimals(1);
+    m_gain->setSingleStep(0.5);
+    m_gain->setSuffix(" dB");
+    rl->addWidget(m_gain, 4, 1);
+    rl->addWidget(new QLabel(tr("Fade In")), 5, 0);
+    m_fadeIn = new QSpinBox;
+    m_fadeIn->setRange(0, 10000);
+    m_fadeIn->setSuffix(" ms");
+    rl->addWidget(m_fadeIn, 5, 1);
+    rl->addWidget(new QLabel(tr("Fade Out")), 6, 0);
+    m_fadeOut = new QSpinBox;
+    m_fadeOut->setRange(0, 10000);
+    m_fadeOut->setSuffix(" ms");
+    rl->addWidget(m_fadeOut, 6, 1);
+    m_reverse = new QPushButton(tr("Reverse"));
+    m_normalize = new QPushButton(tr("Normalize"));
+    rl->addWidget(m_reverse, 7, 0);
+    rl->addWidget(m_normalize, 7, 1);
     lay->addWidget(m_regionBox);
     lay->addStretch(1);
 
@@ -439,12 +460,31 @@ Inspector::Inspector(Engine* e, QWidget* p) : QWidget(p), m_e(e) {
     connect(m_follow, &QCheckBox::toggled, this, [this] { applyFlex(); });
     connect(m_srcBpm, &QDoubleSpinBox::editingFinished, this, [this] { applyFlex(); });
     connect(m_semis, &QSpinBox::editingFinished, this, [this] { applyFlex(); });
+    connect(m_gain, &QDoubleSpinBox::editingFinished, this, [this] { applyRegionAudio(); });
+    connect(m_fadeIn, &QSpinBox::editingFinished, this, [this] { applyRegionAudio(); });
+    connect(m_fadeOut, &QSpinBox::editingFinished, this, [this] { applyRegionAudio(); });
+    connect(m_reverse, &QPushButton::clicked, this, [this] {
+        if (m_track >= 0 && m_region >= 0) { m_e->reverseRegion(m_track, m_region); refresh(); }
+    });
+    connect(m_normalize, &QPushButton::clicked, this, [this] {
+        if (m_track >= 0 && m_region >= 0) { m_e->normalizeRegion(m_track, m_region, -1.f); refresh(); }
+    });
     setSelection(-1, -1);
 }
 
 void Inspector::applyFlex() {
     if (m_updating || m_track < 0 || m_region < 0) return;
     m_e->setRegionFlex(m_track, m_region, m_follow->isChecked(), m_srcBpm->value(), m_semis->value());
+}
+
+void Inspector::applyRegionAudio() {
+    if (m_updating || m_track < 0 || m_region < 0) return;
+    if (std::fabs(m_gain->value() - m_curGain) < 1e-6 && m_fadeIn->value() == m_curFadeIn && m_fadeOut->value() == m_curFadeOut) return;
+    m_e->setRegionAudio(m_track, m_region, float(m_gain->value()), qint64(m_fadeIn->value()) * kSampleRate / 1000,
+                        qint64(m_fadeOut->value()) * kSampleRate / 1000);
+    m_curGain = m_gain->value();
+    m_curFadeIn = m_fadeIn->value();
+    m_curFadeOut = m_fadeOut->value();
 }
 
 void Inspector::openInsert(int slot) {
@@ -508,6 +548,12 @@ void Inspector::setSelection(int t, int r) {
             m_follow->setChecked(rg.follow);
             m_srcBpm->setValue(rg.sourceBpm);
             m_semis->setValue(int(std::lround(rg.semitones)));
+            m_gain->setValue(double(rg.gainDb));
+            m_fadeIn->setValue(int(std::lround(double(rg.fadeIn) * 1000.0 / kSampleRate)));
+            m_fadeOut->setValue(int(std::lround(double(rg.fadeOut) * 1000.0 / kSampleRate)));
+            m_curGain = m_gain->value();   // rounded to the spin box precision
+            m_curFadeIn = m_fadeIn->value();
+            m_curFadeOut = m_fadeOut->value();
         }
     } else {
         m_name->clear();

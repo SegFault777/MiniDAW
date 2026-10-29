@@ -20,6 +20,10 @@ public:
     void deleteSelected();
     void splitAtPlayhead();
     void duplicateSelected();
+    void copySelected();               ///< Copy / cut / paste of regions (v0.5).
+    void cutSelected();
+    void pasteAtPlayhead();
+    void duplicateSelectedTrack();
     void setAutomationMode(bool on);
     void showTempoTrack(bool on);
     void setSnap(bool on) { m_snap = on; }
@@ -62,6 +66,7 @@ private:
     double yToBpm(int y) const;
     int tempoPointAt(const std::vector<dsp::TempoPoint>& pts, QPoint pt) const;
     void tempoPress(QMouseEvent* e);
+    void regionMenu(const QPoint& globalPos, int track, int region, double beat);
 
     Engine* m_e;
     QScrollBar *m_hbar, *m_vbar;

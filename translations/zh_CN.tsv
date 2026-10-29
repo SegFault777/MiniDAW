@@ -134,3 +134,32 @@ Not a valid MiniDAW project file.	不是有效的 MiniDAW 项目文件。
 There is nothing to bounce.	没有可导出的内容。
 Audio error: %1	音频错误: %1
 No audio output device was found.	未找到音频输出设备。
+# v0.5
+Cut	剪切
+Copy	复制
+Paste	粘贴
+Duplicate Track	复制轨道
+Bounce	导出混音
+Range	范围
+Format	格式
+Whole project	整个项目
+Cycle range	循环范围
+16-bit PCM	16 位 PCM
+24-bit PCM	24 位 PCM
+32-bit float	32 位浮点
+Dither (16-bit)	抖动 (16 位)
+Normalize to	标准化电平
+Add reverb / echo tail (2 s)	添加混响 / 回声尾音 (2 秒)
+Set a cycle range first (right-drag on the ruler).	请先设置循环范围 (在标尺上右键拖动)。
+This audio is still loading.	此音频仍在加载中。
+MIDI regions can be pasted on Software Instrument and Drummer tracks.	MIDI 区域可以粘贴到软件乐器轨道和鼓手轨道。
+Audio regions can be pasted on Audio tracks.	音频区域可以粘贴到音频轨道。
+%1 copy	%1 副本
+Input device	输入设备
+Recording latency compensation	录音延迟补偿
+Moves recorded audio earlier (positive) or later (negative) to make up for the latency of your audio interface.	将录制的音频提前 (正值) 或延后 (负值),以补偿音频接口的延迟。
+Gain	增益
+Fade In	淡入
+Fade Out	淡出
+Reverse	反转
+Normalize	标准化

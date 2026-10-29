@@ -134,3 +134,32 @@ Not a valid MiniDAW project file.	No es un archivo de proyecto de MiniDAW válid
 There is nothing to bounce.	No hay nada que exportar.
 Audio error: %1	Error de audio: %1
 No audio output device was found.	No se encontró ningún dispositivo de salida de audio.
+# v0.5
+Cut	Cortar
+Copy	Copiar
+Paste	Pegar
+Duplicate Track	Duplicar pista
+Bounce	Exportar
+Range	Rango
+Format	Formato
+Whole project	Proyecto completo
+Cycle range	Rango de ciclo
+16-bit PCM	PCM de 16 bits
+24-bit PCM	PCM de 24 bits
+32-bit float	Coma flotante de 32 bits
+Dither (16-bit)	Dithering (16 bits)
+Normalize to	Normalizar a
+Add reverb / echo tail (2 s)	Añadir cola de reverb / eco (2 s)
+Set a cycle range first (right-drag on the ruler).	Define primero un rango de ciclo (arrastra con el botón derecho en la regla).
+This audio is still loading.	Este audio aún se está cargando.
+MIDI regions can be pasted on Software Instrument and Drummer tracks.	Las regiones MIDI se pueden pegar en pistas de instrumento de software y de baterista.
+Audio regions can be pasted on Audio tracks.	Las regiones de audio se pueden pegar en pistas de audio.
+%1 copy	Copia de %1
+Input device	Dispositivo de entrada
+Recording latency compensation	Compensación de latencia de grabación
+Moves recorded audio earlier (positive) or later (negative) to make up for the latency of your audio interface.	Mueve el audio grabado hacia delante (positivo) o hacia atrás (negativo) para compensar la latencia de tu interfaz de audio.
+Gain	Ganancia
+Fade In	Fundido de entrada
+Fade Out	Fundido de salida
+Reverse	Invertir
+Normalize	Normalizar

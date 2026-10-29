@@ -72,7 +72,7 @@ private:
     QSplitter *m_hsplit, *m_vsplit;
 
     QAction *aNew, *aOpen, *aSave, *aSaveAs, *aImport, *aImportMidi, *aExportMidi, *aBounce, *aPrefs, *aQuit;
-    QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation;
+    QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation, *aCut, *aCopy, *aPaste, *aDuplicateTrack;
     QAction *aNewAudio, *aNewInstrument, *aNewDrums, *aNewDrummer, *aDeleteTrack, *aTempoTrack, *aMeter;
     QAction *aRewind, *aPlay, *aStop, *aRecord, *aCycle, *aMetronome, *aCountIn;
     QAction *aInspector, *aMixer, *aSmart, *aRoll, *aSteps, *aDrummerTab, *aLoopBrowser, *aEditors, *aTyping, *aAbout;

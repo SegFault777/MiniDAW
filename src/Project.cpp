@@ -19,7 +19,7 @@
 #include "vst3/Vst3Host.h"
 
 namespace {
-const int kProjectVersion = 2;
+const int kProjectVersion = 3;
 
 QString typeToString(TrackType t) {
     switch (t) {
@@ -329,6 +329,9 @@ bool Engine::saveProject(const QString& path, QString* error) {
                 ro["follow"] = r.follow;
                 ro["sourceBpm"] = r.sourceBpm;
                 ro["semitones"] = r.semitones;
+                if (r.gainDb != 0.f) ro["gainDb"] = double(r.gainDb);
+                if (r.fadeIn > 0) ro["fadeIn"] = double(r.fadeIn);
+                if (r.fadeOut > 0) ro["fadeOut"] = double(r.fadeOut);
             }
             regs.append(ro);
         }
@@ -483,6 +486,9 @@ bool Engine::loadProject(const QString& path, QString* error) {
                     r.follow = ro["follow"].toBool();
                     r.sourceBpm = ro["sourceBpm"].toDouble();
                     r.semitones = ro["semitones"].toDouble();
+                    r.gainDb = float(ro["gainDb"].toDouble(0));
+                    r.fadeIn = qint64(ro["fadeIn"].toDouble(0));
+                    r.fadeOut = qint64(ro["fadeOut"].toDouble(0));
                     if (!toDecode.contains(r.pendingPath)) toDecode << r.pendingPath;
                 }
                 t.regions.push_back(r);
@@ -558,30 +564,44 @@ bool Engine::loadProject(const QString& path, QString* error) {
 
 // ------------------------------------------------------------------ bounce
 bool Engine::exportWav(const QString& path, QString* error) {
+    return exportAudio(path, ExportOptions{}, error);
+}
+
+bool Engine::exportAudio(const QString& path, const ExportOptions& opt, QString* error) {
     const auto tempo = tempoMap();
     QMutexLocker lk(&m_mutex);
     m_tm = tempo.get();
-    double endBeat = 0;
-    bool anyDrums = false;
-    for (const Track& t : m_tracks) {
-        for (const Region& r : t.regions) endBeat = std::max(endBeat, r.start + regionBeats(r));
-        if (t.type == TrackType::Drums)
-            for (const auto& row : t.steps)
-                for (bool b : row) anyDrums |= b;
+    double startBeat = 0, endBeat = 0;
+    if (opt.cycleOnly) {
+        startBeat = m_loopA.load();
+        endBeat = m_loopB.load();
+        if (!(endBeat > startBeat)) {
+            if (error) *error = tr("Set a cycle range first (right-drag on the ruler).");
+            return false;
+        }
+    } else {
+        bool anyDrums = false;
+        for (const Track& t : m_tracks) {
+            for (const Region& r : t.regions) endBeat = std::max(endBeat, r.start + regionBeats(r));
+            if (t.type == TrackType::Drums)
+                for (const auto& row : t.steps)
+                    for (bool b : row) anyDrums |= b;
+        }
+        if (anyDrums) endBeat = std::max(endBeat, tempo->barStart(5));   // at least 4 bars of drums
     }
-    if (anyDrums) endBeat = std::max(endBeat, tempo->barStart(5));   // at least 4 bars of drums
-    if (endBeat <= 0) {
+    if (endBeat <= startBeat) {
         if (error) *error = tr("There is nothing to bounce.");
         return false;
     }
-    const qint64 end = qint64(std::llround(tempo->beatToFrame(endBeat))) + qint64(kSampleRate) * 2;   // 2 s tail for reverb / echo
+    const qint64 first = qint64(std::llround(tempo->beatToFrame(startBeat)));
+    const qint64 end = qint64(std::llround(tempo->beatToFrame(endBeat))) + (opt.tail ? qint64(kSampleRate) * 2 : 0);   // tail for reverb / echo
+    const qint64 total = end - first;
 
     QFile f(path);
     if (!f.open(QIODevice::WriteOnly)) {
         if (error) *error = f.errorString();
         return false;
     }
-    writeWavHeader(f, quint32(end * 4));
 
     constexpr int kBlock = 4096;
     const size_t need = size_t(kBlock) * 2;
@@ -590,17 +610,40 @@ bool Engine::exportWav(const QString& path, QString* error) {
         m_trackBuf.resize(need);
         for (auto& a : m_auxBuf) a.resize(need);
     }
-    flushDsp();
-    m_expected = -1;
-    std::vector<qint16> pcm(need);
-    for (qint64 p = 0; p < end; p += kBlock) {
-        const int n = int(std::min<qint64>(kBlock, end - p));
-        renderBlock(p, n, m_scratch.data(), true);
-        masterProcess(m_scratch.data(), n);
-        for (int i = 0; i < n * 2; ++i) pcm[size_t(i)] = qint16(std::clamp(m_scratch[size_t(i)], -1.f, 1.f) * 32767.f);
-        f.write(reinterpret_cast<const char*>(pcm.data()), qint64(n) * 4);
+    // Renders [first, end) through the whole signal path and hands every block to 'sink'.
+    auto pass = [&](auto&& sink) {
+        flushDsp();
+        m_expected = -1;
+        for (qint64 p = first; p < end; p += kBlock) {
+            const int n = int(std::min<qint64>(kBlock, end - p));
+            renderBlock(p, n, m_scratch.data(), true);
+            masterProcess(m_scratch.data(), n);
+            if (!sink(m_scratch.data(), n)) break;
+        }
+        flushDsp();
+        m_expected = -1;
+    };
+
+    float gain = 1.f;
+    if (opt.normalize) {   // first pass: find the peak of the finished mix
+        float peak = 0;
+        pass([&](const float* b, int n) { peak = std::max(peak, dsp::peakOf(b, size_t(n))); return true; });
+        gain = dsp::normalizeGain(peak, opt.normalizeDb);
     }
-    flushDsp();
-    m_expected = -1;
+
+    const auto header = dsp::wavHeader(opt.format, kSampleRate, quint64(total));
+    bool ok = f.write(reinterpret_cast<const char*>(header.data()), qint64(header.size())) == qint64(header.size());
+    std::vector<std::uint8_t> bytes;
+    std::uint32_t seed = 12345u;
+    if (ok) pass([&](const float* b, int n) {
+        bytes.clear();
+        dsp::encodeSamples(b, size_t(n), opt.format, gain, opt.dither, seed, bytes);
+        ok = f.write(reinterpret_cast<const char*>(bytes.data()), qint64(bytes.size())) == qint64(bytes.size());
+        return ok;
+    });
+    if (!ok) {
+        if (error) *error = f.errorString();
+        return false;
+    }
     return true;
 }

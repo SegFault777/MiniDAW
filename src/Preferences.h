@@ -9,6 +9,7 @@ class QComboBox;
 class QLabel;
 class QLineEdit;
 class QListWidget;
+class QSpinBox;
 
 /// Settings dialog: audio device, MIDI input, language, loops folder and VST3 plug-in folders.
 /// Values are stored with QSettings; MainWindow applies them after the dialog is accepted.
@@ -20,7 +21,8 @@ public:
 private:
     void save();
     Engine* m_e;
-    QComboBox *m_device, *m_buffer, *m_midi, *m_language;
+    QComboBox *m_device, *m_buffer, *m_midi, *m_language, *m_input;
+    QSpinBox* m_recOffset;
     QLabel* m_status;
     QLineEdit* m_loops;
     QListWidget *m_folders, *m_found;
