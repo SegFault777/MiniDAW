@@ -31,11 +31,18 @@ jobs:
         with:
           arch: x64
 
+      - name: Get the VST3 SDK (optional)
+        shell: bash
+        continue-on-error: true
+        run: |
+          git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/steinbergmedia/vst3sdk.git "$RUNNER_TEMP/vst3sdk"
+          echo "VST3_SDK_DIR=$RUNNER_TEMP/vst3sdk" >> "$GITHUB_ENV"
+
       - name: Determine version
         id: ver
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.2-dev' }
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.4-dev' }
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Install Inno Setup

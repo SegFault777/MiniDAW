@@ -5,17 +5,22 @@
 #include <QMainWindow>
 #include <QTimer>
 #include <map>
+#include <set>
 #include "Engine.h"
 
 class Timeline;
 class Inspector;
 class MixerPanel;
-class SynthPanel;
+class InstrumentPanel;
+class DrummerPanel;
 class PianoRoll;
 class StepSequencer;
+class LoopBrowser;
+class MidiInput;
 class QTabWidget;
 class QSplitter;
 class QDoubleSpinBox;
+class QToolButton;
 class QLabel;
 class QAction;
 
@@ -30,9 +35,12 @@ protected:
     bool eventFilter(QObject*, QEvent*) override;
 
 private:
+    enum Tab { TabMixer, TabSmart, TabRoll, TabSteps, TabDrummer };
+
     void buildActions();
     void buildMenus();
     QWidget* buildControlBar();
+    void applySettings();
     void tick();
     void onSelection(int track, int region);
     void onRecord();
@@ -43,31 +51,41 @@ private:
     bool saveProject(bool saveAs);
     void importDialog();
     void exportDialog();
+    void meterDialog();
+    void preferences();
     void about();
     int musicalTrack() const;
+    void liveNoteOn(int pitch, int velocity);
+    void liveNoteOff(int pitch);
 
     Engine m_engine;
     Timeline* m_timeline;
     Inspector* m_inspector;
     MixerPanel* m_mixer;
-    SynthPanel* m_synth;
+    InstrumentPanel* m_smart;
+    DrummerPanel* m_drummer;
     PianoRoll* m_roll;
     StepSequencer* m_seq;
+    LoopBrowser* m_loops;
+    MidiInput* m_midi;
     QTabWidget* m_bottom;
     QSplitter *m_hsplit, *m_vsplit;
 
-    QAction *aNew, *aOpen, *aSave, *aSaveAs, *aImport, *aBounce, *aQuit;
+    QAction *aNew, *aOpen, *aSave, *aSaveAs, *aImport, *aImportMidi, *aExportMidi, *aBounce, *aPrefs, *aQuit;
     QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation;
-    QAction *aNewAudio, *aNewInstrument, *aNewDrums, *aDeleteTrack;
+    QAction *aNewAudio, *aNewInstrument, *aNewDrums, *aNewDrummer, *aDeleteTrack, *aTempoTrack, *aMeter;
     QAction *aRewind, *aPlay, *aStop, *aRecord, *aCycle, *aMetronome, *aCountIn;
-    QAction *aInspector, *aMixer, *aSmart, *aRoll, *aSteps, *aEditors, *aTyping, *aAbout;
+    QAction *aInspector, *aMixer, *aSmart, *aRoll, *aSteps, *aDrummerTab, *aLoopBrowser, *aEditors, *aTyping, *aAbout;
 
-    QLabel *m_lcdPos, *m_lcdTime, *m_keysLabel;
+    QLabel *m_lcdPos, *m_lcdTime, *m_keysLabel, *m_audioLabel;
+    QToolButton* m_sigButton;
     QDoubleSpinBox* m_bpm;
     QTimer m_timer;
 
-    int m_selTrack = -1;
+    int m_selTrack = -1, m_selRegion = -1;
     int m_octave = 0;                                   // musical typing octave offset
+    bool m_sustain = false;                             // MIDI sustain pedal
     std::map<int, std::pair<int, int>> m_heldKeys;      // key -> (track, pitch)
+    std::set<std::pair<int, int>> m_sustained;          // notes kept alive by the pedal
     QString m_lastTitle;
 };

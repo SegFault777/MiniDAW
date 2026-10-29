@@ -9,20 +9,30 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QUrl>
 #include <cmath>
 #include "AudioUtil.h"
 #include "Engine.h"
+#include "dsp/MidiFile.h"
+#include "dsp/Stretch.h"
+#include "vst3/Vst3Host.h"
 
 namespace {
-const int kProjectVersion = 1;
+const int kProjectVersion = 2;
 
 QString typeToString(TrackType t) {
-    return t == TrackType::Audio ? "audio" : t == TrackType::Instrument ? "instrument" : "drums";
+    switch (t) {
+    case TrackType::Audio: return "audio";
+    case TrackType::Instrument: return "instrument";
+    case TrackType::Drums: return "drums";
+    case TrackType::Drummer: return "drummer";
+    }
+    return "audio";
 }
 
 TrackType typeFromString(const QString& s) {
-    return s == "instrument" ? TrackType::Instrument : s == "drums" ? TrackType::Drums : TrackType::Audio;
+    return s == "instrument" ? TrackType::Instrument : s == "drums" ? TrackType::Drums : s == "drummer" ? TrackType::Drummer : TrackType::Audio;
 }
 
 QJsonObject paramsToJson(const dsp::ParamSet& set) {
@@ -36,6 +46,24 @@ void applyParams(dsp::ParamSet& set, const QJsonObject& o) {
         const auto it = o.find(QString::fromStdString(p->name));
         if (it != o.end()) p->set(float(it->toDouble(p->def)));
     }
+}
+
+/// Tempo written in a loop's file name ("Funk Groove 100 bpm.wav"), or 0.
+double bpmFromName(const QString& name) {
+    static const QRegularExpression re("(\\d{2,3}(?:\\.\\d+)?)\\s*[-_ ]?\\s*bpm", QRegularExpression::CaseInsensitiveOption);
+    const auto m = re.match(name);
+    return m.hasMatch() ? m.captured(1).toDouble() : 0.0;
+}
+
+std::shared_ptr<dsp::Effect> makeEffect(const QString& id) {
+    return id.startsWith("vst3:") ? vst3::createEffect(id) : dsp::createEffect(id.toStdString());
+}
+
+std::shared_ptr<dsp::Instrument> makeInstrument(const QString& id) {
+    if (id == "synth") return std::make_shared<dsp::Synth>();
+    if (id == "drumkit") return std::make_shared<dsp::DrumKit>();
+    if (id.startsWith("vst3:")) return vst3::createInstrument(id);
+    return nullptr;
 }
 }  // namespace
 
@@ -91,17 +119,122 @@ void Engine::importAudio(const QString& path, int track, double startBeat) {
         }
         if (t < 0) t = addTrack(TrackType::Audio, data->name);
         else checkpoint();
+        Region r;
+        r.name = data->name;
+        r.start = std::max(0.0, startBeat);
+        r.source = r.audio = data;
+        r.frames = r.srcFrames = data->frames();
+        const double fileBpm = bpmFromName(data->name);   // loops that carry a tempo follow the project tempo
+        if (fileBpm > 0) {
+            r.sourceBpm = fileBpm;
+            r.follow = true;
+            const double bpm = tempoMap()->bpmAt(r.start);
+            // Stretch outside the lock; this can take a moment for long files.
+            const double ratio = fileBpm / bpm;
+            auto d = std::make_shared<AudioData>();
+            d->name = data->name;
+            d->path = data->path;
+            d->pcm = dsp::flex(data->pcm.data(), size_t(data->frames()), ratio, 0.0);
+            computePeaks(*d);
+            r.audio = d;
+            r.offset = 0;
+            r.frames = d->frames();
+            r.flexBpm = bpm;
+        }
         {
             QMutexLocker l(&m_mutex);
-            Region r;
-            r.name = data->name;
-            r.start = std::max(0.0, startBeat);
-            r.audio = data;
-            r.frames = data->frames();
             m_tracks[size_t(t)].regions.push_back(r);
         }
         changed(false);
     });
+}
+
+// ------------------------------------------------------------------ MIDI files
+bool Engine::importMidiFile(const QString& path, QString* error) {
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) {
+        if (error) *error = f.errorString();
+        return false;
+    }
+    const QByteArray raw = f.readAll();
+    dsp::MidiSong song;
+    std::string err;
+    if (!dsp::readMidiFile(std::vector<std::uint8_t>(raw.begin(), raw.end()), song, err)) {
+        if (error) *error = QString::fromStdString(err);
+        return false;
+    }
+    pushUndo();
+    bool empty = true;
+    {
+        QMutexLocker l(&m_mutex);
+        for (const Track& t : m_tracks) empty = empty && t.regions.empty();
+    }
+    if (empty) {   // adopt the tempo and time signature of the file into an empty project
+        auto tm = std::make_shared<dsp::TempoMap>(*tempoMap());
+        tm->setTempo({{0, song.bpm, false}});
+        tm->setMeter({{1, song.num, song.den}});
+        setTempoMap(tm, false);
+    }
+    const auto tm = tempoMap();
+    {
+        QMutexLocker l(&m_mutex);
+        int n = 1;
+        for (const dsp::MidiTrack& mt : song.tracks) {
+            bool drums = true;
+            double maxEnd = 0;
+            for (const dsp::MidiNote& note : mt.notes) {
+                drums = drums && note.channel == 9;
+                maxEnd = std::max(maxEnd, note.startBeat + note.lengthBeats);
+            }
+            const QString name = mt.name.empty() ? tr("Imported %1").arg(n) : QString::fromStdString(mt.name);
+            Track t = makeTrack(drums ? TrackType::Drummer : TrackType::Instrument, name);
+            Region r;
+            r.midi = true;
+            r.name = name;
+            r.start = 0;
+            r.lengthBeats = std::max(tm->barLength(1), tm->nextBarLine(maxEnd));
+            for (const dsp::MidiNote& note : mt.notes) r.notes.push_back({note.pitch, note.startBeat, note.lengthBeats, note.velocity});
+            t.regions.push_back(std::move(r));
+            m_tracks.push_back(std::move(t));
+            ++n;
+        }
+    }
+    changed(true);
+    return true;
+}
+
+bool Engine::exportMidiFile(const QString& path, QString* error) {
+    const auto tm = tempoMap();
+    dsp::MidiSong song;
+    song.bpm = tm->bpmAt(0);
+    song.num = tm->meterAtBeat(0).num;
+    song.den = tm->meterAtBeat(0).den;
+    for (const Track& t : snapshot()) {
+        if (t.type != TrackType::Instrument && t.type != TrackType::Drummer) continue;
+        dsp::MidiTrack mt;
+        mt.name = t.name.toStdString();
+        for (const Region& r : t.regions) {
+            if (!r.midi) continue;
+            for (const Note& n : r.notes) {
+                if (n.start >= r.lengthBeats) continue;
+                mt.notes.push_back({t.type == TrackType::Drummer ? 9 : 0, n.pitch, n.velocity, r.start + n.start,
+                                    std::min(n.length, r.lengthBeats - n.start)});
+            }
+        }
+        if (!mt.notes.empty()) song.tracks.push_back(std::move(mt));
+    }
+    if (song.tracks.empty()) {
+        if (error) *error = tr("There are no MIDI notes to export.");
+        return false;
+    }
+    const auto bytes = dsp::writeMidiFile(song);
+    QFile f(path);
+    if (!f.open(QIODevice::WriteOnly)) {
+        if (error) *error = f.errorString();
+        return false;
+    }
+    f.write(reinterpret_cast<const char*>(bytes.data()), qint64(bytes.size()));
+    return true;
 }
 
 // ------------------------------------------------------------------ save
@@ -133,9 +266,11 @@ bool Engine::saveProject(const QString& path, QString* error) {
             }
             o["steps"] = rows;
         }
-        if (t.synth) {
-            o["synthPreset"] = t.synthPreset;
-            o["synth"] = paramsToJson(*t.synth);
+        if (t.instrument) {
+            o["instrument"] = t.instrumentId;
+            o["preset"] = t.preset;
+            o["synth"] = paramsToJson(*t.instrument);
+            if (t.instrumentId.startsWith("vst3:")) o["state"] = QString::fromLatin1(vst3::saveState(*t.instrument).toBase64());
         }
         QJsonArray inserts;
         for (const auto& fx : t.inserts) {
@@ -143,6 +278,7 @@ bool Engine::saveProject(const QString& path, QString* error) {
             f["id"] = fx->id();
             f["bypass"] = fx->bypass.load();
             f["params"] = paramsToJson(*fx);
+            if (QString(fx->id()).startsWith("vst3:")) f["state"] = QString::fromLatin1(vst3::saveState(*fx).toBase64());
             inserts.append(f);
         }
         o["inserts"] = inserts;
@@ -161,23 +297,38 @@ bool Engine::saveProject(const QString& path, QString* error) {
                 QJsonArray notes;
                 for (const Note& n : r.notes) notes.append(QJsonArray{n.pitch, n.start, n.length, n.velocity});
                 ro["notes"] = notes;
+                if (r.drummer) {
+                    QJsonObject d;
+                    d["style"] = r.drum.style;
+                    d["complexity"] = r.drum.complexity;
+                    d["loudness"] = r.drum.loudness;
+                    d["swing"] = r.drum.swing;
+                    d["fills"] = r.drum.fills;
+                    d["seed"] = r.drum.seed;
+                    d["bars"] = r.drum.bars;
+                    ro["drummer"] = d;
+                }
             } else {
-                QString p = r.audio ? r.audio->path : r.pendingPath;
-                if (r.audio && p.isEmpty()) {   // a fresh recording: store it next to the project file
+                const auto src = r.source ? r.source : r.audio;
+                QString p = src ? src->path : r.pendingPath;
+                if (src && p.isEmpty()) {   // a fresh recording: store it next to the project file
                     dir.mkpath(audioDir);
                     QString file;
                     do { file = dir.filePath(QString("%1/take_%2.wav").arg(audioDir).arg(take++)); } while (QFile::exists(file));
                     QString werr;
-                    if (!writeWavFile(file, r.audio->pcm, &werr)) {
+                    if (!writeWavFile(file, src->pcm, &werr)) {
                         if (error) *error = werr;
                         return false;
                     }
-                    r.audio->path = file;
+                    src->path = file;
                     p = file;
                 }
                 ro["path"] = dir.relativeFilePath(p);
-                ro["offset"] = double(r.offset);
-                ro["frames"] = double(r.frames);
+                ro["srcOffset"] = double(r.srcOffset);
+                ro["srcFrames"] = double(r.srcFrames);
+                ro["follow"] = r.follow;
+                ro["sourceBpm"] = r.sourceBpm;
+                ro["semitones"] = r.semitones;
             }
             regs.append(ro);
         }
@@ -185,10 +336,16 @@ bool Engine::saveProject(const QString& path, QString* error) {
         tracks.append(o);
     }
 
+    const auto tm = tempoMap();
+    QJsonArray tempo, meter;
+    for (const auto& p : tm->tempoPoints()) tempo.append(QJsonObject{{"beat", p.beat}, {"bpm", p.bpm}, {"ramp", p.ramp}});
+    for (const auto& m : tm->meterPoints()) meter.append(QJsonObject{{"bar", m.bar}, {"num", m.num}, {"den", m.den}});
+
     QJsonObject root;
     root["format"] = "MiniDAW";
     root["version"] = kProjectVersion;
-    root["bpm"] = bpm();
+    root["tempo"] = tempo;
+    root["meter"] = meter;
     root["loopOn"] = loopOn();
     root["loopA"] = loopA();
     root["loopB"] = loopB();
@@ -230,6 +387,23 @@ bool Engine::loadProject(const QString& path, QString* error) {
     stopRecording();
     m_playing = false;
     m_countRemain = 0;
+
+    auto tm = std::make_shared<dsp::TempoMap>();
+    std::vector<dsp::TempoPoint> tempo;
+    for (const QJsonValue& v : root["tempo"].toArray()) {
+        const QJsonObject o = v.toObject();
+        tempo.push_back({o["beat"].toDouble(), o["bpm"].toDouble(120), o["ramp"].toBool()});
+    }
+    if (tempo.empty()) tempo.push_back({0, root["bpm"].toDouble(120), false});   // projects from v0.2
+    std::vector<dsp::MeterPoint> meter;
+    for (const QJsonValue& v : root["meter"].toArray()) {
+        const QJsonObject o = v.toObject();
+        meter.push_back({o["bar"].toInt(1), o["num"].toInt(4), o["den"].toInt(4)});
+    }
+    tm->setTempo(tempo);
+    tm->setMeter(meter);
+    { QMutexLocker l(&m_tempoMutex); m_tempo = tm; }
+
     QStringList toDecode;
     {
         QMutexLocker l(&m_mutex);
@@ -237,6 +411,7 @@ bool Engine::loadProject(const QString& path, QString* error) {
         m_undo.clear();
         m_redo.clear();
         m_nextId = 1;
+        m_audition.reset();
         for (const QJsonValue& tv : root["tracks"].toArray()) {
             const QJsonObject o = tv.toObject();
             Track t = makeTrack(typeFromString(o["type"].toString()), o["name"].toString());
@@ -254,16 +429,24 @@ bool Engine::loadProject(const QString& path, QString* error) {
                     for (int k = 0; k < kSteps && k < s.size(); ++k) t.steps[size_t(r)][size_t(k)] = (s[k] == 'x');
                 }
             }
-            if (t.synth) {
-                t.synthPreset = o["synthPreset"].toInt();
-                applyParams(*t.synth, o["synth"].toObject());
+            if (t.instrument) {
+                const QString id = o["instrument"].toString(t.instrumentId);
+                if (id != t.instrumentId) {
+                    if (auto inst = makeInstrument(id)) { t.instrument = inst; t.instrumentId = id; }
+                    else emit message(tr("Instrument plug-in not available: %1").arg(id));
+                }
+                t.preset = o["preset"].toInt();
+                applyParams(*t.instrument, o["synth"].toObject());
+                if (t.instrumentId.startsWith("vst3:") && o.contains("state"))
+                    vst3::loadState(*t.instrument, QByteArray::fromBase64(o["state"].toString().toLatin1()));
             }
             for (const QJsonValue& iv : o["inserts"].toArray()) {
                 const QJsonObject io = iv.toObject();
-                auto fx = dsp::createEffect(io["id"].toString().toStdString());
-                if (!fx) continue;
+                auto fx = makeEffect(io["id"].toString());
+                if (!fx) { emit message(tr("Effect plug-in not available: %1").arg(io["id"].toString())); continue; }
                 fx->bypass = io["bypass"].toBool();
                 applyParams(*fx, io["params"].toObject());
+                if (io.contains("state")) vst3::loadState(*fx, QByteArray::fromBase64(io["state"].toString().toLatin1()));
                 t.inserts.push_back(fx);
             }
             for (const QJsonValue& av : o["volAuto"].toArray()) {
@@ -282,10 +465,24 @@ bool Engine::loadProject(const QString& path, QString* error) {
                         const QJsonArray a = nv.toArray();
                         if (a.size() == 4) r.notes.push_back(Note{a[0].toInt(), a[1].toDouble(), a[2].toDouble(), a[3].toInt()});
                     }
+                    if (ro.contains("drummer")) {
+                        const QJsonObject d = ro["drummer"].toObject();
+                        r.drummer = true;
+                        r.drum.style = d["style"].toInt();
+                        r.drum.complexity = d["complexity"].toDouble(0.5);
+                        r.drum.loudness = d["loudness"].toDouble(0.6);
+                        r.drum.swing = d["swing"].toDouble();
+                        r.drum.fills = d["fills"].toBool(true);
+                        r.drum.seed = d["seed"].toInt(1);
+                        r.drum.bars = d["bars"].toInt(4);
+                    }
                 } else {
                     r.pendingPath = QDir::cleanPath(dir.absoluteFilePath(ro["path"].toString()));
-                    r.offset = qint64(ro["offset"].toDouble());
-                    r.frames = qint64(ro["frames"].toDouble());
+                    r.srcOffset = qint64(ro["srcOffset"].toDouble(ro["offset"].toDouble()));   // "offset" in v0.2 projects
+                    r.srcFrames = qint64(ro["srcFrames"].toDouble(ro["frames"].toDouble()));
+                    r.follow = ro["follow"].toBool();
+                    r.sourceBpm = ro["sourceBpm"].toDouble();
+                    r.semitones = ro["semitones"].toDouble();
                     if (!toDecode.contains(r.pendingPath)) toDecode << r.pendingPath;
                 }
                 t.regions.push_back(r);
@@ -294,7 +491,6 @@ bool Engine::loadProject(const QString& path, QString* error) {
         }
         m_pos = 0;
     }
-    m_bpm = root["bpm"].toDouble(120.0);
     m_loopOn = root["loopOn"].toBool();
     m_loopA = root["loopA"].toDouble(0);
     m_loopB = root["loopB"].toDouble(16);
@@ -308,20 +504,50 @@ bool Engine::loadProject(const QString& path, QString* error) {
     m_flush |= 2;
     m_dirty = false;
     emit tracksChanged();
+    emit tempoChanged();
     emit loopChanged();
 
     // Decode the referenced audio files in the background and attach them to their regions.
     for (const QString& p : toDecode) {
-        decodeAsync(p, [this, p](std::shared_ptr<AudioData> data, QString err) {
+        decodeAsync(p, [this, p](std::shared_ptr<AudioData> data, QString) {
             if (!data) { emit message(tr("Missing audio file: %1").arg(p)); return; }
+            const auto tmap = tempoMap();
+            struct Job { int trackId; size_t ri; Region copy; };
+            std::vector<Job> jobs;
             {
                 QMutexLocker l(&m_mutex);
                 for (Track& t : m_tracks)
-                    for (Region& r : t.regions)
-                        if (!r.midi && !r.audio && r.pendingPath == p) {
-                            r.audio = data;
-                            if (r.frames <= 0 || r.offset + r.frames > data->frames()) r.frames = data->frames() - r.offset;
-                            r.pendingPath.clear();
+                    for (size_t i = 0; i < t.regions.size(); ++i) {
+                        Region& r = t.regions[i];
+                        if (r.midi || r.source || r.pendingPath != p) continue;
+                        r.source = r.audio = data;
+                        if (r.srcFrames <= 0 || r.srcOffset + r.srcFrames > data->frames()) r.srcFrames = data->frames() - r.srcOffset;
+                        r.offset = r.srcOffset;
+                        r.frames = r.srcFrames;
+                        r.pendingPath.clear();
+                        if (r.flexed()) jobs.push_back({t.id, i, r});
+                    }
+            }
+            for (Job& j : jobs) {   // stretch regions that follow the tempo, outside the lock
+                const double bpm = tmap->bpmAt(j.copy.start);
+                const double ratio = (j.copy.follow && j.copy.sourceBpm > 0) ? j.copy.sourceBpm / bpm : 1.0;
+                auto d = std::make_shared<AudioData>();
+                d->name = data->name;
+                d->path = data->path;
+                d->pcm = dsp::flex(data->pcm.data() + j.copy.srcOffset * 2, size_t(j.copy.srcFrames), ratio, j.copy.semitones);
+                computePeaks(*d);
+                j.copy.audio = d;
+                j.copy.offset = 0;
+                j.copy.frames = d->frames();
+                j.copy.flexBpm = bpm;
+            }
+            {
+                QMutexLocker l(&m_mutex);
+                for (const Job& j : jobs)
+                    for (Track& t : m_tracks)
+                        if (t.id == j.trackId && j.ri < t.regions.size() && t.regions[j.ri].source == data) {
+                            Region& dst = t.regions[j.ri];
+                            dst.audio = j.copy.audio; dst.offset = j.copy.offset; dst.frames = j.copy.frames; dst.flexBpm = j.copy.flexBpm;
                         }
             }
             emit regionsChanged();
@@ -332,8 +558,9 @@ bool Engine::loadProject(const QString& path, QString* error) {
 
 // ------------------------------------------------------------------ bounce
 bool Engine::exportWav(const QString& path, QString* error) {
+    const auto tempo = tempoMap();
     QMutexLocker lk(&m_mutex);
-    const double fpb = framesPerBeat();
+    m_tm = tempo.get();
     double endBeat = 0;
     bool anyDrums = false;
     for (const Track& t : m_tracks) {
@@ -342,12 +569,12 @@ bool Engine::exportWav(const QString& path, QString* error) {
             for (const auto& row : t.steps)
                 for (bool b : row) anyDrums |= b;
     }
-    if (anyDrums) endBeat = std::max(endBeat, double(4 * kBeatsPerBar));   // at least 4 bars of drums
+    if (anyDrums) endBeat = std::max(endBeat, tempo->barStart(5));   // at least 4 bars of drums
     if (endBeat <= 0) {
         if (error) *error = tr("There is nothing to bounce.");
         return false;
     }
-    const qint64 end = qint64(std::llround(endBeat * fpb)) + qint64(kSampleRate) * 2;  // 2 s tail for reverb / echo
+    const qint64 end = qint64(std::llround(tempo->beatToFrame(endBeat))) + qint64(kSampleRate) * 2;   // 2 s tail for reverb / echo
 
     QFile f(path);
     if (!f.open(QIODevice::WriteOnly)) {

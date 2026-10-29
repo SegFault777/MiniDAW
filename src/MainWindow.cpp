@@ -6,9 +6,13 @@
 #include <QAbstractSpinBox>
 #include <QApplication>
 #include <QCloseEvent>
+#include <QComboBox>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QDoubleSpinBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QFormLayout>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -16,20 +20,25 @@
 #include <QLineEdit>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QSettings>
 #include <QSignalBlocker>
+#include <QSpinBox>
 #include <QSplitter>
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <cmath>
+#include "Browser.h"
+#include "MidiInput.h"
 #include "Panels.h"
 #include "PianoRoll.h"
+#include "Preferences.h"
 #include "Theme.h"
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.2.0"
+#define MINIDAW_VERSION "0.4.0"
 #endif
 
 namespace {
@@ -54,25 +63,31 @@ MainWindow::MainWindow() {
     m_timeline = new Timeline(&m_engine);
     m_inspector = new Inspector(&m_engine);
     m_mixer = new MixerPanel(&m_engine);
-    m_synth = new SynthPanel(&m_engine);
+    m_smart = new InstrumentPanel(&m_engine);
+    m_drummer = new DrummerPanel(&m_engine);
     m_roll = new PianoRoll(&m_engine);
     m_seq = new StepSequencer(&m_engine);
+    m_loops = new LoopBrowser(&m_engine);
+    m_loops->hide();
+    m_midi = new MidiInput(this);
 
     m_bottom = new QTabWidget;
     m_bottom->addTab(m_mixer, tr("Mixer"));
-    m_bottom->addTab(m_synth, tr("Smart Controls"));
+    m_bottom->addTab(m_smart, tr("Smart Controls"));
     m_bottom->addTab(m_roll, tr("Piano Roll"));
     m_bottom->addTab(m_seq, tr("Step Sequencer"));
-    m_bottom->setCurrentIndex(1);
+    m_bottom->addTab(m_drummer, tr("Drummer"));
+    m_bottom->setCurrentIndex(TabSmart);
 
     m_vsplit = new QSplitter(Qt::Vertical);
     m_vsplit->addWidget(m_timeline);
     m_vsplit->addWidget(m_bottom);
-    m_vsplit->setSizes({430, 290});
+    m_vsplit->setSizes({430, 300});
     m_hsplit = new QSplitter(Qt::Horizontal);
     m_hsplit->addWidget(m_inspector);
     m_hsplit->addWidget(m_vsplit);
-    m_hsplit->setSizes({250, 1050});
+    m_hsplit->addWidget(m_loops);
+    m_hsplit->setSizes({260, 960, 260});
     m_hsplit->setStretchFactor(1, 1);
 
     buildActions();
@@ -85,35 +100,75 @@ MainWindow::MainWindow() {
     lay->addWidget(m_hsplit, 1);
     setCentralWidget(central);
 
+    m_audioLabel = new QLabel;
+    m_audioLabel->setStyleSheet("color:#8c8c94");
     m_keysLabel = new QLabel;
     statusBar()->addPermanentWidget(m_keysLabel);
+    statusBar()->addPermanentWidget(m_audioLabel);
     statusBar()->showMessage(tr("Space: play · R: record · C: cycle · double-click an instrument lane to create a MIDI region · Ctrl+K: musical typing"));
 
     connect(&m_engine, &Engine::tracksChanged, this, [this] {
         m_timeline->refreshLayout();
         m_mixer->rebuild();
         m_inspector->refresh();
-        m_synth->setTrack(m_selTrack);
+        m_smart->setTrack(m_selTrack);
     });
     connect(&m_engine, &Engine::regionsChanged, m_timeline, &Timeline::refreshLayout);
+    connect(&m_engine, &Engine::tempoChanged, this, [this] { m_timeline->update(); });
     connect(&m_engine, &Engine::loopChanged, this, [this] {
         QSignalBlocker b(aCycle);
         aCycle->setChecked(m_engine.loopOn());
         m_timeline->update();
     });
-    connect(&m_engine, &Engine::message, this, [this](const QString& s) { statusBar()->showMessage(s, 8000); });
+    connect(&m_engine, &Engine::message, this, [this](const QString& s) { statusBar()->showMessage(s, 9000); });
+    connect(&m_engine, &Engine::audioStatusChanged, this, [this](const QString& s) { m_audioLabel->setText(s); });
     connect(m_timeline, &Timeline::selectionChanged, this, &MainWindow::onSelection);
     connect(m_timeline, &Timeline::regionOpened, this, [this](int t, int r) {
         m_roll->setRegion(t, r);
-        showBottom(2);
+        const auto trks = m_engine.snapshot();
+        const bool drummer = t >= 0 && t < int(trks.size()) && r >= 0 && r < int(trks[size_t(t)].regions.size()) && trks[size_t(t)].regions[size_t(r)].drummer;
+        showBottom(drummer ? TabDrummer : TabRoll);
     });
     connect(m_mixer, &MixerPanel::trackSelected, m_timeline, &Timeline::selectTrack);
+    connect(m_loops, &LoopBrowser::addRequested, this, [this](const QString& path) {
+        m_engine.importAudio(path, m_selTrack, m_engine.positionBeats());
+    });
+    connect(m_midi, &MidiInput::noteOn, this, [this](int p, int v) { liveNoteOn(p, v); });
+    connect(m_midi, &MidiInput::noteOff, this, [this](int p) { liveNoteOff(p); });
+    connect(m_midi, &MidiInput::controller, this, [this](int cc, int value) {
+        if (cc != 64) return;   // sustain pedal
+        m_sustain = value >= 64;
+        if (!m_sustain) {
+            for (const auto& n : m_sustained) m_engine.noteOff(n.first, n.second);
+            m_sustained.clear();
+        }
+    });
 
     m_mixer->rebuild();
     qApp->installEventFilter(this);   // musical typing needs to see keys before shortcuts do
     connect(&m_timer, &QTimer::timeout, this, &MainWindow::tick);
     m_timer.start(33);
     m_timeline->selectTrack(1);       // the default software instrument
+    QTimer::singleShot(0, this, [this] { applySettings(); });   // after the window is visible: audio device, MIDI, plug-in scan
+}
+
+void MainWindow::applySettings() {
+    QSettings s;
+    const QByteArray dev = QByteArray::fromBase64(s.value("audio/device").toString().toLatin1());
+    const int buf = s.value("audio/buffer", 2048).toInt();
+    if (!dev.isEmpty() || buf != 2048) m_engine.setAudioOutput(dev, buf);
+    m_loops->setFolder(s.value("loops/folder", LoopBrowser::defaultFolder()).toString());
+    const QString midi = s.value("midi/device").toString();
+    m_midi->close();
+    if (!midi.isEmpty()) {
+        const int idx = MidiInput::deviceNames().indexOf(midi);
+        if (idx >= 0 && !m_midi->open(idx)) statusBar()->showMessage(tr("Could not open the MIDI input %1").arg(midi), 6000);
+    }
+    if (vst3::available() && PluginCatalog::list().empty()) {
+        PluginCatalog::rescan();
+        m_inspector->refresh();
+    }
+    m_audioLabel->setText(m_engine.audioStatus());
 }
 
 // ------------------------------------------------------------------ actions
@@ -130,7 +185,10 @@ void MainWindow::buildActions() {
     aSave = make(tr("Save"), QKeySequence::Save);
     aSaveAs = make(tr("Save As…"), QKeySequence::SaveAs);
     aImport = make(tr("Import Audio…"), QKeySequence(Qt::CTRL | Qt::Key_I));
+    aImportMidi = make(tr("Import MIDI File…"), {});
+    aExportMidi = make(tr("Export MIDI File…"), {});
     aBounce = make(tr("Bounce to WAV…"), QKeySequence(Qt::CTRL | Qt::Key_B));
+    aPrefs = make(tr("Preferences…"), QKeySequence(Qt::CTRL | Qt::Key_Comma));
     aQuit = make(tr("Quit"), QKeySequence::Quit);
     aUndo = make(tr("Undo"), QKeySequence::Undo);
     aRedo = make(tr("Redo"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Z));
@@ -143,7 +201,10 @@ void MainWindow::buildActions() {
     aNewAudio = make(tr("New Audio Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_A));
     aNewInstrument = make(tr("New Software Instrument Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_S));
     aNewDrums = make(tr("New Drum Machine Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_D));
+    aNewDrummer = make(tr("New Drummer Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_R));
     aDeleteTrack = make(tr("Delete Track"), QKeySequence(Qt::CTRL | Qt::Key_Backspace));
+    aTempoTrack = make(tr("Show Tempo Track"), QKeySequence(Qt::Key_G), true);
+    aMeter = make(tr("Time Signature…"), {});
 
     aRewind = make(tr("Go to Beginning"), QKeySequence(Qt::Key_Return));
     aPlay = make(tr("Play / Pause"), QKeySequence(Qt::Key_Space));
@@ -153,9 +214,9 @@ void MainWindow::buildActions() {
     aMetronome = make(tr("Metronome Click"), QKeySequence(Qt::Key_K), true);
     aCountIn = make(tr("Count-in (1 bar)"), {}, true);
     aRewind->setIcon(theme::icon(theme::Glyph::Rewind, theme::kText, theme::kText));
-    aPlay->setIcon(theme::icon(theme::Glyph::Play, theme::kText, theme::kText));
+    aPlay->setIcon(theme::icon(theme::Glyph::Play, theme::kGreen, theme::kGreen));
     aStop->setIcon(theme::icon(theme::Glyph::Stop, theme::kText, theme::kText));
-    aRecord->setIcon(theme::icon(theme::Glyph::Record, QColor(190, 70, 70), theme::kRed));
+    aRecord->setIcon(theme::icon(theme::Glyph::Record, QColor(200, 70, 70), theme::kRed));
     aCycle->setIcon(theme::icon(theme::Glyph::Cycle, theme::kText, theme::kYellow));
     aMetronome->setIcon(theme::icon(theme::Glyph::Metronome, theme::kText, theme::kAccent));
     aCountIn->setIcon(theme::icon(theme::Glyph::CountIn, theme::kText, theme::kAccent));
@@ -166,6 +227,8 @@ void MainWindow::buildActions() {
     aSmart = make(tr("Smart Controls"), QKeySequence(Qt::Key_B));
     aRoll = make(tr("Piano Roll"), QKeySequence(Qt::Key_P));
     aSteps = make(tr("Step Sequencer"), QKeySequence(Qt::SHIFT | Qt::Key_S));
+    aDrummerTab = make(tr("Drummer Editor"), QKeySequence(Qt::SHIFT | Qt::Key_D));
+    aLoopBrowser = make(tr("Loop Browser"), QKeySequence(Qt::Key_O), true);
     aEditors = make(tr("Show / Hide Editors"), QKeySequence(Qt::Key_E));
     aTyping = make(tr("Musical Typing"), QKeySequence(Qt::CTRL | Qt::Key_K), true);
     aAbout = make(tr("About MiniDAW"), {});
@@ -179,7 +242,18 @@ void MainWindow::buildActions() {
     connect(aSave, &QAction::triggered, this, [this] { saveProject(false); });
     connect(aSaveAs, &QAction::triggered, this, [this] { saveProject(true); });
     connect(aImport, &QAction::triggered, this, &MainWindow::importDialog);
+    connect(aImportMidi, &QAction::triggered, this, [this] {
+        const QString p = QFileDialog::getOpenFileName(this, tr("Import MIDI File"), {}, tr("MIDI files (*.mid *.midi)"));
+        QString err;
+        if (!p.isEmpty() && !m_engine.importMidiFile(p, &err)) QMessageBox::warning(this, tr("Import MIDI File"), err);
+    });
+    connect(aExportMidi, &QAction::triggered, this, [this] {
+        const QString p = QFileDialog::getSaveFileName(this, tr("Export MIDI File"), "export.mid", tr("MIDI files (*.mid)"));
+        QString err;
+        if (!p.isEmpty() && !m_engine.exportMidiFile(p, &err)) QMessageBox::warning(this, tr("Export MIDI File"), err);
+    });
     connect(aBounce, &QAction::triggered, this, &MainWindow::exportDialog);
+    connect(aPrefs, &QAction::triggered, this, &MainWindow::preferences);
     connect(aQuit, &QAction::triggered, this, &QWidget::close);
     connect(aUndo, &QAction::triggered, this, [this] { m_engine.undo(); });
     connect(aRedo, &QAction::triggered, this, [this] { m_engine.redo(); });
@@ -191,9 +265,12 @@ void MainWindow::buildActions() {
     connect(aNewAudio, &QAction::triggered, this, [this] { m_timeline->selectTrack(m_engine.addTrack(TrackType::Audio)); });
     connect(aNewInstrument, &QAction::triggered, this, [this] { m_timeline->selectTrack(m_engine.addTrack(TrackType::Instrument)); });
     connect(aNewDrums, &QAction::triggered, this, [this] { m_timeline->selectTrack(m_engine.addTrack(TrackType::Drums)); });
+    connect(aNewDrummer, &QAction::triggered, this, [this] { m_timeline->selectTrack(m_engine.addTrack(TrackType::Drummer)); });
     connect(aDeleteTrack, &QAction::triggered, this, [this] {
         if (m_selTrack >= 0) { const int t = m_selTrack; m_timeline->selectTrack(-1); m_engine.removeTrack(t); }
     });
+    connect(aTempoTrack, &QAction::toggled, this, [this](bool on) { m_timeline->showTempoTrack(on); });
+    connect(aMeter, &QAction::triggered, this, &MainWindow::meterDialog);
 
     connect(aRewind, &QAction::triggered, this, [this] { m_engine.seekBeats(m_engine.loopOn() ? m_engine.loopA() : 0.0); });
     connect(aPlay, &QAction::triggered, this, [this] { m_engine.isPlaying() ? m_engine.pause() : m_engine.play(); });
@@ -204,16 +281,19 @@ void MainWindow::buildActions() {
     connect(aCountIn, &QAction::toggled, this, [this](bool on) { m_engine.setCountIn(on); });
 
     connect(aInspector, &QAction::toggled, this, [this](bool on) { m_inspector->setVisible(on); });
-    connect(aMixer, &QAction::triggered, this, [this] { showBottom(0); });
-    connect(aSmart, &QAction::triggered, this, [this] { showBottom(1); });
-    connect(aRoll, &QAction::triggered, this, [this] { showBottom(2); });
-    connect(aSteps, &QAction::triggered, this, [this] { showBottom(3); });
+    connect(aMixer, &QAction::triggered, this, [this] { showBottom(TabMixer); });
+    connect(aSmart, &QAction::triggered, this, [this] { showBottom(TabSmart); });
+    connect(aRoll, &QAction::triggered, this, [this] { showBottom(TabRoll); });
+    connect(aSteps, &QAction::triggered, this, [this] { showBottom(TabSteps); });
+    connect(aDrummerTab, &QAction::triggered, this, [this] { showBottom(TabDrummer); });
+    connect(aLoopBrowser, &QAction::toggled, this, [this](bool on) { m_loops->setVisible(on); });
     connect(aEditors, &QAction::triggered, this, [this] { m_bottom->setVisible(!m_bottom->isVisible()); });
     connect(aTyping, &QAction::toggled, this, [this](bool on) {
         m_keysLabel->setText(on ? tr("KEYS  C%1").arg(3 + m_octave) : QString());
-        if (!on)
+        if (!on) {
             for (auto& [key, tp] : m_heldKeys) m_engine.noteOff(tp.first, tp.second);
-        if (!on) m_heldKeys.clear();
+            m_heldKeys.clear();
+        }
     });
     connect(aAbout, &QAction::triggered, this, &MainWindow::about);
 }
@@ -222,9 +302,9 @@ void MainWindow::buildMenus() {
     QMenu* file = menuBar()->addMenu(tr("&File"));
     file->addActions({aNew, aOpen, aSave, aSaveAs});
     file->addSeparator();
-    file->addActions({aImport, aBounce});
+    file->addActions({aImport, aImportMidi, aExportMidi, aBounce});
     file->addSeparator();
-    file->addAction(aQuit);
+    file->addActions({aPrefs, aQuit});
 
     QMenu* edit = menuBar()->addMenu(tr("&Edit"));
     edit->addActions({aUndo, aRedo});
@@ -234,7 +314,7 @@ void MainWindow::buildMenus() {
     edit->addActions({aSnap, aAutomation});
 
     QMenu* track = menuBar()->addMenu(tr("&Track"));
-    track->addActions({aNewAudio, aNewInstrument, aNewDrums});
+    track->addActions({aNewAudio, aNewInstrument, aNewDrummer, aNewDrums});
     track->addSeparator();
     track->addAction(aDeleteTrack);
 
@@ -242,9 +322,11 @@ void MainWindow::buildMenus() {
     transport->addActions({aPlay, aStop, aRecord, aRewind});
     transport->addSeparator();
     transport->addActions({aCycle, aMetronome, aCountIn});
+    transport->addSeparator();
+    transport->addActions({aTempoTrack, aMeter});
 
     QMenu* view = menuBar()->addMenu(tr("&View"));
-    view->addActions({aInspector, aMixer, aSmart, aRoll, aSteps, aEditors});
+    view->addActions({aInspector, aLoopBrowser, aMixer, aSmart, aRoll, aSteps, aDrummerTab, aEditors});
     view->addSeparator();
     view->addAction(aTyping);
 
@@ -253,8 +335,8 @@ void MainWindow::buildMenus() {
 
 QWidget* MainWindow::buildControlBar() {
     auto* bar = new QFrame;
-    bar->setStyleSheet("QFrame#ctrl{background:#232326;border-bottom:1px solid #151517}");
     bar->setObjectName("ctrl");
+    bar->setStyleSheet("QFrame#ctrl{background:#232326;border-bottom:1px solid #151517}");
     auto* h = new QHBoxLayout(bar);
     h->setContentsMargins(10, 4, 10, 4);
     h->setSpacing(4);
@@ -274,30 +356,44 @@ QWidget* MainWindow::buildControlBar() {
     tool(aCycle);
     h->addSpacing(10);
 
-    // LCD display: bar / beat / division / tick, time and tempo.
+    // LCD display like Logic's: position (bar beat division tick), time, tempo and time signature.
     auto* lcd = new QFrame;
-    lcd->setStyleSheet("QFrame{background:#121416;border:1px solid #050506;border-radius:6px}"
-                       "QLabel{border:none;color:#e8f0ff;font-family:Consolas,monospace;font-size:20px}");
+    lcd->setStyleSheet("QFrame{background:#101214;border:1px solid #050506;border-radius:7px}"
+                       "QLabel{border:none;color:#e8f0ff;font-family:Consolas,monospace;font-size:20px}"
+                       "QToolButton{border:none;color:#e8f0ff;font-family:Consolas,monospace;font-size:18px;padding:0 6px}");
     auto* lh = new QHBoxLayout(lcd);
-    lh->setContentsMargins(12, 2, 12, 2);
+    lh->setContentsMargins(14, 3, 14, 3);
     m_lcdPos = new QLabel("  1 1 1 000");
-    m_lcdTime = new QLabel("00:00.000");
-    m_lcdTime->setStyleSheet("color:#8fa3c0;font-size:15px");
+    m_lcdTime = new QLabel("00:00:00.000");
+    m_lcdTime->setStyleSheet("color:#7f93b3;font-size:15px");
+    auto* sep1 = new QFrame;
+    sep1->setFrameShape(QFrame::VLine);
+    sep1->setStyleSheet("color:#2a2d33");
+    auto* sep2 = new QFrame;
+    sep2->setFrameShape(QFrame::VLine);
+    sep2->setStyleSheet("color:#2a2d33");
     m_bpm = new QDoubleSpinBox;
-    m_bpm->setRange(30, 300);
-    m_bpm->setDecimals(1);
+    m_bpm->setRange(20, 400);
+    m_bpm->setDecimals(2);
     m_bpm->setValue(m_engine.bpm());
     m_bpm->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    m_bpm->setSuffix(" bpm");
-    m_bpm->setFixedWidth(100);
+    m_bpm->setFixedWidth(88);
+    m_bpm->setToolTip(tr("Tempo at the playhead"));
     m_bpm->setStyleSheet("QDoubleSpinBox{background:transparent;border:none;color:#e8f0ff;font-family:Consolas,monospace;font-size:18px}");
-    connect(m_bpm, &QDoubleSpinBox::valueChanged, this, [this](double v) { m_engine.setBpm(v); m_timeline->refreshLayout(); });
+    connect(m_bpm, &QDoubleSpinBox::editingFinished, this, [this] {
+        if (std::fabs(m_bpm->value() - m_engine.bpm()) > 0.005) { m_engine.setBpm(m_bpm->value()); m_timeline->refreshLayout(); }
+    });
+    m_sigButton = new QToolButton;
+    m_sigButton->setText("4/4");
+    m_sigButton->setToolTip(tr("Time Signature…"));
+    connect(m_sigButton, &QToolButton::clicked, this, &MainWindow::meterDialog);
     lh->addWidget(m_lcdPos);
-    lh->addSpacing(8);
+    lh->addSpacing(6);
     lh->addWidget(m_lcdTime);
-    lh->addSpacing(8);
+    lh->addWidget(sep1);
     lh->addWidget(m_bpm);
-    lh->addWidget(new QLabel("4/4"));
+    lh->addWidget(sep2);
+    lh->addWidget(m_sigButton);
     h->addWidget(lcd);
     h->addSpacing(10);
     tool(aMetronome);
@@ -309,27 +405,32 @@ QWidget* MainWindow::buildControlBar() {
 // ------------------------------------------------------------------ behaviour
 void MainWindow::tick() {
     const double beat = m_engine.positionBeats();
-    const double frac = (beat - std::floor(beat)) * 4.0;   // sixteenth-note position within the beat
-    m_lcdPos->setText(QString::asprintf("%3d %d %d %03d", int(beat / kBeatsPerBar) + 1, int(beat) % kBeatsPerBar + 1,
-                                        int(frac) + 1, int((frac - std::floor(frac)) * 240)));
-    const double sec = beat * 60.0 / m_engine.bpm();
-    m_lcdTime->setText(QString::asprintf("%02d:%02d.%03d", int(sec) / 60, int(sec) % 60, int((sec - std::floor(sec)) * 1000)));
+    const auto tm = m_engine.tempoMap();
+    const int bar = tm->barAt(beat);
+    const double inBar = beat - tm->barStart(bar), unit = 4.0 / tm->meterAtBeat(beat).den;
+    const double sub = (inBar / unit - std::floor(inBar / unit)) * 4.0;   // sixteenth-note position inside the beat
+    m_lcdPos->setText(QString::asprintf("%3d %d %d %03d", bar, int(inBar / unit) + 1, int(sub) + 1, int((sub - std::floor(sub)) * 240)));
+    const double sec = tm->beatToFrame(beat) / kSampleRate;
+    m_lcdTime->setText(QString::asprintf("%02d:%02d:%02d.%03d", int(sec) / 3600, int(sec) / 60 % 60, int(sec) % 60, int((sec - std::floor(sec)) * 1000)));
+    const dsp::MeterPoint mp = tm->meterAtBeat(beat);
+    const QString sig = QString("%1/%2").arg(mp.num).arg(mp.den);
+    if (m_sigButton->text() != sig) m_sigButton->setText(sig);
     {
         QSignalBlocker b(aRecord);
         aRecord->setChecked(m_engine.isRecording());
     }
-    if (!m_bpm->hasFocus() && std::fabs(m_bpm->value() - m_engine.bpm()) > 0.05) {
+    if (!m_bpm->hasFocus() && std::fabs(m_bpm->value() - tm->bpmAt(beat)) > 0.004) {
         QSignalBlocker b(m_bpm);
-        m_bpm->setValue(m_engine.bpm());
+        m_bpm->setValue(tm->bpmAt(beat));
     }
     if (m_engine.isPlaying()) m_timeline->followPlayhead();
     m_timeline->update();
     m_inspector->tick();
     if (m_bottom->isVisible()) {
         switch (m_bottom->currentIndex()) {
-        case 0: m_mixer->tick(); break;
-        case 2: m_roll->update(); break;
-        case 3: m_seq->update(); break;
+        case TabMixer: m_mixer->tick(); break;
+        case TabRoll: m_roll->update(); break;
+        case TabSteps: m_seq->update(); break;
         default: break;
         }
     }
@@ -340,15 +441,22 @@ void MainWindow::tick() {
 
 void MainWindow::onSelection(int track, int region) {
     m_selTrack = track;
-    m_inspector->setTrack(track);
-    m_synth->setTrack(track);
+    m_selRegion = region;
+    m_inspector->setSelection(track, region);
+    m_smart->setTrack(track);
     m_seq->setTrack(track);
-    const auto tr = m_engine.snapshot();
-    if (track < 0 || track >= int(tr.size())) return;
-    const Track& t = tr[size_t(track)];
-    if (region >= 0 && region < int(t.regions.size()) && t.regions[size_t(region)].midi) m_roll->setRegion(track, region);
-    if (t.type == TrackType::Drums) showBottom(3);
-    else if (t.type == TrackType::Instrument && m_bottom->currentIndex() == 3) showBottom(1);
+    const auto trks = m_engine.snapshot();
+    if (track < 0 || track >= int(trks.size())) return;
+    const Track& t = trks[size_t(track)];
+    if (region >= 0 && region < int(t.regions.size())) {
+        if (t.regions[size_t(region)].midi) m_roll->setRegion(track, region);
+        m_drummer->setRegion(track, region);
+    } else {
+        m_drummer->setRegion(-1, -1);
+    }
+    if (t.type == TrackType::Drums) showBottom(TabSteps);
+    else if (t.type == TrackType::Drummer && region >= 0 && t.regions[size_t(region)].drummer) showBottom(TabDrummer);
+    else if (m_bottom->currentIndex() == TabSteps || m_bottom->currentIndex() == TabDrummer) showBottom(TabSmart);
 }
 
 void MainWindow::onRecord() {
@@ -356,9 +464,9 @@ void MainWindow::onRecord() {
         m_engine.stopRecording();
         return;
     }
-    const auto tr = m_engine.snapshot();
-    const bool anyArmed = std::any_of(tr.begin(), tr.end(), [](const Track& t) { return t.armed; });
-    if (!anyArmed && m_selTrack >= 0 && m_selTrack < int(tr.size()) && tr[size_t(m_selTrack)].type != TrackType::Drums)
+    const auto trks = m_engine.snapshot();
+    const bool anyArmed = std::any_of(trks.begin(), trks.end(), [](const Track& t) { return t.armed; });
+    if (!anyArmed && m_selTrack >= 0 && m_selTrack < int(trks.size()) && trks[size_t(m_selTrack)].type != TrackType::Drums)
         m_engine.setArmed(m_selTrack, true);   // like Logic: record into the selected track
     m_engine.startRecording();
 }
@@ -374,13 +482,28 @@ void MainWindow::showBottom(int tab) {
 }
 
 int MainWindow::musicalTrack() const {
-    const auto tr = m_engine.snapshot();
-    if (m_selTrack >= 0 && m_selTrack < int(tr.size()) && tr[size_t(m_selTrack)].type == TrackType::Instrument) return m_selTrack;
-    for (size_t i = 0; i < tr.size(); ++i)
-        if (tr[i].type == TrackType::Instrument && tr[i].armed) return int(i);
-    for (size_t i = 0; i < tr.size(); ++i)
-        if (tr[i].type == TrackType::Instrument) return int(i);
+    const auto trks = m_engine.snapshot();
+    auto plays = [&](size_t i) { return trks[i].instrument != nullptr; };
+    if (m_selTrack >= 0 && m_selTrack < int(trks.size()) && plays(size_t(m_selTrack))) return m_selTrack;
+    for (size_t i = 0; i < trks.size(); ++i)
+        if (plays(i) && trks[i].armed) return int(i);
+    for (size_t i = 0; i < trks.size(); ++i)
+        if (trks[i].type == TrackType::Instrument) return int(i);
     return -1;
+}
+
+void MainWindow::liveNoteOn(int pitch, int velocity) {
+    const int t = musicalTrack();
+    if (t < 0) return;
+    m_sustained.erase({t, pitch});
+    m_engine.noteOn(t, pitch, velocity);
+}
+
+void MainWindow::liveNoteOff(int pitch) {
+    const int t = musicalTrack();
+    if (t < 0) return;
+    if (m_sustain) m_sustained.insert({t, pitch});   // the pedal keeps the note sounding
+    else m_engine.noteOff(t, pitch);
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
@@ -425,7 +548,44 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
     return true;
 }
 
-// ------------------------------------------------------------------ files
+// ------------------------------------------------------------------ dialogs and files
+void MainWindow::meterDialog() {
+    const auto tm = m_engine.tempoMap();
+    const int bar = tm->barAt(m_engine.positionBeats());
+    const dsp::MeterPoint cur = tm->meterAtBeat(m_engine.positionBeats());
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Time Signature"));
+    auto* form = new QFormLayout(&dlg);
+    auto* num = new QSpinBox;
+    num->setRange(1, 32);
+    num->setValue(cur.num);
+    auto* den = new QComboBox;
+    for (int d : {1, 2, 4, 8, 16, 32}) den->addItem(QString::number(d), d);
+    den->setCurrentIndex(std::max(0, den->findData(cur.den)));
+    auto* from = new QSpinBox;
+    from->setRange(1, 9999);
+    from->setValue(bar);
+    form->addRow(tr("Beats per bar"), num);
+    form->addRow(tr("Note value"), den);
+    form->addRow(tr("Starting at bar"), from);
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+    auto pts = tm->meterPoints();
+    pts.erase(std::remove_if(pts.begin(), pts.end(), [&](const dsp::MeterPoint& m) { return m.bar == from->value(); }), pts.end());
+    pts.push_back({from->value(), num->value(), den->currentData().toInt()});
+    m_engine.setMeterPoints(pts);
+}
+
+void MainWindow::preferences() {
+    PreferencesDialog dlg(&m_engine, this);
+    if (dlg.exec() != QDialog::Accepted) return;
+    applySettings();
+    if (dlg.languageChanged()) QMessageBox::information(this, tr("Preferences"), tr("Restart MiniDAW to apply the new language."));
+}
+
 bool MainWindow::maybeSave() {
     if (!m_engine.isDirty()) return true;
     const auto r = QMessageBox::question(this, tr("Unsaved changes"), tr("Save changes to the project before continuing?"),
@@ -446,7 +606,6 @@ bool MainWindow::openProject(const QString& path) {
         QMessageBox::warning(this, tr("Open Project"), err);
         return false;
     }
-    m_bpm->setValue(m_engine.bpm());
     m_timeline->selectTrack(0);
     return true;
 }
@@ -492,13 +651,15 @@ void MainWindow::about() {
            "This program is free software: you can redistribute it and/or modify it under the terms of the "
            "GNU General Public License as published by the Free Software Foundation, either version 3 of the "
            "License, or (at your option) any later version. It comes with ABSOLUTELY NO WARRANTY.</p>"
-           "<p>MiniDAW is an independent project and is not affiliated with or endorsed by Apple Inc.</p>")
+           "<p>MiniDAW is an independent project and is not affiliated with or endorsed by Apple Inc. "
+           "VST is a trademark of Steinberg Media Technologies GmbH.</p>")
             .arg(MINIDAW_VERSION));
 }
 
 void MainWindow::closeEvent(QCloseEvent* e) {
     if (maybeSave()) {
         m_engine.pause();
+        m_midi->close();
         e->accept();
     } else {
         e->ignore();

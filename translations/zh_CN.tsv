@@ -1,0 +1,136 @@
+#name	简体中文
+# MiniDAW translation. One 'English<TAB>Translation' pair per line; untranslated texts stay in English.
+# Use \n for a line break. Keep placeholders such as %1 unchanged.
+&File	文件(&F)
+&Edit	编辑(&E)
+&Track	轨道(&T)
+T&ransport	走带(&R)
+&View	视图(&V)
+&Help	帮助(&H)
+New	新建
+Open…	打开…
+Save	保存
+Save As…	另存为…
+Import Audio…	导入音频…
+Import MIDI File…	导入 MIDI 文件…
+Export MIDI File…	导出 MIDI 文件…
+Bounce to WAV…	混音导出为 WAV…
+Preferences…	偏好设置…
+Quit	退出
+Undo	撤销
+Redo	重做
+Delete	删除
+Duplicate Region	复制区域
+Split at Playhead	在播放头处分割
+Snap to Grid	吸附到网格
+Volume Automation	音量自动化
+New Audio Track	新建音频轨道
+New Software Instrument Track	新建软件乐器轨道
+New Drum Machine Track	新建鼓机轨道
+New Drummer Track	新建鼓手轨道
+Delete Track	删除轨道
+Show Tempo Track	显示速度轨道
+Time Signature…	拍号…
+Go to Beginning	转到开头
+Play / Pause	播放 / 暂停
+Stop	停止
+Record	录音
+Cycle	循环
+Metronome Click	节拍器
+Count-in (1 bar)	预备拍 (1 小节)
+Inspector	检查器
+Mixer	混音器
+Smart Controls	智能控制
+Piano Roll	钢琴卷帘
+Step Sequencer	步进音序器
+Drummer Editor	鼓手编辑器
+Loop Browser	循环乐段浏览器
+Show / Hide Editors	显示 / 隐藏编辑器
+Musical Typing	音乐键盘
+About MiniDAW	关于 MiniDAW
+Tracks	轨道
+Tempo	速度
+Audio	音频
+Software Instrument	软件乐器
+Drum Machine	鼓机
+Drummer	鼓手
+No track selected	未选择轨道
+INSPECTOR	检查器
+Audio FX	音频效果
+Pan	声像
+Mute	静音
+Solo	独奏
+Record enable	录音待命
+Master	主控
+Follow Tempo	跟随速度
+Source tempo	原始速度
+Transpose	移调
+Preset	预设
+Kick	底鼓
+Snare	军鼓
+Hi-Hat	踩镲
+Clap	拍手
+Rock	摇滚
+Pop	流行
+Hip-Hop	嘻哈
+House	浩室
+Funk	放克
+Disco	迪斯科
+Channel EQ	通道均衡器
+Compressor	压缩器
+Echo	回声
+Reverb	混响
+Overdrive	过载
+Limiter	限制器
+Bypass	旁通
+Style	风格
+Bars	小节数
+Swing	摇摆
+Fills	过门
+New Variation	新变化
+Simple	简单
+Complex	复杂
+Loud	响亮
+Velocity	力度
+Grid	网格
+Quantize (Q)	量化 (Q)
+Ramp to Next Point	渐变到下一点
+Delete Point	删除点
+Rename Track…	重命名轨道…
+Rename Track	重命名轨道
+Track name:	轨道名称:
+Time Signature	拍号
+Beats per bar	每小节拍数
+Note value	音符时值
+Starting at bar	起始小节
+LOOP BROWSER	循环乐段浏览器
+Search	搜索
+Preview on click	点击试听
+Folder…	文件夹…
+Preferences	偏好设置
+General	常规
+Plug-ins	插件
+Output device	输出设备
+System Default	系统默认
+Buffer size	缓冲区大小
+Play Test Tone	播放测试音
+Status	状态
+MIDI input	MIDI 输入
+None	无
+Language	语言
+Automatic (system language)	自动 (系统语言)
+Restart MiniDAW to apply a new language.	请重新启动 MiniDAW 以应用新语言。
+Restart MiniDAW to apply the new language.	请重新启动 MiniDAW 以应用新语言。
+Loops folder	循环乐段文件夹
+Browse…	浏览…
+Rescan	重新扫描
+Untitled	未命名
+Unsaved changes	有未保存的更改
+Save changes to the project before continuing?	继续之前要保存项目的更改吗?
+Open Project	打开项目
+Save Project	保存项目
+Saved %1	已保存 %1
+Not a valid MiniDAW project file.	不是有效的 MiniDAW 项目文件。
+There is nothing to bounce.	没有可导出的内容。
+Audio error: %1	音频错误: %1
+No audio output device was found.	未找到音频输出设备。

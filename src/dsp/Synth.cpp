@@ -66,9 +66,9 @@ Synth::Synth() {
     pVol = &add("Volume", 0, 1, 0.7f);
 }
 
-int Synth::presetCount() { return int(sizeof(kPresets) / sizeof(kPresets[0])); }
+int Synth::presetCount() const { return int(sizeof(kPresets) / sizeof(kPresets[0])); }
 
-const char* Synth::presetName(int i) { return kPresets[std::clamp(i, 0, presetCount() - 1)].name; }
+const char* Synth::presetName(int i) const { return kPresets[std::clamp(i, 0, presetCount() - 1)].name; }
 
 void Synth::setPreset(int index) {
     const Preset& p = kPresets[std::clamp(index, 0, presetCount() - 1)];

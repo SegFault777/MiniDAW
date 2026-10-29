@@ -28,8 +28,9 @@ public:
     void setValue(double v);   // programmatic change, does not emit valueChanged
     double value() const { return m_v; }
     void setStepped(bool on) { m_stepped = on; }
+    void setCompact(bool on);   // small dial without text (label and value go to the tooltip)
     void setFormatter(std::function<QString(double)> f) { m_fmt = std::move(f); update(); }
-    QSize sizeHint() const override { return {64, 84}; }
+    QSize sizeHint() const override { return {m_compact ? 44 : 64, m_compact ? 46 : 84}; }
 signals:
     void valueChanged(double v);   // emitted for user changes only
 protected:
@@ -43,9 +44,52 @@ private:
     void setNorm(double n);
     QString m_label;
     double m_min, m_max, m_def, m_v;
-    bool m_log, m_stepped = false;
+    bool m_log, m_stepped = false, m_compact = false;
     std::function<QString(double)> m_fmt;
     double m_pressY = 0, m_pressNorm = 0;
+};
+
+/// Vertical fader with a dB scale. The value is a linear gain (0 .. 1.5, unity = 1.0).
+class Fader : public QWidget {
+    Q_OBJECT
+public:
+    explicit Fader(QWidget* parent = nullptr);
+    void setValue(float gain);
+    float value() const { return m_gain; }
+    QSize sizeHint() const override { return {38, 180}; }
+signals:
+    void valueChanged(float gain);
+protected:
+    void paintEvent(QPaintEvent*) override;
+    void mousePressEvent(QMouseEvent*) override;
+    void mouseMoveEvent(QMouseEvent*) override;
+    void mouseDoubleClickEvent(QMouseEvent*) override;
+    void wheelEvent(QWheelEvent*) override;
+private:
+    float posForGain(float g) const;
+    float gainForPos(float p) const;
+    int thumbY() const;
+    void setFromY(int y);
+    float m_gain = 0.8f;
+};
+
+/// Two-axis pad (the Drummer's complexity / loudness control).
+class XYPad : public QWidget {
+    Q_OBJECT
+public:
+    explicit XYPad(QWidget* parent = nullptr);
+    void setValue(double x, double y);   // both 0..1; programmatic, does not emit
+    QSize sizeHint() const override { return {220, 160}; }
+signals:
+    void pressed();
+    void changed(double x, double y);    // x: left to right, y: bottom to top
+protected:
+    void paintEvent(QPaintEvent*) override;
+    void mousePressEvent(QMouseEvent*) override;
+    void mouseMoveEvent(QMouseEvent*) override;
+private:
+    void setFromPos(QPoint p);
+    double m_x = 0.5, m_y = 0.5;
 };
 
 /// A grid of knobs bound to every parameter of an effect or synth.

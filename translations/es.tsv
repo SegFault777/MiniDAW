@@ -1,0 +1,136 @@
+#name	Español
+# MiniDAW translation. One 'English<TAB>Translation' pair per line; untranslated texts stay in English.
+# Use \n for a line break. Keep placeholders such as %1 unchanged.
+&File	&Archivo
+&Edit	&Editar
+&Track	&Pista
+T&ransport	T&ransporte
+&View	&Ver
+&Help	A&yuda
+New	Nuevo
+Open…	Abrir…
+Save	Guardar
+Save As…	Guardar como…
+Import Audio…	Importar audio…
+Import MIDI File…	Importar archivo MIDI…
+Export MIDI File…	Exportar archivo MIDI…
+Bounce to WAV…	Exportar a WAV…
+Preferences…	Preferencias…
+Quit	Salir
+Undo	Deshacer
+Redo	Rehacer
+Delete	Eliminar
+Duplicate Region	Duplicar región
+Split at Playhead	Dividir en el cursor
+Snap to Grid	Ajustar a la cuadrícula
+Volume Automation	Automatización de volumen
+New Audio Track	Nueva pista de audio
+New Software Instrument Track	Nueva pista de instrumento de software
+New Drum Machine Track	Nueva pista de caja de ritmos
+New Drummer Track	Nueva pista de batería (Drummer)
+Delete Track	Eliminar pista
+Show Tempo Track	Mostrar pista de tempo
+Time Signature…	Compás…
+Go to Beginning	Ir al principio
+Play / Pause	Reproducir / Pausa
+Stop	Detener
+Record	Grabar
+Cycle	Ciclo
+Metronome Click	Metrónomo
+Count-in (1 bar)	Cuenta previa (1 compás)
+Inspector	Inspector
+Mixer	Mezclador
+Smart Controls	Controles inteligentes
+Piano Roll	Piano roll
+Step Sequencer	Secuenciador de pasos
+Drummer Editor	Editor de Drummer
+Loop Browser	Explorador de loops
+Show / Hide Editors	Mostrar / ocultar editores
+Musical Typing	Teclado musical
+About MiniDAW	Acerca de MiniDAW
+Tracks	Pistas
+Tempo	Tempo
+Audio	Audio
+Software Instrument	Instrumento de software
+Drum Machine	Caja de ritmos
+Drummer	Baterista
+No track selected	Ninguna pista seleccionada
+INSPECTOR	INSPECTOR
+Audio FX	Efectos de audio
+Pan	Panorama
+Mute	Silenciar
+Solo	Solo
+Record enable	Armar grabación
+Master	Master
+Follow Tempo	Seguir tempo
+Source tempo	Tempo original
+Transpose	Transponer
+Preset	Preajuste
+Kick	Bombo
+Snare	Caja
+Hi-Hat	Hi-hat
+Clap	Palmas
+Rock	Rock
+Pop	Pop
+Hip-Hop	Hip-hop
+House	House
+Funk	Funk
+Disco	Disco
+Channel EQ	Ecualizador de canal
+Compressor	Compresor
+Echo	Eco
+Reverb	Reverberación
+Overdrive	Saturación
+Limiter	Limitador
+Bypass	Bypass
+Style	Estilo
+Bars	Compases
+Swing	Swing
+Fills	Redobles
+New Variation	Nueva variación
+Simple	Simple
+Complex	Complejo
+Loud	Fuerte
+Velocity	Velocidad
+Grid	Cuadrícula
+Quantize (Q)	Cuantizar (Q)
+Ramp to Next Point	Rampa al siguiente punto
+Delete Point	Eliminar punto
+Rename Track…	Renombrar pista…
+Rename Track	Renombrar pista
+Track name:	Nombre de la pista:
+Time Signature	Compás
+Beats per bar	Tiempos por compás
+Note value	Valor de la nota
+Starting at bar	Desde el compás
+LOOP BROWSER	EXPLORADOR DE LOOPS
+Search	Buscar
+Preview on click	Escuchar al hacer clic
+Folder…	Carpeta…
+Preferences	Preferencias
+General	General
+Plug-ins	Plug-ins
+Output device	Dispositivo de salida
+System Default	Predeterminado del sistema
+Buffer size	Tamaño del búfer
+Play Test Tone	Reproducir tono de prueba
+Status	Estado
+MIDI input	Entrada MIDI
+None	Ninguno
+Language	Idioma
+Automatic (system language)	Automático (idioma del sistema)
+Restart MiniDAW to apply a new language.	Reinicia MiniDAW para aplicar el nuevo idioma.
+Restart MiniDAW to apply the new language.	Reinicia MiniDAW para aplicar el nuevo idioma.
+Loops folder	Carpeta de loops
+Browse…	Examinar…
+Rescan	Volver a buscar
+Untitled	Sin título
+Unsaved changes	Cambios sin guardar
+Save changes to the project before continuing?	¿Guardar los cambios del proyecto antes de continuar?
+Open Project	Abrir proyecto
+Save Project	Guardar proyecto
+Saved %1	Guardado %1
+Not a valid MiniDAW project file.	No es un archivo de proyecto de MiniDAW válido.
+There is nothing to bounce.	No hay nada que exportar.
+Audio error: %1	Error de audio: %1
+No audio output device was found.	No se encontró ningún dispositivo de salida de audio.

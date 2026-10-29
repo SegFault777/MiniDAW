@@ -1,0 +1,136 @@
+#name	日本語
+# MiniDAW translation. One 'English<TAB>Translation' pair per line; untranslated texts stay in English.
+# Use \n for a line break. Keep placeholders such as %1 unchanged.
+&File	ファイル(&F)
+&Edit	編集(&E)
+&Track	トラック(&T)
+T&ransport	トランスポート(&R)
+&View	表示(&V)
+&Help	ヘルプ(&H)
+New	新規
+Open…	開く…
+Save	保存
+Save As…	名前を付けて保存…
+Import Audio…	オーディオを読み込む…
+Import MIDI File…	MIDIファイルを読み込む…
+Export MIDI File…	MIDIファイルを書き出す…
+Bounce to WAV…	WAVにバウンス…
+Preferences…	環境設定…
+Quit	終了
+Undo	元に戻す
+Redo	やり直す
+Delete	削除
+Duplicate Region	リージョンを複製
+Split at Playhead	再生ヘッドで分割
+Snap to Grid	グリッドにスナップ
+Volume Automation	ボリュームオートメーション
+New Audio Track	新規オーディオトラック
+New Software Instrument Track	新規ソフトウェア音源トラック
+New Drum Machine Track	新規ドラムマシントラック
+New Drummer Track	新規ドラマートラック
+Delete Track	トラックを削除
+Show Tempo Track	テンポトラックを表示
+Time Signature…	拍子…
+Go to Beginning	先頭へ移動
+Play / Pause	再生 / 一時停止
+Stop	停止
+Record	録音
+Cycle	サイクル
+Metronome Click	メトロノーム
+Count-in (1 bar)	カウントイン (1小節)
+Inspector	インスペクタ
+Mixer	ミキサー
+Smart Controls	スマートコントロール
+Piano Roll	ピアノロール
+Step Sequencer	ステップシーケンサー
+Drummer Editor	ドラマーエディタ
+Loop Browser	ループブラウザ
+Show / Hide Editors	エディタの表示 / 非表示
+Musical Typing	ミュージカルタイピング
+About MiniDAW	MiniDAWについて
+Tracks	トラック
+Tempo	テンポ
+Audio	オーディオ
+Software Instrument	ソフトウェア音源
+Drum Machine	ドラムマシン
+Drummer	ドラマー
+No track selected	トラックが選択されていません
+INSPECTOR	インスペクタ
+Audio FX	オーディオFX
+Pan	パン
+Mute	ミュート
+Solo	ソロ
+Record enable	録音可能
+Master	マスター
+Follow Tempo	テンポに追従
+Source tempo	元のテンポ
+Transpose	トランスポーズ
+Preset	プリセット
+Kick	キック
+Snare	スネア
+Hi-Hat	ハイハット
+Clap	クラップ
+Rock	ロック
+Pop	ポップ
+Hip-Hop	ヒップホップ
+House	ハウス
+Funk	ファンク
+Disco	ディスコ
+Channel EQ	チャンネルEQ
+Compressor	コンプレッサー
+Echo	エコー
+Reverb	リバーブ
+Overdrive	オーバードライブ
+Limiter	リミッター
+Bypass	バイパス
+Style	スタイル
+Bars	小節数
+Swing	スウィング
+Fills	フィル
+New Variation	新しいバリエーション
+Simple	シンプル
+Complex	複雑
+Loud	大きく
+Velocity	ベロシティ
+Grid	グリッド
+Quantize (Q)	クオンタイズ (Q)
+Ramp to Next Point	次のポイントまで変化
+Delete Point	ポイントを削除
+Rename Track…	トラック名を変更…
+Rename Track	トラック名を変更
+Track name:	トラック名:
+Time Signature	拍子
+Beats per bar	1小節の拍数
+Note value	音符の長さ
+Starting at bar	開始小節
+LOOP BROWSER	ループブラウザ
+Search	検索
+Preview on click	クリックで試聴
+Folder…	フォルダ…
+Preferences	環境設定
+General	一般
+Plug-ins	プラグイン
+Output device	出力デバイス
+System Default	システムのデフォルト
+Buffer size	バッファサイズ
+Play Test Tone	テストトーンを再生
+Status	状態
+MIDI input	MIDI入力
+None	なし
+Language	言語
+Automatic (system language)	自動 (システムの言語)
+Restart MiniDAW to apply a new language.	新しい言語を適用するにはMiniDAWを再起動してください。
+Restart MiniDAW to apply the new language.	新しい言語を適用するにはMiniDAWを再起動してください。
+Loops folder	ループフォルダ
+Browse…	参照…
+Rescan	再スキャン
+Untitled	名称未設定
+Unsaved changes	未保存の変更
+Save changes to the project before continuing?	続行する前にプロジェクトの変更を保存しますか?
+Open Project	プロジェクトを開く
+Save Project	プロジェクトを保存
+Saved %1	%1 を保存しました
+Not a valid MiniDAW project file.	有効なMiniDAWプロジェクトファイルではありません。
+There is nothing to bounce.	バウンスする内容がありません。
+Audio error: %1	オーディオエラー: %1
+No audio output device was found.	オーディオ出力デバイスが見つかりません。

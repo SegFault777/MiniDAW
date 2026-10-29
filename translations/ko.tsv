@@ -1,0 +1,200 @@
+#name	한국어
+# MiniDAW translation. One 'English<TAB>Translation' pair per line; untranslated texts stay in English.
+# Use \n for a line break. Keep placeholders such as %1 unchanged.
+&File	파일(&F)
+&Edit	편집(&E)
+&Track	트랙(&T)
+T&ransport	트랜스포트(&R)
+&View	보기(&V)
+&Help	도움말(&H)
+New	새로 만들기
+Open…	열기…
+Save	저장
+Save As…	다른 이름으로 저장…
+Import Audio…	오디오 가져오기…
+Import MIDI File…	MIDI 파일 가져오기…
+Export MIDI File…	MIDI 파일 내보내기…
+Bounce to WAV…	WAV로 바운스…
+Preferences…	환경설정…
+Quit	종료
+Undo	실행 취소
+Redo	다시 실행
+Delete	삭제
+Duplicate Region	리전 복제
+Split at Playhead	재생 헤드에서 분할
+Snap to Grid	그리드에 맞추기
+Volume Automation	볼륨 오토메이션
+New Audio Track	새 오디오 트랙
+New Software Instrument Track	새 소프트웨어 악기 트랙
+New Drum Machine Track	새 드럼 머신 트랙
+New Drummer Track	새 드러머 트랙
+Delete Track	트랙 삭제
+Show Tempo Track	템포 트랙 표시
+Time Signature…	박자…
+Go to Beginning	처음으로 이동
+Play / Pause	재생 / 일시 정지
+Stop	정지
+Record	녹음
+Cycle	반복(사이클)
+Metronome Click	메트로놈
+Count-in (1 bar)	카운트인 (1마디)
+Inspector	인스펙터
+Mixer	믹서
+Smart Controls	스마트 컨트롤
+Piano Roll	피아노 롤
+Step Sequencer	스텝 시퀀서
+Drummer Editor	드러머 편집기
+Loop Browser	루프 브라우저
+Show / Hide Editors	편집기 표시 / 숨기기
+Musical Typing	뮤지컬 타이핑
+About MiniDAW	MiniDAW 정보
+Tracks	트랙
+Tempo	템포
+Audio	오디오
+Software Instrument	소프트웨어 악기
+Drum Machine	드럼 머신
+Drummer	드러머
+Audio track	오디오 트랙
+No track selected	선택된 트랙 없음
+INSPECTOR	인스펙터
+Audio FX	오디오 FX
++ Add	+ 추가
+− Remove	− 제거
+Remove	제거
+Aux A: Reverb…	보조 A: 리버브…
+Aux B: Echo…	보조 B: 에코…
+Send A	센드 A
+Send B	센드 B
+Pan	팬
+Mute	음소거
+Solo	솔로
+Record enable	녹음 활성화
+Master	마스터
+Stereo Out	스테레오 출력
+Follow Tempo	템포 따르기
+Source tempo	원본 템포
+Transpose	이조
+ st	 반음
+Preset	프리셋
+Open Plug-in Window	플러그인 창 열기
+MiniDAW Synth	MiniDAW 신스
+Drum Kit	드럼 키트
+Kick	킥
+Snare	스네어
+Hi-Hat	하이햇
+Clap	클랩
+Rock	록
+Pop	팝
+Hip-Hop	힙합
+House	하우스
+Funk	펑크
+Disco	디스코
+Classic Saw	클래식 소(Saw)
+Warm Pad	따뜻한 패드
+Pluck	플럭
+Sub Bass	서브 베이스
+Bright Lead	밝은 리드
+Soft Keys	부드러운 건반
+Channel EQ	채널 EQ
+Compressor	컴프레서
+Echo	에코
+Reverb	리버브
+Overdrive	오버드라이브
+Limiter	리미터
+Bypass	바이패스
+VST3 Plug-ins	VST3 플러그인
+Style	스타일
+Bars	마디 수
+Swing	스윙
+Fills	필인
+New Variation	새 변형
+Simple	단순
+Complex	복잡
+Loud	강하게
+Velocity	벨로시티
+Grid	그리드
+Quantize (Q)	퀀타이즈 (Q)
+Click to draw · drag edge to resize · right-click or Delete to remove	클릭하여 그리기 · 가장자리를 끌어 길이 조절 · 오른쪽 클릭 또는 Delete로 삭제
+Double-click a MIDI region in the Tracks area to edit its notes.	트랙 영역에서 MIDI 리전을 더블클릭하면 노트를 편집할 수 있습니다.
+Double-click a Drummer track lane to create a Drummer region, then select it to edit.	드러머 트랙 레인을 더블클릭해 드러머 리전을 만든 뒤 선택하여 편집하세요.
+Select a Drum Machine track to edit its pattern.	패턴을 편집하려면 드럼 머신 트랙을 선택하세요.
+Select a Software Instrument or Drummer track to see its controls.	소프트웨어 악기 또는 드러머 트랙을 선택하면 컨트롤이 표시됩니다.
+Click to add a point, drag to change it.	클릭하여 점을 추가하고, 끌어서 변경하세요.
+Ramp to Next Point	다음 점까지 점진적 변화
+Delete Point	점 삭제
+Rename Track…	트랙 이름 변경…
+Rename Track	트랙 이름 변경
+Track name:	트랙 이름:
+Time Signature	박자
+Beats per bar	마디당 박 수
+Note value	음표 단위
+Starting at bar	시작 마디
+Tempo at the playhead	재생 헤드 위치의 템포
+LOOP BROWSER	루프 브라우저
+Search	검색
+Preview on click	클릭하면 미리 듣기
+Folder…	폴더…
+Choose Loops Folder	루프 폴더 선택
+%1 loops — double-click to add, or drag onto a track.	루프 %1개 — 더블클릭하여 추가하거나 트랙으로 끌어다 놓으세요.
+No audio files found in %1	%1에서 오디오 파일을 찾지 못했습니다
+Preferences	환경설정
+General	일반
+MIDI	MIDI
+Plug-ins	플러그인
+Output device	출력 장치
+System Default	시스템 기본값
+Buffer size	버퍼 크기
+%1 samples (%2 ms)	%1 샘플 (%2 ms)
+Play Test Tone	테스트 톤 재생
+Status	상태
+MIDI input	MIDI 입력
+None	없음
+Notes from the selected keyboard play the selected Software Instrument track.	선택한 키보드의 노트로 선택된 소프트웨어 악기 트랙을 연주합니다.
+Language	언어
+Automatic (system language)	자동 (시스템 언어)
+Restart MiniDAW to apply a new language.	새 언어를 적용하려면 MiniDAW를 다시 시작하세요.
+Restart MiniDAW to apply the new language.	새 언어를 적용하려면 MiniDAW를 다시 시작하세요.
+Loops folder	루프 폴더
+Browse…	찾아보기…
+VST3 plug-in folders:	VST3 플러그인 폴더:
+Add Folder…	폴더 추가…
+Add VST3 Folder	VST3 폴더 추가
+Rescan	다시 검색
+Effect	이펙트
+Instrument	악기
+This build was made without VST3 support.	이 빌드는 VST3 지원 없이 만들어졌습니다.
+Untitled	제목 없음
+Unsaved changes	저장되지 않은 변경 사항
+Save changes to the project before continuing?	계속하기 전에 프로젝트 변경 사항을 저장할까요?
+Open Project	프로젝트 열기
+Save Project	프로젝트 저장
+Saved %1	%1 저장됨
+Import Audio	오디오 가져오기
+Import MIDI File	MIDI 파일 가져오기
+Export MIDI File	MIDI 파일 내보내기
+Bounce to WAV	WAV로 바운스
+Bounced to %1	%1(으)로 바운스했습니다
+Bounce failed: %1	바운스 실패: %1
+Not a valid MiniDAW project file.	올바른 MiniDAW 프로젝트 파일이 아닙니다.
+There is nothing to bounce.	바운스할 내용이 없습니다.
+There are no MIDI notes to export.	내보낼 MIDI 노트가 없습니다.
+Imported %1	가져옴 %1
+Could not decode %1	%1을(를) 디코딩할 수 없습니다
+Import failed: %1	가져오기 실패: %1
+Missing audio file: %1	오디오 파일을 찾을 수 없음: %1
+Could not create the effect.	이펙트를 만들 수 없습니다.
+Could not load the instrument.	악기를 불러올 수 없습니다.
+Effect plug-in not available: %1	이펙트 플러그인을 사용할 수 없음: %1
+Instrument plug-in not available: %1	악기 플러그인을 사용할 수 없음: %1
+Could not open the MIDI input %1	MIDI 입력 %1을(를) 열 수 없습니다
+Arm an audio or instrument track first (R button on the track header).	먼저 오디오 또는 악기 트랙을 녹음 대기시키세요 (트랙 헤더의 R 버튼).
+Could not start recording.	녹음을 시작할 수 없습니다.
+No audio input device was found.	오디오 입력 장치를 찾지 못했습니다.
+No audio output device was found.	오디오 출력 장치를 찾지 못했습니다.
+Audio error: %1	오디오 오류: %1
+The audio device accepted no data. Choose another output device in Preferences.	오디오 장치가 데이터를 받지 않습니다. 환경설정에서 다른 출력 장치를 선택하세요.
+KEYS  C%1	건반  C%1
+Space: play · R: record · C: cycle · double-click an instrument lane to create a MIDI region · Ctrl+K: musical typing	Space: 재생 · R: 녹음 · C: 반복 · 악기 레인을 더블클릭해 MIDI 리전 만들기 · Ctrl+K: 뮤지컬 타이핑
+Audio (*.wav *.mp3 *.flac *.ogg *.m4a *.aac);;All files (*)	오디오 (*.wav *.mp3 *.flac *.ogg *.m4a *.aac);;모든 파일 (*)
+MIDI files (*.mid *.midi)	MIDI 파일 (*.mid *.midi)
+MIDI files (*.mid)	MIDI 파일 (*.mid)

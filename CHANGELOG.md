@@ -2,6 +2,37 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.4] - 2026-10-28
+
+### Added
+- **Tempo track** with step changes and linear ramps, editable in the Tracks area (`G`).
+- **Time signature** changes at any bar; the ruler, bar numbers, metronome accents, count-in,
+  Drummer and recorded regions follow the meter.
+- **Time stretching and pitch shifting** (WSOLA): regions can follow the project tempo and be
+  transposed. Loops that carry a tempo in their file name follow the project tempo automatically.
+- Tempo and time-signature edits take part in undo / redo and in saved projects.
+- Logic-style Mixer strips (FX slots, sends, pan, dB fader, name tags), track-type icons in the track
+  headers, a Drummer editor with an XY pad, and a lighter LCD with tempo and time signature.
+
+## [0.3] - 2026-10-28
+
+### Added
+- **VST3 hosting** for instruments and effects, with editor windows and saved plug-in state
+  (compiled when the VST3 SDK is available).
+- **Drummer** tracks: styles, complexity / loudness pad, swing, fills and variations.
+- **MIDI keyboard input** (winmm) with sustain pedal; **import and export of Standard MIDI Files**.
+- **Loop Browser** with search, preview, drag and drop, and sample loops.
+- **Preferences**: audio device and buffer size, MIDI input, language, loops folder, VST3 folders.
+- **Languages**: Korean, Japanese, Simplified Chinese and Spanish, from plain-text translation files.
+
+### Fixed
+- Playback could stay silent on devices that reject 44.1 kHz / 16-bit. MiniDAW now falls back to the
+  device's preferred format (with conversion), reports the opened device in the status bar and
+  offers a test tone.
+
+### Changed
+- Project files use the extension `.mdaw` and store the tempo and meter maps (projects from v0.2 still open).
+
 ## [0.2] - 2026-10-25
 
 ### Added

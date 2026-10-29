@@ -1,10 +1,10 @@
 ; MiniDAW installer script for Inno Setup 6.
-; Build:  ISCC.exe /DMyAppVersion=0.2 installer\MiniDAW.iss
+; Build:  ISCC.exe /DMyAppVersion=0.4 installer\MiniDAW.iss
 ; Expects the deployed application (exe + Qt runtime) in dist\MiniDAW.
 
 #define MyAppName "MiniDAW"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.2"
+  #define MyAppVersion "0.4"
 #endif
 #define MyAppExe "MiniDAW.exe"
 

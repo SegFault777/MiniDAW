@@ -38,6 +38,10 @@ void apply(QApplication& app) {
         QToolButton { background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 3px; }
         QToolButton:hover { background: #3d3d42; }
         QToolButton:checked { background: #4a4a52; border-color: #5a5a64; }
+        QPushButton { background: #3a3a40; border: 1px solid #4a4a52; border-radius: 4px; padding: 4px 12px; }
+        QPushButton:hover { background: #46464e; }
+        QPushButton:pressed { background: #3d8bff; }
+        QCheckBox::indicator { width: 14px; height: 14px; }
         QToolButton::menu-indicator { image: none; }
         QTabWidget::pane { border-top: 1px solid #1d1d20; }
         QTabBar::tab { background: #2f2f33; padding: 5px 16px; border: 1px solid #1d1d20; border-bottom: none; }

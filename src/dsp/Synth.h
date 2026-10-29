@@ -4,25 +4,26 @@
 #pragma once
 #include <array>
 #include <cstdint>
-#include "Param.h"
+#include "Instrument.h"
 
 namespace dsp {
 
 /// 16-voice subtractive synthesizer: two band-limited oscillators, a sub oscillator,
 /// a resonant state-variable low-pass filter with its own decay envelope and an ADSR amp envelope.
-class Synth : public ParamSet {
+class Synth : public Instrument {
 public:
     Synth();
 
-    void noteOn(int note, int velocity);
-    void noteOff(int note);
-    void allNotesOff();                    ///< Releases every voice quickly (used on seek / loop).
-    void reset();                          ///< Silences every voice immediately.
-    void render(float* io, int frames);    ///< Adds the output into an interleaved stereo buffer.
+    void noteOn(int note, int velocity) override;
+    void noteOff(int note) override;
+    void allNotesOff() override;
+    void reset() override;
+    void render(float* io, int frames) override;
+    const char* kind() const override { return "synth"; }
 
-    void setPreset(int index);
-    static int presetCount();
-    static const char* presetName(int index);
+    void setPreset(int index) override;
+    int presetCount() const override;
+    const char* presetName(int index) const override;
 
 private:
     struct Voice {

@@ -10,21 +10,25 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cmath>
 #include <functional>
 #include <map>
 #include <memory>
 #include <vector>
+#include "dsp/DrumKit.h"
+#include "dsp/Drummer.h"
 #include "dsp/Effects.h"
+#include "dsp/Instrument.h"
 #include "dsp/Synth.h"
+#include "dsp/TempoMap.h"
 
 constexpr int kSampleRate = 44100;
 constexpr int kPeakStride = 256;   // frames summarised by one waveform peak
-constexpr int kDrumRows = 4;       // kick, snare, hi-hat, clap
+constexpr int kDrumRows = 4;       // step sequencer rows: kick, snare, hi-hat, clap
 constexpr int kSteps = 16;
-constexpr int kBeatsPerBar = 4;
 using DrumPattern = std::array<std::array<bool, kSteps>, kDrumRows>;
 
-enum class TrackType { Audio, Instrument, Drums };
+enum class TrackType { Audio, Instrument, Drums, Drummer };
 
 /// Decoded audio shared between regions (split / duplicated regions reference the same data).
 struct AudioData {
@@ -42,16 +46,27 @@ struct Note {
     int velocity = 100;
 };
 
-/// A region on a track. Positions are in beats so MIDI follows tempo changes like in a musical DAW.
+/// A region on a track. Positions are in quarter-note beats so music follows tempo changes.
 struct Region {
     QString name;
     bool midi = false;
-    double start = 0;                       // timeline position in beats
-    double lengthBeats = 4;                 // MIDI regions only
-    std::shared_ptr<const AudioData> audio; // audio regions only
-    QString pendingPath;                    // audio still being decoded after a project load
-    qint64 offset = 0, frames = 0;          // audio frames used
+    double start = 0;                        // timeline position in beats
+    double lengthBeats = 4;                  // MIDI regions only
     std::vector<Note> notes;
+    bool drummer = false;                    // notes are generated from 'drum'
+    dsp::DrummerParams drum;
+
+    // Audio regions. 'audio' is what is played: either 'source' itself or a time-stretched copy of it.
+    std::shared_ptr<const AudioData> audio;
+    std::shared_ptr<const AudioData> source;
+    QString pendingPath;                     // audio still being decoded after a project load
+    qint64 offset = 0, frames = 0;           // used part of 'audio'
+    qint64 srcOffset = 0, srcFrames = 0;     // used part of 'source'
+    bool follow = false;                     // stretch to the project tempo
+    double sourceBpm = 0;                    // tempo of the recording (needed for 'follow')
+    double semitones = 0;                    // pitch transposition
+    double flexBpm = 0;                      // project tempo that 'audio' was stretched for
+    bool flexed() const { return follow || std::abs(semitones) > 0.01; }
 };
 
 struct AutoPoint {
@@ -69,8 +84,9 @@ struct Track {
     std::vector<Region> regions;
     DrumPattern steps{};
     std::vector<std::shared_ptr<dsp::Effect>> inserts;
-    std::shared_ptr<dsp::Synth> synth;
-    int synthPreset = 0;
+    std::shared_ptr<dsp::Instrument> instrument;   // Instrument and Drummer tracks
+    QString instrumentId;                          // "synth", "drumkit" or "vst3:..."
+    int preset = 0;
     std::vector<AutoPoint> volAuto;
     float peakL = 0, peakR = 0;
 };
@@ -102,25 +118,42 @@ public:
     void setSolo(int i, bool on);
     void setArmed(int i, bool on);
     void setMasterVolume(float v) { m_master = v; markDirty(); }
+    float masterVolume() const { return m_master; }
 
     void addInsert(int track, const QString& effectId);
     void removeInsert(int track, int slot);
     void setInsertBypass(int track, int slot, bool bypass);
-    void setSynthPreset(int track, int preset);
+    void setInstrument(int track, const QString& instrumentId);
+    void setInstrumentPreset(int track, int preset);
     std::shared_ptr<dsp::Effect> auxEffect(int bus) const { return m_aux[size_t(bus)]; }
     std::shared_ptr<dsp::Effect> limiter() const { return m_limiter; }
 
     void importAudio(const QString& path, int track, double startBeat);
+    bool importMidiFile(const QString& path, QString* error);
+    bool exportMidiFile(const QString& path, QString* error);
     int addMidiRegion(int track, double startBeat, double lengthBeats);
+    int addDrummerRegion(int track, double startBeat, int bars);
+    void setDrummerParams(int track, int region, const dsp::DrummerParams& p);
     void moveRegion(int t, int r, double startBeat);
     void resizeRegion(int t, int r, double lengthBeats);
     void removeRegion(int t, int r);
     void splitRegion(int t, int r, double atBeat);
     int duplicateRegion(int t, int r);
     void setRegionNotes(int t, int r, const std::vector<Note>& notes);
+    void setRegionFlex(int t, int r, bool follow, double sourceBpm, double semitones);
     void setStep(int track, int row, int step, bool on);
     void setDrumPattern(int track, const DrumPattern& p);
     void setVolAuto(int track, const std::vector<AutoPoint>& pts);
+
+    // ---- Tempo and time signature ----
+    std::shared_ptr<const dsp::TempoMap> tempoMap() const;
+    void setTempoPoints(const std::vector<dsp::TempoPoint>& pts, bool commit = true);
+    void setMeterPoints(const std::vector<dsp::MeterPoint>& pts);
+    void commitTempo();                 ///< Re-stretches regions that follow the tempo.
+    double bpm() const;                 ///< Tempo at the playhead.
+    void setBpm(double bpm);            ///< Edits the tempo at the playhead.
+    double beatToFrame(double beat) const { return tempoMap()->beatToFrame(beat); }
+    double frameToBeat(double frame) const { return tempoMap()->frameToBeat(frame); }
 
     // ---- Undo / redo ----
     void checkpoint();   // call before a gesture that modifies the project
@@ -138,10 +171,7 @@ public:
     bool startRecording();
     void stopRecording();
     void seekBeats(double beat);
-    double positionBeats() const { return double(m_pos.load()) / framesPerBeat(); }
-    void setBpm(double b);
-    double bpm() const { return m_bpm; }
-    double framesPerBeat() const { return kSampleRate * 60.0 / m_bpm; }
+    double positionBeats() const { return frameToBeat(double(m_pos.load())); }
     void setMetronome(bool on) { m_metro = on; }
     bool metronome() const { return m_metro; }
     void setCountIn(bool on) { m_countIn = on; }
@@ -152,7 +182,14 @@ public:
     double loopB() const { return m_loopB; }
     void masterPeaks(float& l, float& r) const;
 
-    // ---- Live playing (musical typing / piano roll preview) ----
+    // ---- Audio device ----
+    void setAudioOutput(const QByteArray& deviceId, int bufferFrames);
+    QString audioStatus() const { return m_audioStatus; }
+    void playTestTone();
+    void audition(const QString& path);   // plays a file once, independent of the transport
+    void stopAudition();
+
+    // ---- Live playing (musical typing, MIDI keyboard, piano roll preview) ----
     void noteOn(int track, int pitch, int velocity);
     void noteOff(int track, int pitch);
 
@@ -172,31 +209,39 @@ public:
 signals:
     void tracksChanged();    // structural change: tracks, effects, names
     void regionsChanged();   // regions, notes, patterns or automation changed
+    void tempoChanged();
     void loopChanged();
+    void audioStatusChanged(const QString& status);
     void message(const QString& text);
 
 private:
     struct Ev { int off; bool on; int pitch; int vel; };
+    struct UndoState { std::vector<Track> tracks; std::shared_ptr<const dsp::TempoMap> tempo; };
 
     Track makeTrack(TrackType type, const QString& name);
     void changed(bool structural);
     void pushUndo();
+    void restore(UndoState s);
     void decodeAsync(const QString& path, std::function<void(std::shared_ptr<AudioData>, QString)> done);
     void startPlayback();
-    void synthDrums();
     void flushDsp();
+    void regenDrummer(Region& r, const dsp::TempoMap& tm) const;
     void renderBlock(qint64 pos, int frames, float* out, bool running);
     void addClicks(qint64 timelineFrame, int frames, float* out);
     void masterProcess(float* buf, int frames);
+    void setTempoMap(std::shared_ptr<const dsp::TempoMap> map, bool commit);
 
     mutable QMutex m_mutex;
     std::vector<Track> m_tracks;
-    std::vector<std::vector<Track>> m_undo, m_redo;
+    std::vector<UndoState> m_undo, m_redo;
     int m_nextId = 1;
     std::array<std::shared_ptr<dsp::Effect>, 2> m_aux;   // aux A: reverb, aux B: echo
     std::shared_ptr<dsp::Effect> m_limiter;
 
-    std::array<std::vector<float>, kDrumRows> m_drum;
+    mutable QMutex m_tempoMutex;
+    std::shared_ptr<const dsp::TempoMap> m_tempo;
+    const dsp::TempoMap* m_tm = nullptr;   // valid while the audio thread holds m_mutex
+
     qint64 m_drumMax = 0;
     std::vector<float> m_scratch, m_trackBuf;
     std::array<std::vector<float>, 2> m_auxBuf;
@@ -204,11 +249,15 @@ private:
     float m_masterL = 0, m_masterR = 0;
 
     std::atomic<qint64> m_pos{0}, m_expected{-1}, m_countRemain{0}, m_countTotal{0}, m_idle{0};
-    std::atomic<double> m_bpm{120.0}, m_loopA{0.0}, m_loopB{16.0};
+    std::atomic<qint64> m_countClick{0}, m_toneRemain{0};
+    std::atomic<int> m_countPerBar{4};
+    std::atomic<double> m_loopA{0.0}, m_loopB{16.0};
     std::atomic<bool> m_playing{false}, m_recording{false}, m_recAudio{false};
     std::atomic<bool> m_metro{false}, m_countIn{false}, m_loopOn{false}, m_dirty{false};
     std::atomic<int> m_flush{0};   // bit 0: release synth notes, bit 1: reset every effect
     std::atomic<float> m_master{0.9f};
+    std::shared_ptr<const AudioData> m_audition;
+    qint64 m_auditionPos = 0;
 
     // Recording state
     QMutex m_recMutex;
@@ -219,7 +268,7 @@ private:
     std::map<int, Pending> m_recPending;
     std::vector<Note> m_recNotes;   // absolute beat positions
 
-    QString m_path;
+    QString m_path, m_audioStatus;
     QThread m_thread;
     AudioOutput* m_out = nullptr;
     AudioInput* m_in = nullptr;

@@ -60,6 +60,8 @@ protected:
         }
         const Track& trk = tr[size_t(m_t)];
         const Region& rg = trk.regions[size_t(m_r)];
+        const auto tm = m_e->tempoMap();
+        auto isBar = [&](double beat) { return std::fabs(beat - tm->barStart(tm->barAt(beat))) < 1e-6; };
         const int W = width(), areaBottom = height() - kVelH;
 
         // Pitch rows.
@@ -76,7 +78,7 @@ protected:
         for (double b = firstBeat; b * m_ppb - m_scrollX < W; b += m_grid) {
             const int x = beatX(b);
             const double absBeat = rg.start + b;
-            const bool bar = std::fmod(absBeat, kBeatsPerBar) < 1e-6, beat = std::fmod(absBeat, 1.0) < 1e-6;
+            const bool bar = isBar(absBeat), beat = std::fmod(absBeat, 1.0) < 1e-6;
             p.setPen(QColor(255, 255, 255, bar ? 80 : beat ? 40 : 16));
             p.drawLine(x, kRulerH, x, areaBottom);
         }
@@ -121,9 +123,9 @@ protected:
             if (b < 0) continue;
             const double absBeat = rg.start + b;
             const int x = beatX(b);
-            const bool bar = std::fmod(absBeat, kBeatsPerBar) < 1e-6;
+            const bool bar = isBar(absBeat);
             p.drawLine(x, bar ? 4 : kRulerH - 7, x, kRulerH);
-            if (bar) p.drawText(x + 4, 15, QString::number(int(absBeat / kBeatsPerBar) + 1));
+            if (bar) p.drawText(x + 4, 15, QString::number(tm->barAt(absBeat)));
         }
 
         // Velocity lane.
