@@ -3,6 +3,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "Preferences.h"
 
+#include <algorithm>
+#include <QAudioDevice>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QFormLayout>

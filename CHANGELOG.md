@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.4_1] - 2026-10-29
+
+### Fixed
+- Build failure in `Preferences.cpp` (missing `QComboBox`, `QAudioDevice` and `<algorithm>` includes)
+  that broke the GitHub Actions Windows build.
+
 ## [0.4] - 2026-10-28
 
 ### Added

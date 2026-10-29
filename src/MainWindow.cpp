@@ -38,7 +38,7 @@
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.4.0"
+#define MINIDAW_VERSION "0.4_1"
 #endif
 
 namespace {
