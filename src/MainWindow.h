@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 #include <QMainWindow>
+#include <QMenu>
 #include <QTimer>
 #include <map>
 #include <set>
@@ -72,7 +73,7 @@ private:
     QSplitter *m_hsplit, *m_vsplit;
 
     QAction *aNew, *aOpen, *aSave, *aSaveAs, *aImport, *aImportMidi, *aExportMidi, *aBounce, *aPrefs, *aQuit;
-    QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation, *aCut, *aCopy, *aPaste, *aDuplicateTrack;
+    QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation, *aCut, *aCopy, *aPaste, *aDuplicateTrack, *aAddMarker, *aNextMarker, *aPrevMarker, *aTapTempo, *aMoveUp, *aMoveDown, *aMuteRegion;
     QAction *aNewAudio, *aNewInstrument, *aNewDrums, *aNewDrummer, *aDeleteTrack, *aTempoTrack, *aMeter;
     QAction *aRewind, *aPlay, *aStop, *aRecord, *aCycle, *aMetronome, *aCountIn;
     QAction *aInspector, *aMixer, *aSmart, *aRoll, *aSteps, *aDrummerTab, *aLoopBrowser, *aEditors, *aTyping, *aAbout;
@@ -80,7 +81,13 @@ private:
     QLabel *m_lcdPos, *m_lcdTime, *m_keysLabel, *m_audioLabel;
     QToolButton* m_sigButton;
     QDoubleSpinBox* m_bpm;
-    QTimer m_timer;
+    QTimer m_timer, m_autosaveTimer;
+    QMenu* m_recentMenu = nullptr;
+    std::vector<qint64> m_taps;   // tap tempo: timestamps in ms
+
+    void checkRecovery();
+    void addRecent(const QString& path);
+    void updateRecentMenu();
 
     int m_selTrack = -1, m_selRegion = -1;
     int m_octave = 0;                                   // musical typing octave offset

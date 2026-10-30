@@ -18,7 +18,7 @@
 #   * VST3_SDK_DIR points to a checkout of https://github.com/steinbergmedia/vst3sdk (with submodules).
 #     When it is set and builds cleanly, MiniDAW is built with VST3 hosting. Otherwise the build
 #     continues without it.
-#   * MINIDAW_VERSION overrides the version string (default 0.5_1).
+#   * MINIDAW_VERSION overrides the version string (default 0.6).
 set -euo pipefail
 
 # Git Bash would otherwise rewrite arguments such as /nologo into file paths.
@@ -28,7 +28,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$ROOT/src"
 BUILD="$ROOT/build"
 DIST="$ROOT/dist/MiniDAW"
-VERSION="${MINIDAW_VERSION:-0.5_1}"
+VERSION="${MINIDAW_VERSION:-0.6}"
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 4)}"
 TARGET="${1:-build}"
 
@@ -166,6 +166,20 @@ do_build() {
     echo "built $BUILD/MiniDAW.exe"
 }
 
+# Builds the example plug-ins of plugin-sdk/examples into dist/MiniDAW/plugins (failures are not fatal).
+build_example_plugins() {
+    local out="$DIST/plugins" tmp="$BUILD/plugins" f name
+    mkdir -p "$out" "$tmp"
+    for f in "$ROOT"/plugin-sdk/examples/*.cpp; do
+        name="$(basename "${f%.cpp}")"
+        if ( cd "$tmp" && cl -nologo -std:c++17 -O2 -EHsc -MD -LD "$(cygpath -m "$f")" -Fe"$(cygpath -m "$tmp/$name.dll")" >/dev/null 2>&1 ) && [ -f "$tmp/$name.dll" ]; then
+            cp "$tmp/$name.dll" "$out/"
+        else
+            echo "warning: could not build the example plug-in $name"
+        fi
+    done
+}
+
 do_deploy() {
     [ -f "$BUILD/MiniDAW.exe" ] || die "build first: ./build.sh build"
     command -v windeployqt >/dev/null 2>&1 || export PATH="$(qt_root)/bin:$PATH"
@@ -175,6 +189,8 @@ do_deploy() {
     windeployqt --release --no-translations --no-system-d3d-compiler "$(cygpath -m "$DIST/MiniDAW.exe")"
     cp -r "$ROOT/translations" "$DIST/translations"   # language files (plain text, one per language)
     cp -r "$ROOT/loops" "$DIST/loops"                 # sample loops for the Loop Browser
+    cp -r "$ROOT/plugin-sdk" "$DIST/plugin-sdk"       # header, examples and documentation for plug-in authors
+    build_example_plugins
     cp "$ROOT/LICENSE" "$ROOT/README.md" "$DIST/"
     powershell.exe -NoProfile -Command \
         "Compress-Archive -Path '$(cygpath -w "$DIST")' -DestinationPath '$(cygpath -w "$ROOT/MiniDAW-windows-x64-portable.zip")' -Force"

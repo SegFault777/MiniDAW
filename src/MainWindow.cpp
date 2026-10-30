@@ -4,6 +4,7 @@
 #include "MainWindow.h"
 
 #include <QAbstractSpinBox>
+#include <QActionGroup>
 #include <QApplication>
 #include <QCheckBox>
 #include <QCloseEvent>
@@ -22,7 +23,12 @@
 #include <QMenuBar>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QSettings>
+#include <QStandardPaths>
 #include <QSignalBlocker>
 #include <QSpinBox>
 #include <QSplitter>
@@ -40,7 +46,7 @@
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.5_1"
+#define MINIDAW_VERSION "0.6"
 #endif
 
 namespace {
@@ -151,7 +157,73 @@ MainWindow::MainWindow() {
     connect(&m_timer, &QTimer::timeout, this, &MainWindow::tick);
     m_timer.start(33);
     m_timeline->selectTrack(1);       // the default software instrument
-    QTimer::singleShot(0, this, [this] { applySettings(); });   // after the window is visible: audio device, MIDI, plug-in scan
+    m_engine.setAutosaveDir(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/autosave");
+    connect(&m_autosaveTimer, &QTimer::timeout, this, [this] {
+        if (m_engine.isDirty() && !m_engine.isRecording()) m_engine.autosave();
+    });
+    QTimer::singleShot(0, this, [this] {   // after the window is visible: recovery question, audio device, MIDI, plug-in scan
+        checkRecovery();
+        applySettings();
+    });
+}
+
+/// A leftover lock file means the last session did not end normally: offer to restore the autosave.
+void MainWindow::checkRecovery() {
+    const QString dir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/autosave";
+    const QString lock = dir + "/running.lock";
+    if (QFile::exists(lock) && m_engine.hasAutosave()) {
+        const auto r = QMessageBox::question(this, tr("Recover Project"),
+                                             tr("MiniDAW did not close properly last time. Restore the last autosaved project?"),
+                                             QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+        if (r == QMessageBox::Yes) {
+            QString err;
+            if (m_engine.loadProject(m_engine.autosavePath(), &err)) {
+                m_engine.markRecovered();
+                m_timeline->selectTrack(0);
+                statusBar()->showMessage(tr("Recovered the autosaved project. Please save it."), 8000);
+            } else {
+                QMessageBox::warning(this, tr("Recover Project"), err);
+            }
+        } else {
+            m_engine.clearAutosave();
+        }
+    }
+    QDir().mkpath(dir);
+    QFile f(lock);
+    if (f.open(QIODevice::WriteOnly)) f.write(QByteArray::number(QCoreApplication::applicationPid()));
+}
+
+void MainWindow::addRecent(const QString& path) {
+    QSettings s;
+    QStringList list = s.value("recent/files").toStringList();
+    const QString abs = QFileInfo(path).absoluteFilePath();
+    list.removeAll(abs);
+    list.prepend(abs);
+    while (list.size() > 8) list.removeLast();
+    s.setValue("recent/files", list);
+    updateRecentMenu();
+}
+
+void MainWindow::updateRecentMenu() {
+    if (!m_recentMenu) return;
+    m_recentMenu->clear();
+    QStringList list = QSettings().value("recent/files").toStringList();
+    list.erase(std::remove_if(list.begin(), list.end(), [](const QString& p) { return !QFileInfo::exists(p); }), list.end());
+    for (const QString& p : list) {
+        QAction* a = m_recentMenu->addAction(QFileInfo(p).fileName());
+        a->setToolTip(p);
+        connect(a, &QAction::triggered, this, [this, p] {
+            if (maybeSave()) openProject(p);
+        });
+    }
+    m_recentMenu->setEnabled(!list.isEmpty());
+    if (!list.isEmpty()) {
+        m_recentMenu->addSeparator();
+        connect(m_recentMenu->addAction(tr("Clear Menu")), &QAction::triggered, this, [this] {
+            QSettings().remove("recent/files");
+            updateRecentMenu();
+        });
+    }
 }
 
 void MainWindow::applySettings() {
@@ -172,6 +244,9 @@ void MainWindow::applySettings() {
         m_inspector->refresh();
     }
     m_audioLabel->setText(m_engine.audioStatus());
+    const int minutes = s.value("general/autosaveMin", 3).toInt();
+    if (minutes > 0) m_autosaveTimer.start(minutes * 60 * 1000);
+    else m_autosaveTimer.stop();
 }
 
 // ------------------------------------------------------------------ actions
@@ -203,7 +278,7 @@ void MainWindow::buildActions() {
     aSplit = make(tr("Split at Playhead"), QKeySequence(Qt::CTRL | Qt::Key_T));
     aSnap = make(tr("Snap to Grid"), {}, true);
     aSnap->setChecked(true);
-    aAutomation = make(tr("Volume Automation"), QKeySequence(Qt::Key_A), true);
+    aAutomation = make(tr("Automation"), QKeySequence(Qt::Key_A), true);
     aNewAudio = make(tr("New Audio Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_A));
     aNewInstrument = make(tr("New Software Instrument Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_S));
     aNewDrums = make(tr("New Drum Machine Track"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_D));
@@ -213,6 +288,13 @@ void MainWindow::buildActions() {
     aTempoTrack = make(tr("Show Tempo Track"), QKeySequence(Qt::Key_G), true);
     aMeter = make(tr("Time Signature…"), {});
 
+    aTapTempo = make(tr("Tap Tempo"), QKeySequence(Qt::SHIFT | Qt::Key_T));
+    aMoveUp = make(tr("Move Track Up"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_Up));
+    aMoveDown = make(tr("Move Track Down"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_Down));
+    aMuteRegion = make(tr("Mute / Unmute Region"), QKeySequence(Qt::CTRL | Qt::Key_M));
+    aAddMarker = make(tr("Add Marker"), QKeySequence(Qt::Key_M));
+    aNextMarker = make(tr("Next Marker"), QKeySequence(Qt::ALT | Qt::Key_Right));
+    aPrevMarker = make(tr("Previous Marker"), QKeySequence(Qt::ALT | Qt::Key_Left));
     aRewind = make(tr("Go to Beginning"), QKeySequence(Qt::Key_Return));
     aPlay = make(tr("Play / Pause"), QKeySequence(Qt::Key_Space));
     aStop = make(tr("Stop"), QKeySequence(Qt::Key_Period));
@@ -283,6 +365,39 @@ void MainWindow::buildActions() {
     connect(aTempoTrack, &QAction::toggled, this, [this](bool on) { m_timeline->showTempoTrack(on); });
     connect(aMeter, &QAction::triggered, this, &MainWindow::meterDialog);
 
+    connect(aTapTempo, &QAction::triggered, this, [this] {
+        const qint64 now = QDateTime::currentMSecsSinceEpoch();
+        if (!m_taps.empty() && now - m_taps.back() > 2000) m_taps.clear();   // a pause starts a new measurement
+        m_taps.push_back(now);
+        if (m_taps.size() > 5) m_taps.erase(m_taps.begin());
+        if (m_taps.size() < 2) return;
+        const double avg = double(m_taps.back() - m_taps.front()) / double(m_taps.size() - 1);
+        const double bpm = std::clamp(std::round(60000.0 / std::max(avg, 1.0) * 10.0) / 10.0, 20.0, 300.0);
+        m_engine.setBpm(bpm);
+        m_timeline->refreshLayout();
+        statusBar()->showMessage(tr("Tempo: %1 BPM").arg(bpm, 0, 'f', 1), 2000);
+    });
+    connect(aMoveUp, &QAction::triggered, this, [this] {
+        const int t = m_timeline->selectedTrack();
+        if (t > 0) { m_engine.moveTrack(t, t - 1); m_timeline->selectTrack(t - 1); }
+    });
+    connect(aMoveDown, &QAction::triggered, this, [this] {
+        const int t = m_timeline->selectedTrack();
+        if (t >= 0 && t + 1 < m_engine.trackCount()) { m_engine.moveTrack(t, t + 1); m_timeline->selectTrack(t + 1); }
+    });
+    connect(aMuteRegion, &QAction::triggered, this, [this] { m_timeline->toggleMuteSelected(); });
+    connect(aAddMarker, &QAction::triggered, this, [this] { m_engine.addMarker(m_engine.positionBeats()); });
+    connect(aNextMarker, &QAction::triggered, this, [this] {
+        const double p = m_engine.positionBeats();
+        for (const Marker& m : m_engine.markers())
+            if (m.beat > p + 1e-6) { m_engine.seekBeats(m.beat); break; }
+    });
+    connect(aPrevMarker, &QAction::triggered, this, [this] {
+        const double p = m_engine.positionBeats();
+        const auto marks = m_engine.markers();
+        for (auto it = marks.rbegin(); it != marks.rend(); ++it)
+            if (it->beat < p - 1e-6) { m_engine.seekBeats(it->beat); break; }
+    });
     connect(aRewind, &QAction::triggered, this, [this] { m_engine.seekBeats(m_engine.loopOn() ? m_engine.loopA() : 0.0); });
     connect(aPlay, &QAction::triggered, this, [this] { m_engine.isPlaying() ? m_engine.pause() : m_engine.play(); });
     connect(aStop, &QAction::triggered, this, [this] { m_engine.stop(); });
@@ -311,7 +426,10 @@ void MainWindow::buildActions() {
 
 void MainWindow::buildMenus() {
     QMenu* file = menuBar()->addMenu(tr("&File"));
-    file->addActions({aNew, aOpen, aSave, aSaveAs});
+    file->addActions({aNew, aOpen});
+    m_recentMenu = file->addMenu(tr("Open Recent"));
+    updateRecentMenu();
+    file->addActions({aSave, aSaveAs});
     file->addSeparator();
     file->addActions({aImport, aImportMidi, aExportMidi, aBounce});
     file->addSeparator();
@@ -320,19 +438,38 @@ void MainWindow::buildMenus() {
     QMenu* edit = menuBar()->addMenu(tr("&Edit"));
     edit->addActions({aUndo, aRedo});
     edit->addSeparator();
-    edit->addActions({aCut, aCopy, aPaste});
+    edit->addActions({aCut, aCopy, aPaste, aMuteRegion});
     edit->addSeparator();
     edit->addActions({aDelete, aDuplicate, aSplit});
     edit->addSeparator();
     edit->addActions({aSnap, aAutomation});
+    {   // which parameter the automation lanes edit
+        QMenu* am = edit->addMenu(tr("Automation Parameter"));
+        auto* grp = new QActionGroup(this);
+        const char* names[4] = {QT_TR_NOOP("Volume"), QT_TR_NOOP("Pan"), QT_TR_NOOP("Send A"), QT_TR_NOOP("Send B")};
+        for (int k = 0; k < 4; ++k) {
+            QAction* a = am->addAction(tr(names[k]));
+            a->setCheckable(true);
+            a->setChecked(k == 0);
+            grp->addAction(a);
+            connect(a, &QAction::triggered, this, [this, k] {
+                m_timeline->setAutoParam(AutoParam(k));
+                if (!aAutomation->isChecked()) aAutomation->setChecked(true);
+            });
+        }
+    }
 
     QMenu* track = menuBar()->addMenu(tr("&Track"));
     track->addActions({aNewAudio, aNewInstrument, aNewDrummer, aNewDrums});
     track->addSeparator();
-    track->addActions({aDuplicateTrack, aDeleteTrack});
+    track->addActions({aDuplicateTrack, aMoveUp, aMoveDown, aDeleteTrack});
 
     QMenu* transport = menuBar()->addMenu(tr("T&ransport"));
     transport->addActions({aPlay, aStop, aRecord, aRewind});
+    transport->addSeparator();
+    transport->addActions({aAddMarker, aPrevMarker, aNextMarker});
+    transport->addSeparator();
+    transport->addAction(aTapTempo);
     transport->addSeparator();
     transport->addActions({aCycle, aMetronome, aCountIn});
     transport->addSeparator();
@@ -620,6 +757,7 @@ bool MainWindow::openProject(const QString& path) {
         return false;
     }
     m_timeline->selectTrack(0);
+    addRecent(path);
     return true;
 }
 
@@ -636,6 +774,7 @@ bool MainWindow::saveProject(bool saveAs) {
         return false;
     }
     statusBar()->showMessage(tr("Saved %1").arg(path), 4000);
+    addRecent(path);
     return true;
 }
 
@@ -735,6 +874,9 @@ void MainWindow::closeEvent(QCloseEvent* e) {
     if (maybeSave()) {
         m_engine.pause();
         m_midi->close();
+        m_autosaveTimer.stop();
+        m_engine.clearAutosave();   // a normal exit: nothing to recover
+        QFile::remove(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/autosave/running.lock");
         e->accept();
     } else {
         e->ignore();

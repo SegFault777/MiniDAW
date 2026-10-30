@@ -163,3 +163,37 @@ Fade In	淡入
 Fade Out	淡出
 Reverse	反转
 Normalize	标准化
+# v0.6
+Automation	自动化
+Automation Parameter	自动化参数
+Volume	音量
+Pan	声像
+Send A	发送 A
+Send B	发送 B
+Marker %1	标记 %1
+Add Marker	添加标记
+Next Marker	下一个标记
+Previous Marker	上一个标记
+Rename Marker	重命名标记
+Rename Marker…	重命名标记…
+Delete Marker	删除标记
+Add Marker Here	在此处添加标记
+Name	名称
+Recover Project	恢复项目
+MiniDAW did not close properly last time. Restore the last autosaved project?	MiniDAW 上次没有正常关闭。要恢复最近一次的自动保存吗？
+Recovered the autosaved project. Please save it.	已恢复自动保存的项目,请保存。
+Autosave every	自动保存间隔
+ min	 分钟
+Off	关闭
+Open Recent	打开最近的项目
+Clear Menu	清除菜单
+Tap Tempo	节拍速度点按
+Tempo: %1 BPM	速度:%1 BPM
+Move Track Up	上移轨道
+Move Track Down	下移轨道
+Track Color…	轨道颜色…
+Track Color	轨道颜色
+Mute / Unmute Region	静音 / 取消静音区域
+Chorus	合唱
+Filter	滤波器
+MiniDAW Plug-ins	MiniDAW 插件

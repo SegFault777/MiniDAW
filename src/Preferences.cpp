@@ -91,6 +91,12 @@ PreferencesDialog::PreferencesDialog(Engine* e, QWidget* parent) : QDialog(paren
     m_initialLanguage = s.value("ui/language", "auto").toString();
     m_language->setCurrentIndex(std::max(0, m_language->findData(m_initialLanguage)));
     gf->addRow(tr("Language"), m_language);
+    m_autosave = new QSpinBox;
+    m_autosave->setRange(0, 60);
+    m_autosave->setSuffix(tr(" min"));
+    m_autosave->setSpecialValueText(tr("Off"));
+    m_autosave->setValue(s.value("general/autosaveMin", 3).toInt());
+    gf->addRow(tr("Autosave every"), m_autosave);
     gf->addRow(QString(), new QLabel(tr("Restart MiniDAW to apply a new language.")));
     auto* loopRow = new QHBoxLayout;
     m_loops = new QLineEdit(s.value("loops/folder", LoopBrowser::defaultFolder()).toString());
@@ -156,6 +162,7 @@ void PreferencesDialog::save() {
     s.setValue("audio/recOffset", m_recOffset->value());
     s.setValue("midi/device", m_midi->currentIndex() > 0 ? m_midi->currentText() : QString());
     s.setValue("ui/language", m_language->currentData().toString());
+    s.setValue("general/autosaveMin", m_autosave->value());
     s.setValue("loops/folder", m_loops->text());
     QStringList folders;
     for (int i = 0; i < m_folders->count(); ++i) folders << m_folders->item(i)->text();

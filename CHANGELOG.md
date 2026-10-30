@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.6] - 2026-10-30
+
+### Added
+- **Pan, Send A and Send B automation** in addition to volume (*Edit > Automation Parameter*); pan automation
+  uses the pan law per sample. Saved in the project file.
+- **Autosave and crash recovery**: autosaves to the local app-data folder while the project has unsaved
+  changes (interval in *Preferences > General*, default 3 minutes). A leftover lock file after a crash makes
+  MiniDAW offer the last autosave. New recordings are written once and reused by later autosaves.
+- **Markers** (`M`, `Alt+Left`, `Alt+Right`): strip above the ruler, add / rename / delete / drag, saved in the
+  project and covered by undo.
+- **Move Track Up / Down** and **Track Color** in the track header menu.
+- **Mute Region** (`Ctrl+M` and region menu), dimmed on the timeline and saved in the project.
+- **Chorus** and **Filter** insert effects.
+- **Open Recent** (8 projects) and **Tap Tempo** (`Shift+T`).
+- **MiniDAW plug-in SDK**: `plugin-sdk/mdplugin.h` (plain C API, version 1), `dsp::NativeEffect` host wrapper,
+  loader for the `plugins` folders and two example plug-ins (Tremolo, Bitcrusher) that are built and shipped
+  by `build.sh deploy`. Unit tests load the examples with `dlopen`.
+
+### Changed
+- The ruler is 12 px taller to make room for the marker strip.
+- Project files are still version 3; v0.6 files open in v0.5 except for the new automation lanes, markers
+  and muted regions, which older versions ignore.
+
 ## [0.5_1] - 2026-10-29
 
 ### Fixed

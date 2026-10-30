@@ -14,6 +14,7 @@
 #include <cmath>
 #include "AudioUtil.h"
 #include "Engine.h"
+#include "NativePlugins.h"
 #include "dsp/MidiFile.h"
 #include "dsp/Stretch.h"
 #include "vst3/Vst3Host.h"
@@ -56,7 +57,9 @@ double bpmFromName(const QString& name) {
 }
 
 std::shared_ptr<dsp::Effect> makeEffect(const QString& id) {
-    return id.startsWith("vst3:") ? vst3::createEffect(id) : dsp::createEffect(id.toStdString());
+    if (id.startsWith("vst3:")) return vst3::createEffect(id);
+    if (id.startsWith("native:")) return nativeplug::create(id);
+    return dsp::createEffect(id.toStdString());
 }
 
 std::shared_ptr<dsp::Instrument> makeInstrument(const QString& id) {
@@ -239,6 +242,39 @@ bool Engine::exportMidiFile(const QString& path, QString* error) {
 
 // ------------------------------------------------------------------ save
 bool Engine::saveProject(const QString& path, QString* error) {
+    if (!writeProject(path, false, error)) return false;
+    m_path = path;
+    m_dirty = false;
+    clearAutosave();   // the autosave is obsolete once the project is saved
+    return true;
+}
+
+// ------------------------------------------------------------------ autosave and crash recovery (v0.6)
+QString Engine::autosavePath() const { return m_autosaveDir.isEmpty() ? QString() : m_autosaveDir + "/autosave.mdaw"; }
+
+bool Engine::hasAutosave() const { return !m_autosaveDir.isEmpty() && QFile::exists(autosavePath()); }
+
+bool Engine::autosave(QString* error) {
+    if (m_autosaveDir.isEmpty()) return false;
+    QDir().mkpath(m_autosaveDir);
+    return writeProject(autosavePath(), true, error);
+}
+
+void Engine::clearAutosave() {
+    if (m_autosaveDir.isEmpty()) return;
+    QFile::remove(autosavePath());
+    QDir(m_autosaveDir + "/audio").removeRecursively();
+    m_autoFiles.clear();
+}
+
+void Engine::markRecovered() {
+    m_path.clear();
+    m_dirty = true;
+}
+
+/// Writes the project. An autosave never changes the project's path or dirty state; it keeps every
+/// path absolute and stores new recordings once in '<autosave dir>/audio'.
+bool Engine::writeProject(const QString& path, bool autosave, QString* error) {
     const QFileInfo fi(path);
     const QDir dir = fi.absoluteDir();
     const QString audioDir = fi.completeBaseName() + "_audio";
@@ -282,9 +318,14 @@ bool Engine::saveProject(const QString& path, QString* error) {
             inserts.append(f);
         }
         o["inserts"] = inserts;
-        QJsonArray autom;
-        for (const AutoPoint& p : t.volAuto) autom.append(QJsonArray{p.beat, double(p.value)});
-        o["volAuto"] = autom;
+        static const char* const kAutoKeys[4] = {"volAuto", "panAuto", "sendAAuto", "sendBAuto"};
+        for (int k = 0; k < 4; ++k) {
+            const auto& pts = t.autoOf(AutoParam(k));
+            if (k > 0 && pts.empty()) continue;   // older files only know volAuto
+            QJsonArray autom;
+            for (const AutoPoint& p : pts) autom.append(QJsonArray{p.beat, double(p.value)});
+            o[kAutoKeys[k]] = autom;
+        }
 
         QJsonArray regs;
         for (const Region& r : t.regions) {
@@ -292,6 +333,7 @@ bool Engine::saveProject(const QString& path, QString* error) {
             ro["name"] = r.name;
             ro["start"] = r.start;
             ro["midi"] = r.midi;
+            if (r.mute) ro["mute"] = true;
             if (r.midi) {
                 ro["length"] = r.lengthBeats;
                 QJsonArray notes;
@@ -311,7 +353,25 @@ bool Engine::saveProject(const QString& path, QString* error) {
             } else {
                 const auto src = r.source ? r.source : r.audio;
                 QString p = src ? src->path : r.pendingPath;
-                if (src && p.isEmpty()) {   // a fresh recording: store it next to the project file
+                // Audio that only exists in the autosave folder counts as fresh when the project is really saved.
+                const bool inAutosave = !autosave && src && !m_autosaveDir.isEmpty() && p.startsWith(m_autosaveDir);
+                if (autosave && src && p.isEmpty()) {   // fresh recording: written once, reused by the next autosaves
+                    const auto it = m_autoFiles.find(src.get());
+                    if (it != m_autoFiles.end() && !it->second.first.expired()) {
+                        p = it->second.second;
+                    } else {
+                        dir.mkpath("audio");
+                        const QString file = dir.filePath(QString("audio/rec_%1.wav").arg(m_autoTake++));
+                        QString werr;
+                        if (!writeWavFile(file, src->pcm, &werr)) {
+                            if (error) *error = werr;
+                            return false;
+                        }
+                        m_autoFiles[src.get()] = {src, file};
+                        p = file;
+                    }
+                }
+                if (src && (p.isEmpty() || inAutosave)) {   // a fresh recording: store it next to the project file
                     dir.mkpath(audioDir);
                     QString file;
                     do { file = dir.filePath(QString("%1/take_%2.wav").arg(audioDir).arg(take++)); } while (QFile::exists(file));
@@ -323,7 +383,7 @@ bool Engine::saveProject(const QString& path, QString* error) {
                     src->path = file;
                     p = file;
                 }
-                ro["path"] = dir.relativeFilePath(p);
+                ro["path"] = autosave ? p : dir.relativeFilePath(p);
                 ro["srcOffset"] = double(r.srcOffset);
                 ro["srcFrames"] = double(r.srcFrames);
                 ro["follow"] = r.follow;
@@ -349,6 +409,11 @@ bool Engine::saveProject(const QString& path, QString* error) {
     root["version"] = kProjectVersion;
     root["tempo"] = tempo;
     root["meter"] = meter;
+    {
+        QJsonArray marks;
+        for (const Marker& m : markers()) marks.append(QJsonObject{{"beat", m.beat}, {"name", m.name}});
+        root["markers"] = marks;
+    }
     root["loopOn"] = loopOn();
     root["loopA"] = loopA();
     root["loopB"] = loopB();
@@ -366,8 +431,6 @@ bool Engine::saveProject(const QString& path, QString* error) {
         return false;
     }
     f.write(QJsonDocument(root).toJson(QJsonDocument::Indented));
-    m_path = path;
-    m_dirty = false;
     return true;
 }
 
@@ -415,6 +478,12 @@ bool Engine::loadProject(const QString& path, QString* error) {
         m_redo.clear();
         m_nextId = 1;
         m_audition.reset();
+        m_markers.clear();
+        for (const QJsonValue& mv : root["markers"].toArray()) {
+            const QJsonObject mo = mv.toObject();
+            m_markers.push_back({mo["beat"].toDouble(), mo["name"].toString()});
+        }
+        std::sort(m_markers.begin(), m_markers.end(), [](const Marker& a, const Marker& b) { return a.beat < b.beat; });
         for (const QJsonValue& tv : root["tracks"].toArray()) {
             const QJsonObject o = tv.toObject();
             Track t = makeTrack(typeFromString(o["type"].toString()), o["name"].toString());
@@ -452,16 +521,19 @@ bool Engine::loadProject(const QString& path, QString* error) {
                 if (io.contains("state")) vst3::loadState(*fx, QByteArray::fromBase64(io["state"].toString().toLatin1()));
                 t.inserts.push_back(fx);
             }
-            for (const QJsonValue& av : o["volAuto"].toArray()) {
-                const QJsonArray a = av.toArray();
-                if (a.size() == 2) t.volAuto.push_back({a[0].toDouble(), float(a[1].toDouble())});
-            }
+            static const char* const kAutoKeys[4] = {"volAuto", "panAuto", "sendAAuto", "sendBAuto"};
+            for (int k = 0; k < 4; ++k)
+                for (const QJsonValue& av : o[kAutoKeys[k]].toArray()) {
+                    const QJsonArray a = av.toArray();
+                    if (a.size() == 2) t.autoOf(AutoParam(k)).push_back({a[0].toDouble(), float(a[1].toDouble())});
+                }
             for (const QJsonValue& rv : o["regions"].toArray()) {
                 const QJsonObject ro = rv.toObject();
                 Region r;
                 r.name = ro["name"].toString();
                 r.start = ro["start"].toDouble();
                 r.midi = ro["midi"].toBool();
+                r.mute = ro["mute"].toBool();
                 if (r.midi) {
                     r.lengthBeats = ro["length"].toDouble(4);
                     for (const QJsonValue& nv : ro["notes"].toArray()) {

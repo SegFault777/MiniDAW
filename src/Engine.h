@@ -66,6 +66,7 @@ struct Region {
     bool follow = false;                     // stretch to the project tempo
     double sourceBpm = 0;                    // tempo of the recording (needed for 'follow')
     double semitones = 0;                    // pitch transposition
+    bool mute = false;                       // muted regions stay on the timeline but make no sound (v0.6)
     float gainDb = 0;                        // region gain (v0.5)
     qint64 fadeIn = 0, fadeOut = 0;          // fade lengths in frames of the played audio (v0.5)
     double flexBpm = 0;                      // project tempo that 'audio' was stretched for
@@ -74,8 +75,20 @@ struct Region {
 
 struct AutoPoint {
     double beat = 0;
-    float value = 0;   // volume, 0..1.5
+    float value = 0;   // value of the automated parameter (see autoRange)
 };
+
+/// Parameters of a track that can be automated.
+enum class AutoParam { Volume, Pan, SendA, SendB };
+
+/// Value range of an automation lane.
+inline std::pair<float, float> autoRange(AutoParam p) {
+    switch (p) {
+    case AutoParam::Volume: return {0.f, 1.5f};
+    case AutoParam::Pan: return {-1.f, 1.f};
+    default: return {0.f, 1.f};
+    }
+}
 
 struct Track {
     int id = 0;
@@ -90,8 +103,23 @@ struct Track {
     std::shared_ptr<dsp::Instrument> instrument;   // Instrument and Drummer tracks
     QString instrumentId;                          // "synth", "drumkit" or "vst3:..."
     int preset = 0;
-    std::vector<AutoPoint> volAuto;
+    std::vector<AutoPoint> volAuto, panAuto, sendAAuto, sendBAuto;
     float peakL = 0, peakR = 0;
+
+    std::vector<AutoPoint>& autoOf(AutoParam p) {
+        return p == AutoParam::Volume ? volAuto : p == AutoParam::Pan ? panAuto : p == AutoParam::SendA ? sendAAuto : sendBAuto;
+    }
+    const std::vector<AutoPoint>& autoOf(AutoParam p) const {
+        return p == AutoParam::Volume ? volAuto : p == AutoParam::Pan ? panAuto : p == AutoParam::SendA ? sendAAuto : sendBAuto;
+    }
+    /// Value of the parameter when it has no automation.
+    float baseValue(AutoParam p) const { return p == AutoParam::Volume ? volume : p == AutoParam::Pan ? pan : p == AutoParam::SendA ? sendA : sendB; }
+};
+
+/// A named position on the timeline (v0.6).
+struct Marker {
+    double beat = 0;
+    QString name;
 };
 
 /// Options of "Bounce to WAV" (v0.5).
@@ -157,13 +185,24 @@ public:
     int pasteRegion(int track, double beat);             ///< Pastes the clipboard region; returns its index or -1.
     int duplicateTrack(int i);                           ///< Copies a track with its regions, instrument and inserts.
     void setRegionAudio(int t, int r, float gainDb, qint64 fadeInFrames, qint64 fadeOutFrames);
+    void setRegionMute(int t, int r, bool mute);
+    void moveTrack(int from, int to);                    ///< Moves a track to another position in the list.
+    void setTrackColor(int i, const QColor& color);
     void reverseRegion(int t, int r);                    ///< Reverses the audio of a region (creates a reversed copy).
     void normalizeRegion(int t, int r, float targetDb = -1.f);   ///< Sets the region gain so that its peak is at targetDb.
     void setRegionNotes(int t, int r, const std::vector<Note>& notes);
     void setRegionFlex(int t, int r, bool follow, double sourceBpm, double semitones);
     void setStep(int track, int row, int step, bool on);
     void setDrumPattern(int track, const DrumPattern& p);
+    // ---- Markers (kept sorted by position) ----
+    std::vector<Marker> markers() const;
+    int addMarker(double beat, const QString& name = {});   ///< Returns the index of the new marker.
+    void removeMarker(int i);
+    void renameMarker(int i, const QString& name);
+    int moveMarker(int i, double beat);                     ///< Returns the new index (the list stays sorted).
+
     void setVolAuto(int track, const std::vector<AutoPoint>& pts);
+    void setAuto(int track, AutoParam param, const std::vector<AutoPoint>& pts);
 
     // ---- Tempo and time signature ----
     std::shared_ptr<const dsp::TempoMap> tempoMap() const;
@@ -223,6 +262,14 @@ public:
     void newProject();
     bool saveProject(const QString& path, QString* error);
     bool loadProject(const QString& path, QString* error);
+    // ---- Autosave and crash recovery (v0.6) ----
+    void setAutosaveDir(const QString& dir) { m_autosaveDir = dir; }
+    QString autosavePath() const;
+    bool hasAutosave() const;
+    bool autosave(QString* error = nullptr);   ///< Writes the autosave file; the project path and dirty flag stay as they are.
+    void clearAutosave();
+    void markRecovered();                      ///< After loading an autosave: the project becomes "untitled" and modified.
+
     bool exportWav(const QString& path, QString* error);   ///< 16-bit WAV of the whole project.
     bool exportAudio(const QString& path, const ExportOptions& opt, QString* error);
 
@@ -240,7 +287,7 @@ signals:
 
 private:
     struct Ev { int off; bool on; int pitch; int vel; };
-    struct UndoState { std::vector<Track> tracks; std::shared_ptr<const dsp::TempoMap> tempo; };
+    struct UndoState { std::vector<Track> tracks; std::shared_ptr<const dsp::TempoMap> tempo; std::vector<Marker> markers; };
 
     Track makeTrack(TrackType type, const QString& name);
     void changed(bool structural);
@@ -258,6 +305,11 @@ private:
     mutable QMutex m_mutex;
     std::vector<Track> m_tracks;
     std::vector<UndoState> m_undo, m_redo;
+    std::vector<Marker> m_markers;   // guarded by m_mutex
+    bool writeProject(const QString& path, bool autosave, QString* error);
+    QString m_autosaveDir;
+    int m_autoTake = 1;
+    std::map<const void*, std::pair<std::weak_ptr<const AudioData>, QString>> m_autoFiles;
     int m_nextId = 1;
     std::array<std::shared_ptr<dsp::Effect>, 2> m_aux;   // aux A: reverb, aux B: echo
     std::shared_ptr<dsp::Effect> m_limiter;

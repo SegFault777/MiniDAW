@@ -38,6 +38,18 @@ struct Biquad {
         set(1 + alpha * A, -2 * c, 1 - alpha * A, 1 + alpha / A, -2 * c, 1 - alpha / A);
     }
 
+    void lowpass(float f, float q) {
+        f = std::min(f, 0.49f * kSampleRate);
+        const float w = 2 * kPi * f / kSampleRate, c = std::cos(w), alpha = std::sin(w) / (2 * q);
+        set((1 - c) * 0.5f, 1 - c, (1 - c) * 0.5f, 1 + alpha, -2 * c, 1 - alpha);
+    }
+
+    void highpass(float f, float q) {
+        f = std::min(f, 0.49f * kSampleRate);
+        const float w = 2 * kPi * f / kSampleRate, c = std::cos(w), alpha = std::sin(w) / (2 * q);
+        set((1 + c) * 0.5f, -(1 + c), (1 + c) * 0.5f, 1 + alpha, -2 * c, 1 - alpha);
+    }
+
     void lowShelf(float f, float gainDb) {
         f = std::min(f, 0.49f * kSampleRate);
         const float A = std::sqrt(dbToLin(gainDb)), w = 2 * kPi * f / kSampleRate;
@@ -267,6 +279,82 @@ private:
     float m_lp[2] = {0, 0};
 };
 
+// ------------------------------------------------------------------ Chorus (v0.6)
+class Chorus : public Effect {
+public:
+    Chorus() {
+        pRate = &add("Rate", 0.05f, 5, 0.8f, "Hz");  pRate->log = true;
+        pDepth = &add("Depth", 0, 1, 0.5f);
+        pMix = &add("Mix", 0, 1, 0.5f);
+        for (auto& b : m_buf) b.assign(kMax, 0.f);
+    }
+    const char* id() const override { return "chorus"; }
+    const char* displayName() const override { return "Chorus"; }
+    void reset() override {
+        for (auto& b : m_buf) std::fill(b.begin(), b.end(), 0.f);
+        m_idx = 0;
+        m_phase = 0;
+    }
+
+    void process(float* io, int n) override {
+        const float inc = pRate->get() / kSampleRate, depth = pDepth->get(), mix = pMix->get();
+        const float base = 0.012f * kSampleRate, swing = 0.006f * kSampleRate * depth;   // 12 ms +- 6 ms
+        for (int i = 0; i < n; ++i) {
+            for (int ch = 0; ch < 2; ++ch) m_buf[ch][size_t(m_idx)] = io[2 * i + ch];
+            for (int ch = 0; ch < 2; ++ch) {
+                const float lfo = std::sin(2 * kPi * (m_phase + 0.25f * float(ch)));   // right channel runs a quarter cycle later
+                float rpos = float(m_idx) - (base + swing * lfo);
+                if (rpos < 0) rpos += float(kMax);
+                const int i0 = int(rpos), i1 = (i0 + 1) % kMax;
+                const float frac = rpos - float(i0);
+                const float wet = m_buf[ch][size_t(i0)] * (1 - frac) + m_buf[ch][size_t(i1)] * frac;
+                io[2 * i + ch] = io[2 * i + ch] * (1 - mix * 0.5f) + wet * mix * 0.5f * 1.4f;
+            }
+            m_phase += inc;
+            if (m_phase >= 1.f) m_phase -= 1.f;
+            if (++m_idx >= kMax) m_idx = 0;
+        }
+    }
+private:
+    static constexpr int kMax = 2048;
+    Param *pRate, *pDepth, *pMix;
+    std::vector<float> m_buf[2];
+    int m_idx = 0;
+    float m_phase = 0;
+};
+
+// ------------------------------------------------------------------ Filter: low cut + high cut with resonance (v0.6)
+class Filter : public Effect {
+public:
+    Filter() {
+        pLow = &add("Low Cut", 20, 2000, 20, "Hz");     pLow->log = true;
+        pHigh = &add("High Cut", 200, 20000, 20000, "Hz");  pHigh->log = true;
+        pRes = &add("Resonance", 0.5f, 8, 0.707f);      pRes->log = true;
+        pMix = &add("Mix", 0, 1, 1);
+    }
+    const char* id() const override { return "filter"; }
+    const char* displayName() const override { return "Filter"; }
+    void reset() override { m_hp.reset(); m_lp.reset(); }
+
+    void process(float* io, int n) override {
+        const float low = pLow->get(), high = pHigh->get(), q = pRes->get(), mix = pMix->get();
+        const bool useHp = low > 21.f, useLp = high < 19500.f;
+        if (useHp) m_hp.highpass(low, q);
+        if (useLp) m_lp.lowpass(high, q);
+        for (int i = 0; i < n; ++i)
+            for (int ch = 0; ch < 2; ++ch) {
+                const float x = io[2 * i + ch];
+                float y = x;
+                if (useHp) y = m_hp.process(ch, y);
+                if (useLp) y = m_lp.process(ch, y);
+                io[2 * i + ch] = x * (1 - mix) + y * mix;
+            }
+    }
+private:
+    Param *pLow, *pHigh, *pRes, *pMix;
+    Biquad m_hp, m_lp;
+};
+
 // ------------------------------------------------------------------ Limiter
 class Limiter : public Effect {
 public:
@@ -303,12 +391,14 @@ std::shared_ptr<Effect> createEffect(const std::string& id) {
     if (id == "echo") return std::make_shared<Echo>();
     if (id == "reverb") return std::make_shared<Reverb>();
     if (id == "drive") return std::make_shared<Overdrive>();
+    if (id == "chorus") return std::make_shared<Chorus>();
+    if (id == "filter") return std::make_shared<Filter>();
     if (id == "limiter") return std::make_shared<Limiter>();
     return nullptr;
 }
 
 const std::vector<std::string>& insertEffectIds() {
-    static const std::vector<std::string> ids = {"eq", "comp", "echo", "reverb", "drive"};
+    static const std::vector<std::string> ids = {"eq", "comp", "echo", "reverb", "drive", "chorus", "filter"};
     return ids;
 }
 

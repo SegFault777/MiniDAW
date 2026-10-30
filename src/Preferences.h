@@ -22,7 +22,7 @@ private:
     void save();
     Engine* m_e;
     QComboBox *m_device, *m_buffer, *m_midi, *m_language, *m_input;
-    QSpinBox* m_recOffset;
+    QSpinBox *m_recOffset, *m_autosave;
     QLabel* m_status;
     QLineEdit* m_loops;
     QListWidget *m_folders, *m_found;

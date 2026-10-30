@@ -23,6 +23,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <cmath>
+#include "NativePlugins.h"
 #include "Theme.h"
 
 // ================================================================= helpers
@@ -50,6 +51,11 @@ QMenu* makeEffectMenu(QWidget* parent, std::function<void(const QString&)> pick)
     for (const std::string& id : dsp::insertEffectIds()) {
         const QString qid = QString::fromStdString(id);
         menu->addAction(QObject::tr(effectLabel(qid).toUtf8().constData()), parent, [pick, qid] { pick(qid); });
+    }
+    QMenu* nat = nullptr;
+    for (const nativeplug::Info& p : nativeplug::list()) {   // MiniDAW plug-ins (plugin-sdk)
+        if (!nat) { menu->addSeparator(); nat = menu->addMenu(QObject::tr("MiniDAW Plug-ins")); }
+        nat->addAction(p.name + (p.vendor.isEmpty() ? QString() : "  (" + p.vendor + ")"), parent, [pick, id = p.id] { pick(id); });
     }
     QMenu* vst = nullptr;
     for (const vst3::PluginInfo& p : PluginCatalog::list()) {

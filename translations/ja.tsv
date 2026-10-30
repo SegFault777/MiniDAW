@@ -163,3 +163,37 @@ Fade In	フェードイン
 Fade Out	フェードアウト
 Reverse	リバース
 Normalize	ノーマライズ
+# v0.6
+Automation	オートメーション
+Automation Parameter	オートメーション パラメータ
+Volume	ボリューム
+Pan	パン
+Send A	センドA
+Send B	センドB
+Marker %1	マーカー %1
+Add Marker	マーカーを追加
+Next Marker	次のマーカー
+Previous Marker	前のマーカー
+Rename Marker	マーカー名を変更
+Rename Marker…	マーカー名を変更…
+Delete Marker	マーカーを削除
+Add Marker Here	ここにマーカーを追加
+Name	名前
+Recover Project	プロジェクトの復元
+MiniDAW did not close properly last time. Restore the last autosaved project?	MiniDAWが前回正常に終了しませんでした。最後の自動保存を復元しますか？
+Recovered the autosaved project. Please save it.	自動保存されたプロジェクトを復元しました。保存してください。
+Autosave every	自動保存の間隔
+ min	 分
+Off	オフ
+Open Recent	最近使ったプロジェクト
+Clear Menu	メニューを消去
+Tap Tempo	タップテンポ
+Tempo: %1 BPM	テンポ: %1 BPM
+Move Track Up	トラックを上へ移動
+Move Track Down	トラックを下へ移動
+Track Color…	トラックの色…
+Track Color	トラックの色
+Mute / Unmute Region	リージョンのミュート／解除
+Chorus	コーラス
+Filter	フィルター
+MiniDAW Plug-ins	MiniDAW プラグイン

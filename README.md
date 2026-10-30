@@ -10,7 +10,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 > sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
 > VST is a trademark of Steinberg Media Technologies GmbH.
 
-**Version 0.5_1** · License: GPL-3.0-or-later
+**Version 0.6** · License: GPL-3.0-or-later
 
 ## Features
 
@@ -24,6 +24,19 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 - **Duplicate Track** (`Ctrl+Shift+D`) copies a track with its regions, instrument and effects.
 - **Cycle** range (right-drag on the ruler), metronome (accents follow the time signature) and an
   optional one-bar **count-in**. **Volume automation** per track. Undo / redo for edits and tempo changes.
+
+### What is new in v0.6
+- **Pan and send automation** next to volume: *Edit > Automation Parameter* chooses which lane `A` edits.
+- **Autosave and crash recovery**: the project is autosaved while it has unsaved changes (default every
+  3 minutes, *Preferences > General*). After a crash MiniDAW offers to restore the last autosave.
+- **Markers**: `M` adds a marker at the playhead, double-click the marker strip above the ruler to add or
+  rename one, drag to move it, `Alt+Left` / `Alt+Right` jump between markers.
+- **Move tracks** up and down (`Ctrl+Alt+Up` / `Down`) and choose a **track color** from the header menu.
+- **Mute regions** (`Ctrl+M`) without deleting them.
+- **Chorus** and **Filter** (low cut / high cut with resonance) insert effects.
+- **Open Recent** menu and **Tap Tempo** (`Shift+T`).
+- **MiniDAW plug-in SDK**: write your own audio effects as a small shared library and load them from the
+  `plugins` folder. See [`plugin-sdk/README.md`](plugin-sdk/README.md); a tremolo and a bitcrusher are included.
 
 ### What is new in v0.5
 - **Cut, copy and paste regions** between tracks and projects; pasting follows the tempo at the new position.
@@ -88,6 +101,9 @@ files in `translations/`: add `fr.tsv` (copy `ko.tsv`, translate the right-hand 
 | Split at playhead | `Ctrl+T` | Duplicate region | `Ctrl+D` |
 | Delete | `Del` | Musical Typing | `Ctrl+K` |
 | Cut / copy / paste region | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Duplicate track | `Ctrl+Shift+D` |
+| Add marker | `M` | Previous / next marker | `Alt+Left` / `Alt+Right` |
+| Mute region | `Ctrl+M` | Move track up / down | `Ctrl+Alt+Up` / `Down` |
+| Tap tempo | `Shift+T` | Automation on / off | `A` |
 | New audio / instrument / drum machine track | `Ctrl+Alt+A` / `S` / `D` | New Drummer track | `Ctrl+Alt+R` |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` | Import audio | `Ctrl+I` |
 | Save / open | `Ctrl+S` / `Ctrl+O` | Bounce | `Ctrl+B` |
@@ -137,7 +153,7 @@ Without `VST3_SDK_DIR` (or if the SDK fails to build) MiniDAW is built without V
 SDK is available under GPL-3.0, which is compatible with MiniDAW's license. Set `MINIDAW_VERSION` to
 override the version string. The GitHub Actions workflow in `.github/workflows/build.yml` runs
 `bash build.sh all` and attaches the installer and the portable ZIP to a release when a tag such as
-`v0.5_1` is pushed.
+`v0.6` is pushed.
 
 ## Architecture
 

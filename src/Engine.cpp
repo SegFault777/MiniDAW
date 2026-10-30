@@ -13,6 +13,7 @@
 #include <QTimer>
 #include <cmath>
 #include "AudioUtil.h"
+#include "NativePlugins.h"
 #include "dsp/AudioOps.h"
 #include "dsp/MidiFile.h"
 #include "dsp/Stretch.h"
@@ -24,10 +25,9 @@ constexpr qint64 kClickLen = 1400;   // metronome click length in frames
 constexpr int kToneFrames = kSampleRate * 6 / 10;
 const int kRowPiece[kDrumRows] = {dsp::Kick, dsp::Snare, dsp::HatClosed, dsp::Clap};
 
-/// Volume automation value (linear interpolation between breakpoints).
-float autoGain(const Track& t, double beat) {
-    const auto& p = t.volAuto;
-    if (p.empty()) return t.volume;
+/// Automation value (linear interpolation between breakpoints); 'fallback' when the lane is empty.
+float autoValue(const std::vector<AutoPoint>& p, double beat, float fallback) {
+    if (p.empty()) return fallback;
     if (beat <= p.front().beat) return p.front().value;
     if (beat >= p.back().beat) return p.back().value;
     for (size_t i = 1; i < p.size(); ++i) {
@@ -41,6 +41,7 @@ float autoGain(const Track& t, double beat) {
 
 std::shared_ptr<dsp::Effect> makeEffect(const QString& id) {
     if (id.startsWith("vst3:")) return vst3::createEffect(id);
+    if (id.startsWith("native:")) return nativeplug::create(id);
     return dsp::createEffect(id.toStdString());
 }
 
@@ -413,6 +414,7 @@ void Engine::newProject() {
     {
         QMutexLocker l(&m_mutex);
         m_tracks.clear();
+        m_markers.clear();
         m_undo.clear();
         m_redo.clear();
         m_nextId = 1;
@@ -800,6 +802,41 @@ void Engine::setRegionAudio(int t, int r, float gainDb, qint64 fadeInFrames, qin
     changed(false);
 }
 
+void Engine::setRegionMute(int t, int r, bool mute) {
+    checkpoint();
+    REGION_OP(rg.mute = mute;)
+    changed(false);
+}
+
+void Engine::moveTrack(int from, int to) {
+    {
+        QMutexLocker l(&m_mutex);
+        const int n = int(m_tracks.size());
+        if (from < 0 || from >= n || to < 0 || to >= n || from == to) return;
+    }
+    checkpoint();
+    {
+        QMutexLocker l(&m_mutex);
+        const int n = int(m_tracks.size());
+        if (from >= n || to >= n) return;
+        Track t = std::move(m_tracks[size_t(from)]);
+        m_tracks.erase(m_tracks.begin() + from);
+        m_tracks.insert(m_tracks.begin() + to, std::move(t));
+    }
+    changed(true);
+}
+
+void Engine::setTrackColor(int i, const QColor& color) {
+    if (!color.isValid()) return;
+    checkpoint();
+    {
+        QMutexLocker l(&m_mutex);
+        if (i < 0 || i >= int(m_tracks.size())) return;
+        m_tracks[size_t(i)].color = color;
+    }
+    changed(true);
+}
+
 void Engine::reverseRegion(int t, int r) {
     Region c;
     {
@@ -881,13 +918,75 @@ void Engine::setDrumPattern(int track, const DrumPattern& p) {
     changed(false);
 }
 
-void Engine::setVolAuto(int track, const std::vector<AutoPoint>& pts) {
+// ------------------------------------------------------------------ markers
+std::vector<Marker> Engine::markers() const {
+    QMutexLocker l(&m_mutex);
+    return m_markers;
+}
+
+int Engine::addMarker(double beat, const QString& name) {
+    checkpoint();
+    int idx;
+    {
+        QMutexLocker l(&m_mutex);
+        Marker m;
+        m.beat = std::max(0.0, beat);
+        m.name = name.isEmpty() ? tr("Marker %1").arg(m_markers.size() + 1) : name;
+        const auto it = std::upper_bound(m_markers.begin(), m_markers.end(), m.beat, [](double b, const Marker& x) { return b < x.beat; });
+        idx = int(it - m_markers.begin());
+        m_markers.insert(it, m);
+    }
+    changed(false);
+    return idx;
+}
+
+void Engine::removeMarker(int i) {
+    checkpoint();
+    {
+        QMutexLocker l(&m_mutex);
+        if (i < 0 || i >= int(m_markers.size())) return;
+        m_markers.erase(m_markers.begin() + i);
+    }
+    changed(false);
+}
+
+void Engine::renameMarker(int i, const QString& name) {
+    checkpoint();
+    {
+        QMutexLocker l(&m_mutex);
+        if (i < 0 || i >= int(m_markers.size()) || name.trimmed().isEmpty()) return;
+        m_markers[size_t(i)].name = name.trimmed();
+    }
+    changed(false);
+}
+
+int Engine::moveMarker(int i, double beat) {   // no checkpoint: the caller sets one when a drag starts
+    int idx = i;
+    {
+        QMutexLocker l(&m_mutex);
+        if (i < 0 || i >= int(m_markers.size())) return i;
+        Marker m = m_markers[size_t(i)];
+        m.beat = std::max(0.0, beat);
+        m_markers.erase(m_markers.begin() + i);
+        const auto it = std::upper_bound(m_markers.begin(), m_markers.end(), m.beat, [](double b, const Marker& x) { return b < x.beat; });
+        idx = int(it - m_markers.begin());
+        m_markers.insert(it, m);
+    }
+    changed(false);
+    return idx;
+}
+
+void Engine::setVolAuto(int track, const std::vector<AutoPoint>& pts) { setAuto(track, AutoParam::Volume, pts); }
+
+void Engine::setAuto(int track, AutoParam param, const std::vector<AutoPoint>& pts) {
     {
         QMutexLocker l(&m_mutex);
         if (track < 0 || track >= int(m_tracks.size())) return;
         auto sorted = pts;
+        const auto [lo, hi] = autoRange(param);
+        for (AutoPoint& a : sorted) a.value = std::clamp(a.value, lo, hi);
         std::sort(sorted.begin(), sorted.end(), [](const AutoPoint& a, const AutoPoint& b) { return a.beat < b.beat; });
-        m_tracks[size_t(track)].volAuto = sorted;
+        m_tracks[size_t(track)].autoOf(param) = sorted;
     }
     changed(false);
 }
@@ -965,6 +1064,7 @@ void Engine::pushUndo() {
     UndoState s{{}, tempoMap()};
     QMutexLocker l(&m_mutex);
     s.tracks = m_tracks;
+    s.markers = m_markers;
     m_undo.push_back(std::move(s));
     if (m_undo.size() > 60) m_undo.erase(m_undo.begin());
     m_redo.clear();
@@ -981,6 +1081,7 @@ void Engine::restore(UndoState s) {
     {
         QMutexLocker l(&m_mutex);
         m_tracks = std::move(s.tracks);
+        m_markers = std::move(s.markers);
     }
     emit tempoChanged();
     changed(true);
@@ -993,6 +1094,7 @@ void Engine::undo() {
         QMutexLocker l(&m_mutex);
         if (m_undo.empty()) return;
         cur.tracks = m_tracks;
+        cur.markers = m_markers;
         prev = std::move(m_undo.back());
         m_undo.pop_back();
         m_redo.push_back(std::move(cur));
@@ -1007,6 +1109,7 @@ void Engine::redo() {
         QMutexLocker l(&m_mutex);
         if (m_redo.empty()) return;
         cur.tracks = m_tracks;
+        cur.markers = m_markers;
         next = std::move(m_redo.back());
         m_redo.pop_back();
         m_undo.push_back(std::move(cur));
@@ -1229,7 +1332,7 @@ void Engine::renderBlock(qint64 pos, int frames, float* out, bool running) {
 
         if (t.type == TrackType::Audio && running) {
             for (const Region& rg : t.regions) {
-                if (rg.midi || !rg.audio) continue;
+                if (rg.midi || !rg.audio || rg.mute) continue;
                 const qint64 st = bf(rg.start);
                 const qint64 a = std::max(pos, st), b = std::min<qint64>(pos + frames, st + rg.frames);
                 if (a >= b) continue;
@@ -1266,7 +1369,7 @@ void Engine::renderBlock(qint64 pos, int frames, float* out, bool running) {
                 m_events.clear();
                 if (jump) t.instrument->allNotesOff();
                 for (const Region& rg : t.regions) {
-                    if (!rg.midi) continue;
+                    if (!rg.midi || rg.mute) continue;
                     const double regEnd = rg.start + rg.lengthBeats;
                     for (const Note& n : rg.notes) {
                         if (n.start >= rg.lengthBeats) continue;
@@ -1296,16 +1399,27 @@ void Engine::renderBlock(qint64 pos, int frames, float* out, bool running) {
 
         // Fader (with volume automation), pan law and aux sends.
         const bool automated = !t.volAuto.empty();
-        const float g0 = automated ? autoGain(t, beat0) : t.volume;
-        const float g1 = automated ? autoGain(t, beat1) : t.volume;
-        const float ang = (t.pan + 1.f) * 0.25f * float(kPi);
-        const float pl = std::cos(ang) * 1.41421f, pr = std::sin(ang) * 1.41421f;
+        const float g0 = autoValue(t.volAuto, beat0, t.volume), g1 = autoValue(t.volAuto, beat1, t.volume);
+        const bool panAuto = !t.panAuto.empty(), sendAuto = !t.sendAAuto.empty() || !t.sendBAuto.empty();
+        const float pn0 = autoValue(t.panAuto, beat0, t.pan), pn1 = autoValue(t.panAuto, beat1, t.pan);
+        const float sa0 = autoValue(t.sendAAuto, beat0, t.sendA), sa1 = autoValue(t.sendAAuto, beat1, t.sendA);
+        const float sb0 = autoValue(t.sendBAuto, beat0, t.sendB), sb1 = autoValue(t.sendBAuto, beat1, t.sendB);
+        const float ang0 = (pn0 + 1.f) * 0.25f * float(kPi), ang1 = (pn1 + 1.f) * 0.25f * float(kPi);
+        float pl = std::cos(ang0) * 1.41421f, pr = std::sin(ang0) * 1.41421f;
+        (void)automated;
         float peakL = 0, peakR = 0;
         for (int i = 0; i < frames; ++i) {
-            const float g = g0 + (g1 - g0) * float(i) / float(frames);
+            const float k = float(i) / float(frames);
+            const float g = g0 + (g1 - g0) * k;
+            if (panAuto) {   // pan law per sample while the pan is automated
+                const float ang = ang0 + (ang1 - ang0) * k;
+                pl = std::cos(ang) * 1.41421f;
+                pr = std::sin(ang) * 1.41421f;
+            }
+            const float sendA = sendAuto ? sa0 + (sa1 - sa0) * k : t.sendA, sendB = sendAuto ? sb0 + (sb1 - sb0) * k : t.sendB;
             const float a = tb[2 * i] * g, b = tb[2 * i + 1] * g;
-            if (t.sendA > 0.f) { m_auxBuf[0][size_t(2 * i)] += a * t.sendA; m_auxBuf[0][size_t(2 * i + 1)] += b * t.sendA; }
-            if (t.sendB > 0.f) { m_auxBuf[1][size_t(2 * i)] += a * t.sendB; m_auxBuf[1][size_t(2 * i + 1)] += b * t.sendB; }
+            if (sendA > 0.f) { m_auxBuf[0][size_t(2 * i)] += a * sendA; m_auxBuf[0][size_t(2 * i + 1)] += b * sendA; }
+            if (sendB > 0.f) { m_auxBuf[1][size_t(2 * i)] += a * sendB; m_auxBuf[1][size_t(2 * i + 1)] += b * sendB; }
             const float l = a * pl, r = b * pr;
             out[2 * i] += l;
             out[2 * i + 1] += r;

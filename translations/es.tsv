@@ -163,3 +163,37 @@ Fade In	Fundido de entrada
 Fade Out	Fundido de salida
 Reverse	Invertir
 Normalize	Normalizar
+# v0.6
+Automation	Automatización
+Automation Parameter	Parámetro de automatización
+Volume	Volumen
+Pan	Panorama
+Send A	Envío A
+Send B	Envío B
+Marker %1	Marcador %1
+Add Marker	Añadir marcador
+Next Marker	Marcador siguiente
+Previous Marker	Marcador anterior
+Rename Marker	Renombrar marcador
+Rename Marker…	Renombrar marcador…
+Delete Marker	Eliminar marcador
+Add Marker Here	Añadir marcador aquí
+Name	Nombre
+Recover Project	Recuperar proyecto
+MiniDAW did not close properly last time. Restore the last autosaved project?	MiniDAW no se cerró correctamente la última vez. ¿Restaurar el último proyecto guardado automáticamente?
+Recovered the autosaved project. Please save it.	Se recuperó el proyecto guardado automáticamente. Guárdalo.
+Autosave every	Guardado automático cada
+ min	 min
+Off	Desactivado
+Open Recent	Abrir reciente
+Clear Menu	Borrar menú
+Tap Tempo	Tap tempo
+Tempo: %1 BPM	Tempo: %1 BPM
+Move Track Up	Subir pista
+Move Track Down	Bajar pista
+Track Color…	Color de la pista…
+Track Color	Color de la pista
+Mute / Unmute Region	Silenciar / reactivar región
+Chorus	Chorus
+Filter	Filtro
+MiniDAW Plug-ins	Plug-ins de MiniDAW

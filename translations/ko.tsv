@@ -227,3 +227,37 @@ Fade In	페이드 인
 Fade Out	페이드 아웃
 Reverse	리버스
 Normalize	노멀라이즈
+# v0.6
+Automation	오토메이션
+Automation Parameter	오토메이션 파라미터
+Volume	볼륨
+Pan	팬
+Send A	센드 A
+Send B	센드 B
+Marker %1	마커 %1
+Add Marker	마커 추가
+Next Marker	다음 마커
+Previous Marker	이전 마커
+Rename Marker	마커 이름 변경
+Rename Marker…	마커 이름 변경…
+Delete Marker	마커 삭제
+Add Marker Here	여기에 마커 추가
+Name	이름
+Recover Project	프로젝트 복구
+MiniDAW did not close properly last time. Restore the last autosaved project?	MiniDAW가 지난번에 정상적으로 종료되지 않았습니다. 마지막 자동 저장본을 복구할까요?
+Recovered the autosaved project. Please save it.	자동 저장된 프로젝트를 복구했습니다. 저장해 주세요.
+Autosave every	자동 저장 간격
+ min	 분
+Off	끔
+Open Recent	최근 프로젝트 열기
+Clear Menu	메뉴 지우기
+Tap Tempo	탭 템포
+Tempo: %1 BPM	템포: %1 BPM
+Move Track Up	트랙 위로 이동
+Move Track Down	트랙 아래로 이동
+Track Color…	트랙 색상…
+Track Color	트랙 색상
+Mute / Unmute Region	리전 음소거 / 해제
+Chorus	코러스
+Filter	필터
+MiniDAW Plug-ins	MiniDAW 플러그인

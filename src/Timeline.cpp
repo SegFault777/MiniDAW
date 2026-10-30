@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "Timeline.h"
 
+#include <QColorDialog>
 #include <QDragEnterEvent>
+#include <QFontMetrics>
 #include <QDropEvent>
 #include <QFileInfo>
 #include <QInputDialog>
@@ -91,14 +93,16 @@ QRect Timeline::muteRect(int i) const { return QRect(46, laneY(i) + kLaneH - 28,
 QRect Timeline::soloRect(int i) const { return QRect(74, laneY(i) + kLaneH - 28, 24, 18); }
 QRect Timeline::armRect(int i) const { return QRect(102, laneY(i) + kLaneH - 28, 24, 18); }
 
-float Timeline::yToVolume(int y, int lane) const {
+float Timeline::yToAuto(int y, int lane) const {
     const int top = laneY(lane) + 6, bottom = laneY(lane) + kLaneH - 6;
-    return std::clamp(1.5f * (1.f - float(y - top) / float(bottom - top)), 0.f, 1.5f);
+    const auto [lo, hi] = autoRange(m_autoParam);
+    return std::clamp(lo + (hi - lo) * (1.f - float(y - top) / float(bottom - top)), lo, hi);
 }
 
-int Timeline::volumeToY(float v, int lane) const {
+int Timeline::autoToY(float v, int lane) const {
     const int top = laneY(lane) + 6, bottom = laneY(lane) + kLaneH - 6;
-    return bottom - int(v / 1.5f * float(bottom - top));
+    const auto [lo, hi] = autoRange(m_autoParam);
+    return bottom - int((v - lo) / (hi - lo) * float(bottom - top));
 }
 
 int Timeline::bpmToY(double bpm) const {   // tempo lane scale: 40 .. 240 bpm
@@ -174,6 +178,11 @@ void Timeline::setAutomationMode(bool on) {
     update();
 }
 
+void Timeline::setAutoParam(AutoParam p) {
+    m_autoParam = p;
+    update();
+}
+
 void Timeline::showTempoTrack(bool on) {
     m_showTempo = on;
     resizeEvent(nullptr);
@@ -219,6 +228,13 @@ void Timeline::duplicateSelectedTrack() {
     if (idx >= 0) selectTrack(idx);
 }
 
+void Timeline::toggleMuteSelected() {
+    if (m_selTrack < 0 || m_selRegion < 0) return;
+    const auto trk = m_e->snapshot();
+    if (m_selTrack >= int(trk.size()) || m_selRegion >= int(trk[size_t(m_selTrack)].regions.size())) return;
+    m_e->setRegionMute(m_selTrack, m_selRegion, !trk[size_t(m_selTrack)].regions[size_t(m_selRegion)].mute);
+}
+
 void Timeline::regionMenu(const QPoint& globalPos, int track, int region, double beat) {
     QMenu menu(this);
     const bool has = region >= 0;
@@ -227,9 +243,10 @@ void Timeline::regionMenu(const QPoint& globalPos, int track, int region, double
     QAction* paste = menu.addAction(Timeline::tr("Paste"));
     menu.addSeparator();
     QAction* dup = menu.addAction(Timeline::tr("Duplicate Region"));
+    QAction* mute = menu.addAction(Timeline::tr("Mute / Unmute Region"));
     QAction* split = menu.addAction(Timeline::tr("Split at Playhead"));
     QAction* del = menu.addAction(Timeline::tr("Delete"));
-    for (QAction* a : {cut, copy, dup, split, del}) a->setEnabled(has);
+    for (QAction* a : {cut, copy, dup, mute, split, del}) a->setEnabled(has);
     paste->setEnabled(m_e->hasClipboard());
     QAction* a = menu.exec(globalPos);
     if (!a) return;
@@ -239,8 +256,53 @@ void Timeline::regionMenu(const QPoint& globalPos, int track, int region, double
         const int idx = m_e->pasteRegion(track, beat);   // pasted where the mouse was clicked
         if (idx >= 0) selectRegion(track, idx);
     } else if (a == dup) duplicateSelected();
+    else if (a == mute) toggleMuteSelected();
     else if (a == split) splitAtPlayhead();
     else if (a == del) deleteSelected();
+    update();
+}
+
+// ---------------------------------------------------------------- markers
+static QFont markerFont(const QFont& base) {
+    QFont f = base;
+    f.setPixelSize(9);
+    f.setBold(true);
+    return f;
+}
+
+QRect Timeline::markerRect(const Marker& m, const QFontMetrics& fm) const {
+    return QRect(beatToX(m.beat), 1, fm.horizontalAdvance(m.name) + 12, kMarkerH - 2);
+}
+
+int Timeline::markerAt(const std::vector<Marker>& marks, QPoint pt) const {
+    const QFontMetrics fm(markerFont(font()));
+    for (int k = int(marks.size()) - 1; k >= 0; --k)
+        if (markerRect(marks[size_t(k)], fm).adjusted(-2, -1, 2, 1).contains(pt)) return k;
+    return -1;
+}
+
+void Timeline::renameMarkerDialog(int index) {
+    const auto marks = m_e->markers();
+    if (index < 0 || index >= int(marks.size())) return;
+    bool ok = false;
+    const QString name = QInputDialog::getText(this, Timeline::tr("Rename Marker"), Timeline::tr("Name"), QLineEdit::Normal, marks[size_t(index)].name, &ok);
+    if (ok) m_e->renameMarker(index, name);
+}
+
+void Timeline::markerMenu(const QPoint& globalPos, int index, double beat) {
+    QMenu menu(this);
+    QAction *ren = nullptr, *del = nullptr, *add = nullptr;
+    if (index >= 0) {
+        ren = menu.addAction(Timeline::tr("Rename Marker…"));
+        del = menu.addAction(Timeline::tr("Delete Marker"));
+    } else {
+        add = menu.addAction(Timeline::tr("Add Marker Here"));
+    }
+    QAction* a = menu.exec(globalPos);
+    if (!a) return;
+    if (a == ren) renameMarkerDialog(index);
+    else if (a == del) { m_markerIdx = -1; m_e->removeMarker(index); }
+    else if (a == add) m_markerIdx = m_e->addMarker(beat);
     update();
 }
 
@@ -362,7 +424,8 @@ void Timeline::paintEvent(QPaintEvent*) {
                     p.drawLine(QPoint(xo, body.top()), QPoint(r.right() - 1, body.bottom()));
                 }
             }
-            QString label = rg.name;
+            if (rg.mute) p.fillRect(r.adjusted(1, 1, -1, -1), QColor(24, 24, 28, 150));   // muted regions look dimmed
+            QString label = rg.mute ? QString("(M) ") + rg.name : rg.name;
             if (!rg.midi && rg.gainDb != 0.f) label += QString("  %1%2 dB").arg(rg.gainDb > 0 ? "+" : "").arg(double(rg.gainDb), 0, 'f', 1);
             if (rg.follow) label += QString("  ·  %1 bpm").arg(rg.sourceBpm, 0, 'f', 0);
             if (std::fabs(rg.semitones) > 0.01) label += QString("  %1%2 st").arg(rg.semitones > 0 ? "+" : "").arg(rg.semitones, 0, 'f', 0);
@@ -371,22 +434,26 @@ void Timeline::paintEvent(QPaintEvent*) {
                        fontMetrics().elidedText(label, Qt::ElideRight, r.width() - 10));
         }
 
-        if (m_autoMode) {   // volume automation overlay
+        if (m_autoMode) {   // automation overlay of the chosen parameter
+            const auto& pts = t.autoOf(m_autoParam);
+            static const char* const kNames[4] = {"Volume", "Pan", "Send A", "Send B"};
+            p.setPen(theme::kYellow);
+            p.drawText(QPoint(kHeaderW + 6, y + 14), QObject::tr(kNames[int(m_autoParam)]));
             p.setBrush(Qt::NoBrush);
-            if (t.volAuto.empty()) {
+            if (pts.empty()) {
                 p.setPen(QPen(theme::kYellow, 1, Qt::DashLine));
-                p.drawLine(kHeaderW, volumeToY(t.volume, i), W, volumeToY(t.volume, i));
+                p.drawLine(kHeaderW, autoToY(t.baseValue(m_autoParam), i), W, autoToY(t.baseValue(m_autoParam), i));
             } else {
                 p.setPen(QPen(theme::kYellow, 2));
-                int px = kHeaderW, py = volumeToY(t.volAuto.front().value, i);
-                for (const AutoPoint& a : t.volAuto) {
-                    const int ax = beatToX(a.beat), ay = volumeToY(a.value, i);
+                int px = kHeaderW, py = autoToY(pts.front().value, i);
+                for (const AutoPoint& a : pts) {
+                    const int ax = beatToX(a.beat), ay = autoToY(a.value, i);
                     p.drawLine(px, py, ax, ay);
                     px = ax; py = ay;
                 }
                 p.drawLine(px, py, W, py);
                 p.setBrush(theme::kYellow);
-                for (const AutoPoint& a : t.volAuto) p.drawEllipse(QPoint(beatToX(a.beat), volumeToY(a.value, i)), 4, 4);
+                for (const AutoPoint& a : pts) p.drawEllipse(QPoint(beatToX(a.beat), autoToY(a.value, i)), 4, 4);
             }
         }
     }
@@ -476,8 +543,8 @@ void Timeline::paintEvent(QPaintEvent*) {
     forEachGrid([&](double beat, int bar) {
         const int x = beatToX(beat);
         p.setPen(text);
-        p.drawLine(x, bar ? 6 : kRulerH - 9, x, kRulerH);
-        if (bar && (bar - 1) % barStep == 0) p.drawText(x + 4, 17, QString::number(bar));
+        p.drawLine(x, bar ? kMarkerH + 6 : kRulerH - 9, x, kRulerH);
+        if (bar && (bar - 1) % barStep == 0) p.drawText(x + 4, kMarkerH + 17, QString::number(bar));
     });
     for (const dsp::MeterPoint& mp : tm->meterPoints()) {   // time signature markers
         const int x = beatToX(tm->barStart(mp.bar));
@@ -486,6 +553,21 @@ void Timeline::paintEvent(QPaintEvent*) {
         p.drawRoundedRect(QRect(x + 1, kRulerH - 15, 28, 13), 3, 3);
         p.setPen(Qt::white);
         p.drawText(QRect(x + 1, kRulerH - 15, 28, 13), Qt::AlignCenter, QString("%1/%2").arg(mp.num).arg(mp.den));
+    }
+    {   // marker flags along the top of the ruler
+        const QFont mf = markerFont(font());
+        const QFontMetrics mfm(mf);
+        p.setFont(mf);
+        const auto marks = m_e->markers();
+        for (size_t k = 0; k < marks.size(); ++k) {
+            const QRect mr = markerRect(marks[k], mfm);
+            p.setPen(Qt::NoPen);
+            p.setBrush(int(k) == m_markerIdx ? QColor(255, 150, 90) : QColor(214, 95, 70));
+            p.drawRoundedRect(mr, 2, 2);
+            p.setPen(Qt::white);
+            p.drawText(mr, Qt::AlignCenter, marks[k].name);
+        }
+        p.setFont(font());
     }
 
     // Playhead.
@@ -537,6 +619,24 @@ void Timeline::mousePressEvent(QMouseEvent* e) {
     const QPoint pt = e->position().toPoint();
     if (pt.x() > width() - m_vbar->width()) return;
 
+    // Marker strip: click selects / drags a marker, right click opens its menu.
+    if (pt.y() < kMarkerH && pt.x() >= kHeaderW) {
+        const auto marks = m_e->markers();
+        const int mi = markerAt(marks, pt);
+        if (e->button() == Qt::RightButton) {
+            markerMenu(e->globalPosition().toPoint(), mi, snapBeat(xToBeat(pt.x())));
+            return;
+        }
+        if (mi >= 0 && e->button() == Qt::LeftButton) {
+            m_markerIdx = mi;
+            m_e->checkpoint();
+            m_dragOff = xToBeat(pt.x()) - marks[size_t(mi)].beat;
+            m_drag = Drag::Marker;
+            m_e->seekBeats(marks[size_t(mi)].beat);
+            update();
+            return;
+        }
+    }
     // Ruler: left drag moves the playhead, right drag defines the cycle range.
     if (pt.y() < kRulerH && pt.x() >= kHeaderW) {
         if (e->button() == Qt::LeftButton) {
@@ -565,12 +665,26 @@ void Timeline::mousePressEvent(QMouseEvent* e) {
             QMenu menu(this);
             QAction* ren = menu.addAction(Timeline::tr("Rename Track…"));
             QAction* dupTrack = menu.addAction(Timeline::tr("Duplicate Track"));
+            QAction* color = menu.addAction(Timeline::tr("Track Color…"));
+            QAction* up = menu.addAction(Timeline::tr("Move Track Up"));
+            QAction* down = menu.addAction(Timeline::tr("Move Track Down"));
+            up->setEnabled(ti > 0);
+            down->setEnabled(ti + 1 < int(trk.size()));
             QAction* del = menu.addAction(Timeline::tr("Delete Track"));
             QAction* a = menu.exec(e->globalPosition().toPoint());
             if (a == ren) {
                 bool ok = false;
                 const QString n = QInputDialog::getText(this, Timeline::tr("Rename Track"), Timeline::tr("Track name:"), QLineEdit::Normal, t.name, &ok);
                 if (ok && !n.isEmpty()) m_e->renameTrack(ti, n);
+            } else if (a == color) {
+                const QColor c = QColorDialog::getColor(t.color, this, Timeline::tr("Track Color"));
+                if (c.isValid()) m_e->setTrackColor(ti, c);
+            } else if (a == up) {
+                m_e->moveTrack(ti, ti - 1);
+                m_selTrack = ti - 1;
+            } else if (a == down) {
+                m_e->moveTrack(ti, ti + 1);
+                m_selTrack = ti + 1;
             } else if (a == dupTrack) {
                 const int idx = m_e->duplicateTrack(ti);
                 if (idx >= 0) m_selTrack = idx;
@@ -588,22 +702,22 @@ void Timeline::mousePressEvent(QMouseEvent* e) {
 
     // Automation mode: click adds or drags a breakpoint, right click removes it.
     if (m_autoMode) {
-        std::vector<AutoPoint> pts = t.volAuto;
+        std::vector<AutoPoint> pts = t.autoOf(m_autoParam);
         int hit = -1;
         for (size_t k = 0; k < pts.size(); ++k)
-            if (std::abs(beatToX(pts[k].beat) - pt.x()) <= 6 && std::abs(volumeToY(pts[k].value, ti) - pt.y()) <= 6) hit = int(k);
+            if (std::abs(beatToX(pts[k].beat) - pt.x()) <= 6 && std::abs(autoToY(pts[k].value, ti) - pt.y()) <= 6) hit = int(k);
         m_selTrack = ti;
         m_e->checkpoint();
         if (e->button() == Qt::RightButton) {
-            if (hit >= 0) { pts.erase(pts.begin() + hit); m_e->setVolAuto(ti, pts); }
+            if (hit >= 0) { pts.erase(pts.begin() + hit); m_e->setAuto(ti, m_autoParam, pts); }
             return;
         }
         if (hit < 0) {
-            pts.push_back({snapBeat(xToBeat(pt.x())), yToVolume(pt.y(), ti)});
+            pts.push_back({snapBeat(xToBeat(pt.x())), yToAuto(pt.y(), ti)});
             std::sort(pts.begin(), pts.end(), [](const AutoPoint& a, const AutoPoint& b) { return a.beat < b.beat; });
             for (size_t k = 0; k < pts.size(); ++k)
                 if (std::abs(pts[k].beat - snapBeat(xToBeat(pt.x()))) < 1e-9) hit = int(k);
-            m_e->setVolAuto(ti, pts);
+            m_e->setAuto(ti, m_autoParam, pts);
         }
         m_autoIdx = hit;
         m_drag = Drag::AutoPoint;
@@ -638,6 +752,7 @@ void Timeline::mouseMoveEvent(QMouseEvent* e) {
     switch (m_drag) {
     case Drag::Playhead: m_e->seekBeats(m_snap ? snapBeat(xToBeat(pt.x())) : std::max(0.0, xToBeat(pt.x()))); break;
     case Drag::Move: m_e->moveRegion(m_selTrack, m_selRegion, snapBeat(xToBeat(pt.x()) - m_dragOff)); break;
+    case Drag::Marker: m_markerIdx = m_e->moveMarker(m_markerIdx, snapBeat(xToBeat(pt.x()) - m_dragOff)); break;
     case Drag::Resize: {
         const auto trk = m_e->snapshot();
         if (m_selTrack >= 0 && m_selTrack < int(trk.size()) && m_selRegion >= 0) {
@@ -653,11 +768,11 @@ void Timeline::mouseMoveEvent(QMouseEvent* e) {
         break;
     }
     case Drag::AutoPoint: {
-        auto pts = m_e->snapshot()[size_t(m_selTrack)].volAuto;
+        auto pts = m_e->snapshot()[size_t(m_selTrack)].autoOf(m_autoParam);
         if (m_autoIdx >= 0 && m_autoIdx < int(pts.size())) {
             pts[size_t(m_autoIdx)].beat = snapBeat(xToBeat(pt.x()));
-            pts[size_t(m_autoIdx)].value = yToVolume(pt.y(), m_selTrack);
-            m_e->setVolAuto(m_selTrack, pts);
+            pts[size_t(m_autoIdx)].value = yToAuto(pt.y(), m_selTrack);
+            m_e->setAuto(m_selTrack, m_autoParam, pts);
         }
         break;
     }
@@ -687,6 +802,13 @@ void Timeline::mouseReleaseEvent(QMouseEvent*) {
 
 void Timeline::mouseDoubleClickEvent(QMouseEvent* e) {
     const QPoint pt = e->position().toPoint();
+    if (pt.y() < kMarkerH && pt.x() >= kHeaderW) {   // double-click: rename a marker or add one
+        const int mi = markerAt(m_e->markers(), pt);
+        if (mi >= 0) renameMarkerDialog(mi);
+        else m_markerIdx = m_e->addMarker(snapBeat(xToBeat(pt.x())));
+        update();
+        return;
+    }
     const auto trk = m_e->snapshot();
     int t, r;
     bool edge;

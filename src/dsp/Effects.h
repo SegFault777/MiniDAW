@@ -22,7 +22,7 @@ public:
     std::atomic<bool> bypass{false};
 };
 
-/// Creates an effect by id: "eq", "comp", "echo", "reverb", "drive", "limiter".
+/// Creates an effect by id: "eq", "comp", "echo", "reverb", "drive", "chorus", "filter", "limiter".
 std::shared_ptr<Effect> createEffect(const std::string& id);
 
 /// Ids of the effects that can be inserted on a channel strip.
