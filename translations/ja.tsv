@@ -197,3 +197,60 @@ Mute / Unmute Region	リージョンのミュート／解除
 Chorus	コーラス
 Filter	フィルター
 MiniDAW Plug-ins	MiniDAW プラグイン
+# v0.7
+Bounce in Place	その場でバウンス
+Arpeggiate Region…	リージョンをアルペジオ化…
+Quantize Region…	リージョンをクオンタイズ…
+Scale Quantize…	スケール クオンタイズ…
+Humanize…	ヒューマナイズ…
+Chord Trigger…	コード トリガー…
+MIDI Transform	MIDI トランスフォーム
+Select a MIDI region first.	先にMIDIリージョンを選択してください。
+Bounced the track to a new audio track.	トラックを新しいオーディオトラックにバウンスしました。
+This track has no regions to bounce.	バウンスするリージョンがありません。
+The track is silent, nothing was bounced.	トラックが無音のため、バウンスしませんでした。
+%1 (Bounce)	%1 (バウンス)
+Arpeggiate Region	リージョンのアルペジオ化
+Pattern	パターン
+Up	アップ
+Down	ダウン
+Up & Down	アップ＆ダウン
+Down & Up	ダウン＆アップ
+Random	ランダム
+As Played	演奏順
+Rate	レート
+Octave Range	オクターブ範囲
+Gate	ゲート
+Quantize Region	リージョンのクオンタイズ
+Strength	強さ
+50 % is straight, 66 % gives a triplet feel.	50 % はストレート、66 % は三連のノリです。
+Quantize note lengths	ノートの長さもクオンタイズ
+Scale Quantize	スケール クオンタイズ
+Key	キー
+Scale	スケール
+Major	メジャー
+Minor	マイナー
+Harmonic Minor	ハーモニックマイナー
+Melodic Minor	メロディックマイナー
+Dorian	ドリアン
+Phrygian	フリジアン
+Lydian	リディアン
+Mixolydian	ミクソリディアン
+Major Pentatonic	メジャーペンタトニック
+Minor Pentatonic	マイナーペンタトニック
+Blues	ブルース
+Chromatic	クロマチック
+Humanize	ヒューマナイズ
+Timing	タイミング
+Largest timing change as a percentage of a 1/16 note.	16分音符に対する割合で表した最大のタイミング変化です。
+Chord Trigger	コード トリガー
+Chord	コード
+Diminished	ディミニッシュ
+Augmented	オーギュメント
+Suspended 2nd	サス2
+Suspended 4th	サス4
+Major 7th	メジャー7th
+Minor 7th	マイナー7th
+Dominant 7th	ドミナント7th
+Octave	オクターブ
+Inversion	転回

@@ -197,3 +197,60 @@ Mute / Unmute Region	Silenciar / reactivar región
 Chorus	Chorus
 Filter	Filtro
 MiniDAW Plug-ins	Plug-ins de MiniDAW
+# v0.7
+Bounce in Place	Bounce en el sitio
+Arpeggiate Region…	Arpegiar región…
+Quantize Region…	Cuantizar región…
+Scale Quantize…	Cuantizar a escala…
+Humanize…	Humanizar…
+Chord Trigger…	Disparador de acordes…
+MIDI Transform	Transformación MIDI
+Select a MIDI region first.	Selecciona primero una región MIDI.
+Bounced the track to a new audio track.	Se hizo el bounce de la pista a una nueva pista de audio.
+This track has no regions to bounce.	La pista no tiene regiones para el bounce.
+The track is silent, nothing was bounced.	La pista está en silencio; no se hizo el bounce.
+%1 (Bounce)	%1 (bounce)
+Arpeggiate Region	Arpegiar región
+Pattern	Patrón
+Up	Ascendente
+Down	Descendente
+Up & Down	Ascendente y descendente
+Down & Up	Descendente y ascendente
+Random	Aleatorio
+As Played	Orden tocado
+Rate	Velocidad
+Octave Range	Rango de octavas
+Gate	Puerta
+Quantize Region	Cuantizar región
+Strength	Intensidad
+50 % is straight, 66 % gives a triplet feel.	50 % es recto, 66 % da sensación de tresillo.
+Quantize note lengths	Cuantizar también la duración de las notas
+Scale Quantize	Cuantizar a escala
+Key	Tonalidad
+Scale	Escala
+Major	Mayor
+Minor	Menor
+Harmonic Minor	Menor armónica
+Melodic Minor	Menor melódica
+Dorian	Dórico
+Phrygian	Frigio
+Lydian	Lidio
+Mixolydian	Mixolidio
+Major Pentatonic	Pentatónica mayor
+Minor Pentatonic	Pentatónica menor
+Blues	Blues
+Chromatic	Cromática
+Humanize	Humanizar
+Timing	Tiempo
+Largest timing change as a percentage of a 1/16 note.	Mayor cambio de tiempo como porcentaje de una semicorchea.
+Chord Trigger	Disparador de acordes
+Chord	Acorde
+Diminished	Disminuido
+Augmented	Aumentado
+Suspended 2nd	Suspendido 2.ª
+Suspended 4th	Suspendido 4.ª
+Major 7th	Mayor 7.ª
+Minor 7th	Menor 7.ª
+Dominant 7th	Dominante 7.ª
+Octave	Octava
+Inversion	Inversión

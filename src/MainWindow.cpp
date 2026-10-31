@@ -46,7 +46,7 @@
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.6"
+#define MINIDAW_VERSION "0.7"
 #endif
 
 namespace {
@@ -288,6 +288,12 @@ void MainWindow::buildActions() {
     aTempoTrack = make(tr("Show Tempo Track"), QKeySequence(Qt::Key_G), true);
     aMeter = make(tr("Time Signature…"), {});
 
+    aBounceInPlace = make(tr("Bounce in Place"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_B));
+    aArp = make(tr("Arpeggiate Region…"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_A));
+    aQuantize = make(tr("Quantize Region…"), QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Q));
+    aScaleQ = make(tr("Scale Quantize…"), QKeySequence());
+    aHumanize = make(tr("Humanize…"), QKeySequence());
+    aChord = make(tr("Chord Trigger…"), QKeySequence());
     aTapTempo = make(tr("Tap Tempo"), QKeySequence(Qt::SHIFT | Qt::Key_T));
     aMoveUp = make(tr("Move Track Up"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_Up));
     aMoveDown = make(tr("Move Track Down"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_Down));
@@ -365,6 +371,23 @@ void MainWindow::buildActions() {
     connect(aTempoTrack, &QAction::toggled, this, [this](bool on) { m_timeline->showTempoTrack(on); });
     connect(aMeter, &QAction::triggered, this, &MainWindow::meterDialog);
 
+    connect(aBounceInPlace, &QAction::triggered, this, [this] {
+        const int t = m_timeline->selectedTrack();
+        if (t < 0) return;
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        m_engine.pause();
+        const int nt = m_engine.bounceTrackInPlace(t);
+        QApplication::restoreOverrideCursor();
+        if (nt >= 0) {
+            m_timeline->selectTrack(nt);
+            statusBar()->showMessage(tr("Bounced the track to a new audio track."), 5000);
+        }
+    });
+    connect(aArp, &QAction::triggered, this, &MainWindow::arpeggiateDialog);
+    connect(aScaleQ, &QAction::triggered, this, &MainWindow::scaleDialog);
+    connect(aHumanize, &QAction::triggered, this, &MainWindow::humanizeDialog);
+    connect(aChord, &QAction::triggered, this, &MainWindow::chordDialog);
+    connect(aQuantize, &QAction::triggered, this, &MainWindow::quantizeDialog);
     connect(aTapTempo, &QAction::triggered, this, [this] {
         const qint64 now = QDateTime::currentMSecsSinceEpoch();
         if (!m_taps.empty() && now - m_taps.back() > 2000) m_taps.clear();   // a pause starts a new measurement
@@ -440,6 +463,11 @@ void MainWindow::buildMenus() {
     edit->addSeparator();
     edit->addActions({aCut, aCopy, aPaste, aMuteRegion});
     edit->addSeparator();
+    {   // Logic Pro style MIDI transformations of the selected region
+        QMenu* midi = edit->addMenu(tr("MIDI Transform"));
+        midi->addActions({aQuantize, aScaleQ, aHumanize, aChord, aArp});
+    }
+    edit->addSeparator();
     edit->addActions({aDelete, aDuplicate, aSplit});
     edit->addSeparator();
     edit->addActions({aSnap, aAutomation});
@@ -462,7 +490,7 @@ void MainWindow::buildMenus() {
     QMenu* track = menuBar()->addMenu(tr("&Track"));
     track->addActions({aNewAudio, aNewInstrument, aNewDrummer, aNewDrums});
     track->addSeparator();
-    track->addActions({aDuplicateTrack, aMoveUp, aMoveDown, aDeleteTrack});
+    track->addActions({aDuplicateTrack, aBounceInPlace, aMoveUp, aMoveDown, aDeleteTrack});
 
     QMenu* transport = menuBar()->addMenu(tr("T&ransport"));
     transport->addActions({aPlay, aStop, aRecord, aRewind});
@@ -782,6 +810,191 @@ void MainWindow::importDialog() {
     const QStringList files = QFileDialog::getOpenFileNames(this, tr("Import Audio"), {},
                                                             tr("Audio (*.wav *.mp3 *.flac *.ogg *.m4a *.aac);;All files (*)"));
     for (const QString& f : files) m_engine.importAudio(f, -1, m_engine.positionBeats());
+}
+
+/// The selected region, or false (with a hint in the status bar) when no MIDI region is selected.
+static bool selectedMidiRegion(MainWindow* w, Timeline* tl, Engine& e, int& t, int& r) {
+    t = tl->selectedTrack();
+    r = tl->selectedRegion();
+    const auto tracks = e.snapshot();
+    if (t >= 0 && r >= 0 && t < int(tracks.size()) && r < int(tracks[size_t(t)].regions.size()) && tracks[size_t(t)].regions[size_t(r)].midi) return true;
+    w->statusBar()->showMessage(MainWindow::tr("Select a MIDI region first."), 5000);
+    return false;
+}
+
+void MainWindow::arpeggiateDialog() {   // Logic Pro: Arpeggiator
+    int t, r;
+    if (!selectedMidiRegion(this, m_timeline, m_engine, t, r)) return;
+    QSettings s;
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Arpeggiate Region"));
+    auto* form = new QFormLayout(&dlg);
+    auto* pattern = new QComboBox;
+    pattern->addItems({tr("Up"), tr("Down"), tr("Up & Down"), tr("Down & Up"), tr("Random"), tr("As Played")});
+    pattern->setCurrentIndex(std::clamp(s.value("arp/pattern", 0).toInt(), 0, 5));
+    auto* rate = new QComboBox;
+    rate->addItems({"1/4", "1/8", "1/16", "1/32"});
+    rate->setCurrentIndex(std::clamp(s.value("arp/rate", 2).toInt(), 0, 3));
+    auto* octaves = new QSpinBox;
+    octaves->setRange(1, 4);
+    octaves->setValue(s.value("arp/octaves", 1).toInt());
+    auto* gate = new QSpinBox;
+    gate->setRange(5, 100);
+    gate->setSuffix(" %");
+    gate->setValue(s.value("arp/gate", 80).toInt());
+    form->addRow(tr("Pattern"), pattern);
+    form->addRow(tr("Rate"), rate);
+    form->addRow(tr("Octave Range"), octaves);
+    form->addRow(tr("Gate"), gate);
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+    s.setValue("arp/pattern", pattern->currentIndex());
+    s.setValue("arp/rate", rate->currentIndex());
+    s.setValue("arp/octaves", octaves->value());
+    s.setValue("arp/gate", gate->value());
+    static const double kRates[4] = {1.0, 0.5, 0.25, 0.125};
+    ArpParams p;
+    p.pattern = pattern->currentIndex();   // same order as ArpParams::Pattern
+    p.rate = kRates[std::clamp(rate->currentIndex(), 0, 3)];
+    p.octaves = octaves->value();
+    p.gate = gate->value() / 100.0;
+    p.seed = int(QDateTime::currentSecsSinceEpoch() & 0x7fff);
+    m_engine.arpeggiateRegion(t, r, p);
+}
+
+void MainWindow::quantizeDialog() {   // Logic Pro: Quantize with Q-Strength and Q-Swing
+    int t, r;
+    if (!selectedMidiRegion(this, m_timeline, m_engine, t, r)) return;
+    QSettings s;
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Quantize Region"));
+    auto* form = new QFormLayout(&dlg);
+    auto* grid = new QComboBox;
+    grid->addItems({"1/4", "1/8", "1/16", "1/32"});
+    grid->setCurrentIndex(std::clamp(s.value("quant/grid", 2).toInt(), 0, 3));
+    auto* strength = new QSpinBox;
+    strength->setRange(0, 100);
+    strength->setSuffix(" %");
+    strength->setValue(s.value("quant/strength", 100).toInt());
+    auto* swing = new QSpinBox;
+    swing->setRange(50, 75);
+    swing->setSuffix(" %");
+    swing->setValue(s.value("quant/swing", 50).toInt());
+    swing->setToolTip(tr("50 % is straight, 66 % gives a triplet feel."));
+    auto* lengths = new QCheckBox(tr("Quantize note lengths"));
+    lengths->setChecked(s.value("quant/lengths", false).toBool());
+    form->addRow(tr("Grid"), grid);
+    form->addRow(tr("Strength"), strength);
+    form->addRow(tr("Swing"), swing);
+    form->addRow(QString(), lengths);
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+    s.setValue("quant/grid", grid->currentIndex());
+    s.setValue("quant/strength", strength->value());
+    s.setValue("quant/swing", swing->value());
+    s.setValue("quant/lengths", lengths->isChecked());
+    static const double kGrids[4] = {1.0, 0.5, 0.25, 0.125};
+    QuantizeParams p;
+    p.grid = kGrids[std::clamp(grid->currentIndex(), 0, 3)];
+    p.strength = strength->value() / 100.0;
+    p.swing = swing->value() / 100.0;
+    p.lengths = lengths->isChecked();
+    m_engine.quantizeRegion(t, r, p);
+}
+
+void MainWindow::scaleDialog() {   // Logic Pro: Scale Quantizer
+    int t, r;
+    if (!selectedMidiRegion(this, m_timeline, m_engine, t, r)) return;
+    QSettings s;
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Scale Quantize"));
+    auto* form = new QFormLayout(&dlg);
+    auto* key = new QComboBox;
+    key->addItems({"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"});
+    key->setCurrentIndex(std::clamp(s.value("scale/key", 0).toInt(), 0, 11));
+    auto* scale = new QComboBox;
+    scale->addItems({tr("Major"), tr("Minor"), tr("Harmonic Minor"), tr("Melodic Minor"), tr("Dorian"), tr("Phrygian"), tr("Lydian"),
+                     tr("Mixolydian"), tr("Major Pentatonic"), tr("Minor Pentatonic"), tr("Blues"), tr("Chromatic")});
+    scale->setCurrentIndex(std::clamp(s.value("scale/type", 0).toInt(), 0, int(ScaleParams::Count) - 1));
+    form->addRow(tr("Key"), key);
+    form->addRow(tr("Scale"), scale);
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+    s.setValue("scale/key", key->currentIndex());
+    s.setValue("scale/type", scale->currentIndex());
+    ScaleParams p;
+    p.root = key->currentIndex();
+    p.scale = scale->currentIndex();   // same order as ScaleParams::Scale
+    m_engine.scaleQuantizeRegion(t, r, p);
+}
+
+void MainWindow::humanizeDialog() {   // Logic Pro: Humanize
+    int t, r;
+    if (!selectedMidiRegion(this, m_timeline, m_engine, t, r)) return;
+    QSettings s;
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Humanize"));
+    auto* form = new QFormLayout(&dlg);
+    auto* timing = new QSpinBox;
+    timing->setRange(0, 100);
+    timing->setSuffix(" %");
+    timing->setValue(s.value("humanize/timing", 12).toInt());
+    timing->setToolTip(tr("Largest timing change as a percentage of a 1/16 note."));
+    auto* velocity = new QSpinBox;
+    velocity->setRange(0, 60);
+    velocity->setValue(s.value("humanize/velocity", 10).toInt());
+    form->addRow(tr("Timing"), timing);
+    form->addRow(tr("Velocity"), velocity);
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+    s.setValue("humanize/timing", timing->value());
+    s.setValue("humanize/velocity", velocity->value());
+    HumanizeParams p;
+    p.timing = timing->value() / 100.0 * 0.25;
+    p.velocity = velocity->value();
+    p.seed = int(QDateTime::currentSecsSinceEpoch() & 0x7fff);
+    m_engine.humanizeRegion(t, r, p);
+}
+
+void MainWindow::chordDialog() {   // Logic Pro: Chord Trigger
+    int t, r;
+    if (!selectedMidiRegion(this, m_timeline, m_engine, t, r)) return;
+    QSettings s;
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Chord Trigger"));
+    auto* form = new QFormLayout(&dlg);
+    auto* type = new QComboBox;
+    type->addItems({tr("Major"), tr("Minor"), tr("Diminished"), tr("Augmented"), tr("Suspended 2nd"), tr("Suspended 4th"),
+                    tr("Major 7th"), tr("Minor 7th"), tr("Dominant 7th"), tr("Octave")});
+    type->setCurrentIndex(std::clamp(s.value("chord/type", 0).toInt(), 0, int(ChordParams::Count) - 1));
+    auto* inversion = new QSpinBox;
+    inversion->setRange(0, 3);
+    inversion->setValue(s.value("chord/inversion", 0).toInt());
+    form->addRow(tr("Chord"), type);
+    form->addRow(tr("Inversion"), inversion);
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+    s.setValue("chord/type", type->currentIndex());
+    s.setValue("chord/inversion", inversion->value());
+    ChordParams p;
+    p.type = type->currentIndex();   // same order as ChordParams::Type
+    p.inversion = inversion->value();
+    m_engine.chordTriggerRegion(t, r, p);
 }
 
 void MainWindow::exportDialog() {

@@ -1,6 +1,7 @@
 // MiniDAW - a lightweight Logic Pro-inspired digital audio workstation
 // Copyright (C) 2026 MiniDAW contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include "QtBridge.h"
 #include "Panels.h"
 
 #include <QCheckBox>
@@ -285,11 +286,11 @@ void MixerPanel::rebuild() {
         v->addLayout(bh);
 
         auto* name = new QToolButton;   // coloured name tag at the bottom, as in Logic's mixer
-        name->setText(t.name);
-        name->setToolTip(t.name);
+        name->setText(qs(t.name));
+        name->setToolTip(qs(t.name));
         name->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
         name->setFixedHeight(26);
-        name->setStyleSheet(QString("QToolButton{background:%1;border-radius:3px;font-weight:bold;color:white}").arg(t.color.darker(125).name()));
+        name->setStyleSheet(QString("QToolButton{background:%1;border-radius:3px;font-weight:bold;color:white}").arg(qc(t.color).darker(125).name()));
         v->addWidget(name);
 
         m_lay->addWidget(w);
@@ -310,7 +311,7 @@ void MixerPanel::tick() {
         Strip& s = m_strips[i];
         const Track& t = trks[i];
         s.meter->setLevel(t.peakL, t.peakR);
-        if (s.name->text() != t.name) s.name->setText(t.name);
+        if (s.name->text() != qs(t.name)) s.name->setText(qs(t.name));
         if (std::fabs(s.fader->value() - t.volume) > 0.002f) { s.fader->setValue(t.volume); s.db->setText(dbText(t.volume)); }
         if (std::fabs(s.pan->value() - double(t.pan)) > 0.005) s.pan->setValue(t.pan);
         if (s.m->isChecked() != t.mute) { QSignalBlocker b(s.m); s.m->setChecked(t.mute); }
@@ -513,7 +514,7 @@ void Inspector::setSelection(int t, int r) {
     m_regionBox->setVisible(false);
     if (valid) {
         const Track& tk = trks[size_t(t)];
-        m_name->setText(tk.name);
+        m_name->setText(qs(tk.name));
         m_type->setText(tk.type == TrackType::Audio ? tr("Audio track") : tk.type == TrackType::Instrument ? tr("Software Instrument")
                         : tk.type == TrackType::Drums ? tr("Drum Machine") : tr("Drummer"));
         m_fader->setValue(tk.volume);
@@ -550,7 +551,7 @@ void Inspector::setSelection(int t, int r) {
         if (r >= 0 && r < int(tk.regions.size()) && !tk.regions[size_t(r)].midi) {
             const Region& rg = tk.regions[size_t(r)];
             m_regionBox->setVisible(true);
-            m_regionName->setText(rg.name);
+            m_regionName->setText(qs(rg.name));
             m_follow->setChecked(rg.follow);
             m_srcBpm->setValue(rg.sourceBpm);
             m_semis->setValue(int(std::lround(rg.semitones)));

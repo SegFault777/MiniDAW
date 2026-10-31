@@ -5,46 +5,14 @@
 
 #include <QCoreApplication>
 #include <QDir>
-#include <QFile>
 #include <QLocale>
-#include <QTextStream>
 
-namespace {
-QString unescape(const QString& s) {
-    QString out;
-    for (int i = 0; i < s.size(); ++i) {
-        if (s[i] == '\\' && i + 1 < s.size()) {
-            const QChar c = s[++i];
-            out += c == 'n' ? QChar('\n') : c == 't' ? QChar('\t') : c;
-        } else {
-            out += s[i];
-        }
-    }
-    return out;
-}
-}  // namespace
-
-bool FileTranslator::loadFile(const QString& path) {
-    QFile f(path);
-    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
-    QTextStream in(&f);
-    in.setEncoding(QStringConverter::Utf8);
-    m_map.clear();
-    while (!in.atEnd()) {
-        const QString line = in.readLine();
-        if (line.isEmpty() || line.startsWith('#')) continue;
-        const int tab = line.indexOf('\t');
-        if (tab <= 0) continue;
-        const QString tr = unescape(line.mid(tab + 1));
-        if (!tr.isEmpty()) m_map.insert(unescape(line.left(tab)), tr);
-    }
-    return !m_map.isEmpty();
-}
+bool FileTranslator::loadFile(const QString& path) { return m_table.load(path.toStdString()); }
 
 QString FileTranslator::translate(const char*, const char* sourceText, const char*, int) const {
     // The context (class name) is ignored on purpose: one text is translated the same way everywhere.
-    const auto it = m_map.constFind(QString::fromUtf8(sourceText));
-    return it == m_map.constEnd() ? QString() : it.value();   // an empty result means "not translated"
+    const std::string* t = m_table.find(sourceText);
+    return t ? QString::fromStdString(*t) : QString();   // an empty result means "not translated"
 }
 
 namespace i18n {
@@ -58,16 +26,8 @@ QString translationsDir() {
 
 QList<Language> available() {
     QList<Language> langs;
-    const QDir dir(translationsDir());
-    for (const QFileInfo& fi : dir.entryInfoList({"*.tsv"}, QDir::Files, QDir::Name)) {
-        Language l{fi.completeBaseName(), fi.completeBaseName(), fi.absoluteFilePath()};
-        QFile f(l.path);
-        if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            const QString first = QString::fromUtf8(f.readLine()).trimmed();
-            if (first.startsWith("#name\t")) l.name = first.mid(6);
-        }
-        langs << l;
-    }
+    for (const core::LanguageInfo& l : core::findLanguages(translationsDir().toStdString()))
+        langs << Language{QString::fromStdString(l.code), QString::fromStdString(l.name), QString::fromStdString(l.path)};
     return langs;
 }
 
@@ -75,14 +35,9 @@ QString install(const QString& code) {
     const QList<Language> langs = available();
     QString want = code;
     if (want == "auto") {
-        const QString sys = QLocale::system().name();   // for example "ko_KR"
-        want.clear();
-        for (const Language& l : langs)
-            if (l.code == sys) want = l.code;
-        for (const Language& l : langs)
-            if (want.isEmpty() && l.code == sys.section('_', 0, 0)) want = l.code;
-        for (const Language& l : langs)   // any Chinese locale falls back to Simplified Chinese
-            if (want.isEmpty() && sys.startsWith("zh") && l.code.startsWith("zh")) want = l.code;
+        std::vector<core::LanguageInfo> infos;
+        for (const Language& l : langs) infos.push_back({l.code.toStdString(), l.name.toStdString(), l.path.toStdString()});
+        want = QString::fromStdString(core::pickLanguage(infos, QLocale::system().name().toStdString()));   // for example "ko_KR"
     }
     for (const Language& l : langs) {
         if (l.code != want) continue;

@@ -1,6 +1,7 @@
 // MiniDAW - a lightweight Logic Pro-inspired digital audio workstation
 // Copyright (C) 2026 MiniDAW contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include "QtBridge.h"
 #include "PianoRoll.h"
 
 #include <QComboBox>
@@ -90,7 +91,7 @@ protected:
         for (size_t i = 0; i < rg.notes.size(); ++i) {
             const Note& n = rg.notes[i];
             const QRect r(beatX(n.start), pitchY(n.pitch) + 1, std::max(3, int(n.length * m_ppb) - 1), kKeyH - 2);
-            QColor c = trk.color.lighter(80 + n.velocity);
+            QColor c = qc(trk.color).lighter(80 + n.velocity);
             p.setBrush(c);
             p.setPen(int(i) == m_sel ? QPen(Qt::white, 2) : QPen(c.darker(160)));
             p.drawRoundedRect(r, 2, 2);
@@ -137,7 +138,7 @@ protected:
         for (size_t i = 0; i < rg.notes.size(); ++i) {
             const Note& n = rg.notes[i];
             const int h = int((kVelH - 8) * n.velocity / 127.0);
-            p.fillRect(beatX(n.start), areaBottom + kVelH - 4 - h, 5, h, int(i) == m_sel ? QColor(Qt::white) : trk.color);
+            p.fillRect(beatX(n.start), areaBottom + kVelH - 4 - h, 5, h, int(i) == m_sel ? QColor(Qt::white) : qc(trk.color));
         }
     }
 

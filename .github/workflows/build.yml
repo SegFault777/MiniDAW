@@ -23,7 +23,6 @@ jobs:
           host: windows
           target: desktop
           arch: win64_msvc2022_64
-          modules: qtmultimedia
           cache: true
 
       - name: Set up MSVC
@@ -42,7 +41,7 @@ jobs:
         id: ver
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.6-dev' }
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.7-dev' }
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Install Inno Setup

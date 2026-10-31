@@ -4,7 +4,6 @@
 #include "Preferences.h"
 
 #include <algorithm>
-#include <QAudioDevice>
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFileDialog>
@@ -13,8 +12,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QMediaDevices>
 #include <QPushButton>
+#include "platform/Audio.h"
 #include <QSettings>
 #include <QSpinBox>
 #include <QTimer>
@@ -38,7 +37,7 @@ PreferencesDialog::PreferencesDialog(Engine* e, QWidget* parent) : QDialog(paren
     auto* af = new QFormLayout(audio);
     m_device = new QComboBox;
     m_device->addItem(tr("System Default"), QByteArray());
-    for (const QAudioDevice& d : QMediaDevices::audioOutputs()) m_device->addItem(d.description(), d.id());
+    for (const platform::AudioDevice& d : platform::audioOutputs()) m_device->addItem(QString::fromStdString(d.name), QByteArray::fromStdString(d.id));
     const QByteArray savedDev = QByteArray::fromBase64(s.value("audio/device").toString().toLatin1());
     m_device->setCurrentIndex(std::max(0, m_device->findData(savedDev)));
     af->addRow(tr("Output device"), m_device);
@@ -48,7 +47,7 @@ PreferencesDialog::PreferencesDialog(Engine* e, QWidget* parent) : QDialog(paren
     af->addRow(tr("Buffer size"), m_buffer);
     m_input = new QComboBox;
     m_input->addItem(tr("System Default"), QByteArray());
-    for (const QAudioDevice& d : QMediaDevices::audioInputs()) m_input->addItem(d.description(), d.id());
+    for (const platform::AudioDevice& d : platform::audioInputs()) m_input->addItem(QString::fromStdString(d.name), QByteArray::fromStdString(d.id));
     const QByteArray savedIn = QByteArray::fromBase64(s.value("audio/input").toString().toLatin1());
     m_input->setCurrentIndex(std::max(0, m_input->findData(savedIn)));
     af->addRow(tr("Input device"), m_input);

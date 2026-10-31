@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Builds and runs the Qt-free DSP tests (tempo map, time stretching, Drummer, MIDI files, drum kit,
-# fades / WAV export, effects, native plug-in API).
+# fades / WAV export, effects, native plug-in API, and the whole Qt-free core: project model, save / load,
+# autosave, export, bounce in place and MIDI operations).
 # Works with g++ or clang++ on Linux / macOS:  bash tests/run.sh
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
@@ -13,8 +14,12 @@ $CXX -std=c++20 -O2 -Wall -Wextra dsp_effects_tests.cpp $D/Effects.cpp -o /tmp/m
 $CXX -std=c++17 -O2 -fPIC -shared ../plugin-sdk/examples/tremolo.cpp -o /tmp/md_tremolo.so
 $CXX -std=c++17 -O2 -fPIC -shared ../plugin-sdk/examples/bitcrusher.cpp -o /tmp/md_bitcrusher.so
 $CXX -std=c++20 -O2 -Wall -Wextra native_plugin_tests.cpp $D/NativeEffect.cpp -ldl -o /tmp/minidaw_native_tests
+$CXX -std=c++20 -O1 -Wall -Wextra core_tests.cpp ../src/core/*.cpp $D/TempoMap.cpp $D/Stretch.cpp $D/Synth.cpp $D/Effects.cpp $D/DrumKit.cpp $D/Drummer.cpp $D/MidiFile.cpp $D/AudioOps.cpp $D/TempoDetect.cpp -o /tmp/minidaw_core_tests
+$CXX -std=c++20 -O1 -pthread -Wall -Wextra platform_tests.cpp ../src/core/*.cpp ../src/platform/*.cpp $D/TempoMap.cpp $D/Stretch.cpp $D/Synth.cpp $D/Effects.cpp $D/DrumKit.cpp $D/Drummer.cpp $D/MidiFile.cpp $D/AudioOps.cpp $D/TempoDetect.cpp -o /tmp/minidaw_platform_tests
 /tmp/minidaw_timing_tests
 /tmp/minidaw_music_tests
 /tmp/minidaw_audioops_tests
 /tmp/minidaw_effects_tests
 /tmp/minidaw_native_tests
+/tmp/minidaw_core_tests
+/tmp/minidaw_platform_tests

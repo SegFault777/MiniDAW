@@ -2,6 +2,30 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.7] - 2026-10-31
+
+### Changed
+- **Qt-free core.** The engine was split into a platform-independent `core::Session` (`src/core/`: project
+  model, tracks and regions, undo, tempo, transport, recording, offline rendering, bounce, project files,
+  autosave, import / export) and a thin Qt layer. `Engine` keeps the same public API for the user interface
+  and now only provides audio devices, file decoding (`QAudioDecoder`), plug-in hosts and Qt signals.
+- Project files are read and written with MiniDAW's own JSON implementation (`core::Json`); files are
+  handled with `std::filesystem` and UTF-8 paths (`core::Files`); WAV files are read and written without Qt
+  (`core::AudioIO`). The file format is unchanged (still version 3).
+- The model types (`Track`, `Region`, `Note`, `Marker`, ...) use `std::string` and `core::Color` instead of
+  `QString` and `QColor`; `QtBridge.h` converts for the user interface.
+- Offline rendering, bounce and export now run on the core without a sound device. Export streams to disk.
+
+### Added
+- **Bounce in Place** (`Ctrl+Alt+B`, Track menu and track-header menu).
+- **Quantize Region…** with strength and swing (`Ctrl+Shift+Q`).
+- **Arpeggiate Region…** (`Ctrl+Shift+A`): six patterns, rate, octave range and gate.
+- **Scale Quantize…**, **Humanize…** and **Chord Trigger…** (Edit > MIDI Transform).
+- `tests/core_tests.cpp`: JSON, text formatting, WAV files, save / load round trip, undo, clipboard, track
+  duplication, autosave and recovery, export formats, cycle export, normalization, bounce in place (the bounced
+  track renders like the original), pan automation and every MIDI operation. `tests/run.sh` builds and runs
+  everything with g++ or clang++; a new GitHub Actions workflow (`tests.yml`) runs it on Linux.
+
 ## [0.6] - 2026-10-30
 
 ### Added

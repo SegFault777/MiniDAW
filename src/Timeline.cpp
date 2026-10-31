@@ -1,6 +1,7 @@
 // MiniDAW - a lightweight Logic Pro-inspired digital audio workstation
 // Copyright (C) 2026 MiniDAW contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include "QtBridge.h"
 #include "Timeline.h"
 
 #include <QColorDialog>
@@ -271,7 +272,7 @@ static QFont markerFont(const QFont& base) {
 }
 
 QRect Timeline::markerRect(const Marker& m, const QFontMetrics& fm) const {
-    return QRect(beatToX(m.beat), 1, fm.horizontalAdvance(m.name) + 12, kMarkerH - 2);
+    return QRect(beatToX(m.beat), 1, fm.horizontalAdvance(qs(m.name)) + 12, kMarkerH - 2);
 }
 
 int Timeline::markerAt(const std::vector<Marker>& marks, QPoint pt) const {
@@ -285,7 +286,7 @@ void Timeline::renameMarkerDialog(int index) {
     const auto marks = m_e->markers();
     if (index < 0 || index >= int(marks.size())) return;
     bool ok = false;
-    const QString name = QInputDialog::getText(this, Timeline::tr("Rename Marker"), Timeline::tr("Name"), QLineEdit::Normal, marks[size_t(index)].name, &ok);
+    const QString name = QInputDialog::getText(this, Timeline::tr("Rename Marker"), Timeline::tr("Name"), QLineEdit::Normal, qs(marks[size_t(index)].name), &ok);
     if (ok) m_e->renameMarker(index, name);
 }
 
@@ -351,7 +352,7 @@ void Timeline::paintEvent(QPaintEvent*) {
         p.setClipRect(kHeaderW, std::max(top, y), W - kHeaderW, kLaneH);
 
         if (t.type == TrackType::Drums) {
-            QColor c = t.color;
+            QColor c = qc(t.color);
             c.setAlpha(150);
             const int k0 = std::max(0, int(std::floor(beatL * 4))), k1 = int(std::ceil(beatR * 4));
             for (int k = k0; k <= k1; ++k) {
@@ -371,12 +372,12 @@ void Timeline::paintEvent(QPaintEvent*) {
             if (x1 < kHeaderW || x0 > W) continue;
             const QRect r(x0, y + 3, std::max(3, x1 - x0), kLaneH - 7);
             const bool sel = (i == m_selTrack && int(ri) == m_selRegion);
-            QColor fill = t.color;
+            QColor fill = qc(t.color);
             fill.setAlpha(sel ? 170 : 105);
-            p.setPen(sel ? QPen(Qt::white, 2) : QPen(t.color.lighter(135)));
+            p.setPen(sel ? QPen(Qt::white, 2) : QPen(qc(t.color).lighter(135)));
             p.setBrush(fill);
             p.drawRoundedRect(r, 4, 4);
-            p.fillRect(QRect(r.left() + 1, r.top() + 1, r.width() - 2, 15), t.color.darker(sel ? 105 : 135));
+            p.fillRect(QRect(r.left() + 1, r.top() + 1, r.width() - 2, 15), qc(t.color).darker(sel ? 105 : 135));
 
             const QRect body(r.left() + 1, r.top() + 17, r.width() - 2, r.height() - 19);
             if (rg.midi && !rg.notes.empty()) {
@@ -384,14 +385,14 @@ void Timeline::paintEvent(QPaintEvent*) {
                 for (const Note& n : rg.notes) { lo = std::min(lo, n.pitch); hi = std::max(hi, n.pitch); }
                 const double rowH = double(body.height()) / double(hi - lo + 1);
                 p.setPen(Qt::NoPen);
-                p.setBrush(t.color.lighter(185));
+                p.setBrush(qc(t.color).lighter(185));
                 for (const Note& n : rg.notes) {
                     if (n.start >= rg.lengthBeats) continue;
                     p.drawRect(QRectF(beatToX(rg.start + n.start), body.top() + double(hi - n.pitch) * rowH,
                                       std::max(2.0, n.length * m_ppb - 1), std::max(2.0, rowH - 1)));
                 }
             } else if (rg.audio) {
-                p.setPen(t.color.lighter(170));
+                p.setPen(qc(t.color).lighter(170));
                 const int mid = body.center().y(), amp = body.height() / 2 - 1;
                 const auto& pk = rg.audio->peaks;
                 const float lin = rg.gainDb == 0.f ? 1.f : dsp::dbToLinear(rg.gainDb);
@@ -425,7 +426,7 @@ void Timeline::paintEvent(QPaintEvent*) {
                 }
             }
             if (rg.mute) p.fillRect(r.adjusted(1, 1, -1, -1), QColor(24, 24, 28, 150));   // muted regions look dimmed
-            QString label = rg.mute ? QString("(M) ") + rg.name : rg.name;
+            QString label = rg.mute ? QString("(M) ") + qs(rg.name) : qs(rg.name);
             if (!rg.midi && rg.gainDb != 0.f) label += QString("  %1%2 dB").arg(rg.gainDb > 0 ? "+" : "").arg(double(rg.gainDb), 0, 'f', 1);
             if (rg.follow) label += QString("  ·  %1 bpm").arg(rg.sourceBpm, 0, 'f', 0);
             if (std::fabs(rg.semitones) > 0.01) label += QString("  %1%2 st").arg(rg.semitones > 0 ? "+" : "").arg(rg.semitones, 0, 'f', 0);
@@ -464,14 +465,14 @@ void Timeline::paintEvent(QPaintEvent*) {
         const int y = laneY(i);
         const Track& t = tr[size_t(i)];
         p.fillRect(0, y, kHeaderW - 1, kLaneH - 1, i == m_selTrack ? QColor(64, 64, 72) : palette().color(QPalette::Window));
-        p.fillRect(0, y, 4, kLaneH - 1, t.color);
-        drawTrackGlyph(p, QRect(12, y + 8, 26, 26), t.type, t.color);
+        p.fillRect(0, y, 4, kLaneH - 1, qc(t.color));
+        drawTrackGlyph(p, QRect(12, y + 8, 26, 26), t.type, qc(t.color));
         QFont bold = font();
         bold.setBold(true);
         p.setFont(bold);
         p.setPen(text);
         p.drawText(QRect(46, y + 6, kHeaderW - 54, 18), Qt::AlignLeft | Qt::AlignVCenter,
-                   QFontMetrics(bold).elidedText(t.name, Qt::ElideRight, kHeaderW - 54));
+                   QFontMetrics(bold).elidedText(qs(t.name), Qt::ElideRight, kHeaderW - 54));
         p.setFont(font());
         p.setPen(theme::kDim);
         const char* kind = t.type == TrackType::Audio ? "Audio" : t.type == TrackType::Instrument ? "Software Instrument"
@@ -491,7 +492,7 @@ void Timeline::paintEvent(QPaintEvent*) {
         p.setPen(Qt::NoPen);
         p.setBrush(QColor(20, 20, 22));
         p.drawRoundedRect(vr, 2, 2);
-        p.setBrush(t.color.lighter(120));
+        p.setBrush(qc(t.color).lighter(120));
         p.drawRoundedRect(QRect(vr.left(), vr.top(), int(vr.width() * std::min(1.f, t.volume / 1.5f)), vr.height()), 2, 2);
     }
 
@@ -565,7 +566,7 @@ void Timeline::paintEvent(QPaintEvent*) {
             p.setBrush(int(k) == m_markerIdx ? QColor(255, 150, 90) : QColor(214, 95, 70));
             p.drawRoundedRect(mr, 2, 2);
             p.setPen(Qt::white);
-            p.drawText(mr, Qt::AlignCenter, marks[k].name);
+            p.drawText(mr, Qt::AlignCenter, qs(marks[k].name));
         }
         p.setFont(font());
     }
@@ -665,6 +666,7 @@ void Timeline::mousePressEvent(QMouseEvent* e) {
             QMenu menu(this);
             QAction* ren = menu.addAction(Timeline::tr("Rename Track…"));
             QAction* dupTrack = menu.addAction(Timeline::tr("Duplicate Track"));
+            QAction* bounce = menu.addAction(Timeline::tr("Bounce in Place"));
             QAction* color = menu.addAction(Timeline::tr("Track Color…"));
             QAction* up = menu.addAction(Timeline::tr("Move Track Up"));
             QAction* down = menu.addAction(Timeline::tr("Move Track Down"));
@@ -674,10 +676,14 @@ void Timeline::mousePressEvent(QMouseEvent* e) {
             QAction* a = menu.exec(e->globalPosition().toPoint());
             if (a == ren) {
                 bool ok = false;
-                const QString n = QInputDialog::getText(this, Timeline::tr("Rename Track"), Timeline::tr("Track name:"), QLineEdit::Normal, t.name, &ok);
+                const QString n = QInputDialog::getText(this, Timeline::tr("Rename Track"), Timeline::tr("Track name:"), QLineEdit::Normal, qs(t.name), &ok);
                 if (ok && !n.isEmpty()) m_e->renameTrack(ti, n);
+            } else if (a == bounce) {
+                m_e->pause();
+                const int nt = m_e->bounceTrackInPlace(ti);
+                if (nt >= 0) m_selTrack = nt;
             } else if (a == color) {
-                const QColor c = QColorDialog::getColor(t.color, this, Timeline::tr("Track Color"));
+                const QColor c = QColorDialog::getColor(qc(t.color), this, Timeline::tr("Track Color"));
                 if (c.isValid()) m_e->setTrackColor(ti, c);
             } else if (a == up) {
                 m_e->moveTrack(ti, ti - 1);

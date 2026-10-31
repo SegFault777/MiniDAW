@@ -261,3 +261,60 @@ Mute / Unmute Region	리전 음소거 / 해제
 Chorus	코러스
 Filter	필터
 MiniDAW Plug-ins	MiniDAW 플러그인
+# v0.7
+Bounce in Place	제자리 바운스
+Arpeggiate Region…	리전 아르페지오…
+Quantize Region…	리전 퀀타이즈…
+Scale Quantize…	스케일 퀀타이즈…
+Humanize…	휴머나이즈…
+Chord Trigger…	코드 트리거…
+MIDI Transform	MIDI 변환
+Select a MIDI region first.	먼저 MIDI 리전을 선택하세요.
+Bounced the track to a new audio track.	트랙을 새 오디오 트랙으로 바운스했습니다.
+This track has no regions to bounce.	바운스할 리전이 없는 트랙입니다.
+The track is silent, nothing was bounced.	트랙이 무음이라 바운스하지 않았습니다.
+%1 (Bounce)	%1 (바운스)
+Arpeggiate Region	리전 아르페지오
+Pattern	패턴
+Up	위로
+Down	아래로
+Up & Down	위아래로
+Down & Up	아래위로
+Random	랜덤
+As Played	연주한 순서
+Rate	속도
+Octave Range	옥타브 범위
+Gate	게이트
+Quantize Region	리전 퀀타이즈
+Strength	강도
+50 % is straight, 66 % gives a triplet feel.	50 %는 스트레이트, 66 %는 셋잇단음표 느낌입니다.
+Quantize note lengths	노트 길이도 퀀타이즈
+Scale Quantize	스케일 퀀타이즈
+Key	키
+Scale	스케일
+Major	메이저
+Minor	마이너
+Harmonic Minor	하모닉 마이너
+Melodic Minor	멜로딕 마이너
+Dorian	도리안
+Phrygian	프리지안
+Lydian	리디안
+Mixolydian	믹솔리디안
+Major Pentatonic	메이저 펜타토닉
+Minor Pentatonic	마이너 펜타토닉
+Blues	블루스
+Chromatic	크로매틱
+Humanize	휴머나이즈
+Timing	타이밍
+Largest timing change as a percentage of a 1/16 note.	16분음표 길이에 대한 비율로 나타낸 최대 타이밍 변화량입니다.
+Chord Trigger	코드 트리거
+Chord	코드
+Diminished	디미니시드
+Augmented	오그멘티드
+Suspended 2nd	서스 2
+Suspended 4th	서스 4
+Major 7th	메이저 7
+Minor 7th	마이너 7
+Dominant 7th	도미넌트 7
+Octave	옥타브
+Inversion	전위

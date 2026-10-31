@@ -197,3 +197,60 @@ Mute / Unmute Region	静音 / 取消静音区域
 Chorus	合唱
 Filter	滤波器
 MiniDAW Plug-ins	MiniDAW 插件
+# v0.7
+Bounce in Place	原位弹出
+Arpeggiate Region…	琶音区域…
+Quantize Region…	量化区域…
+Scale Quantize…	音阶量化…
+Humanize…	人性化…
+Chord Trigger…	和弦触发…
+MIDI Transform	MIDI 变换
+Select a MIDI region first.	请先选择一个 MIDI 区域。
+Bounced the track to a new audio track.	已将轨道弹出为新的音频轨道。
+This track has no regions to bounce.	此轨道没有可弹出的区域。
+The track is silent, nothing was bounced.	轨道是静音的,未进行弹出。
+%1 (Bounce)	%1 (弹出)
+Arpeggiate Region	琶音区域
+Pattern	模式
+Up	上行
+Down	下行
+Up & Down	上下行
+Down & Up	下上行
+Random	随机
+As Played	按弹奏顺序
+Rate	速率
+Octave Range	八度范围
+Gate	门限
+Quantize Region	量化区域
+Strength	强度
+50 % is straight, 66 % gives a triplet feel.	50 % 为直拍,66 % 为三连音感觉。
+Quantize note lengths	同时量化音符长度
+Scale Quantize	音阶量化
+Key	调
+Scale	音阶
+Major	大调
+Minor	小调
+Harmonic Minor	和声小调
+Melodic Minor	旋律小调
+Dorian	多利亚
+Phrygian	弗里吉亚
+Lydian	利底亚
+Mixolydian	混合利底亚
+Major Pentatonic	大调五声
+Minor Pentatonic	小调五声
+Blues	布鲁斯
+Chromatic	半音阶
+Humanize	人性化
+Timing	时间
+Largest timing change as a percentage of a 1/16 note.	最大时间变化量,以十六分音符长度的百分比表示。
+Chord Trigger	和弦触发
+Chord	和弦
+Diminished	减三和弦
+Augmented	增三和弦
+Suspended 2nd	挂二和弦
+Suspended 4th	挂四和弦
+Major 7th	大七和弦
+Minor 7th	小七和弦
+Dominant 7th	属七和弦
+Octave	八度
+Inversion	转位

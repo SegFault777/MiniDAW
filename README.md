@@ -10,7 +10,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 > sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
 > VST is a trademark of Steinberg Media Technologies GmbH.
 
-**Version 0.6** · License: GPL-3.0-or-later
+**Version 0.7** · License: GPL-3.0-or-later
 
 ## Features
 
@@ -24,6 +24,24 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 - **Duplicate Track** (`Ctrl+Shift+D`) copies a track with its regions, instrument and effects.
 - **Cycle** range (right-drag on the ruler), metronome (accents follow the time signature) and an
   optional one-bar **count-in**. **Volume automation** per track. Undo / redo for edits and tempo changes.
+
+### What is new in v0.7
+- **Qt-free core** (first step towards MiniDAW's own engine): the whole music engine, project model, undo,
+  project files (own JSON reader / writer), autosave, bounce and MIDI operations now live in `src/core/` and
+  `src/dsp/` and use only the C++ standard library. Qt remains for the user interface, audio devices and file
+  decoding. The core has its own test suite that runs without Qt. See [ARCHITECTURE.md](ARCHITECTURE.md).
+- Six **Logic Pro style editing features**:
+  1. **Bounce in Place** (`Ctrl+Alt+B`): renders a track with instrument, effects, fader and pan to a new
+     audio track and mutes the original.
+  2. **Quantize with Strength and Swing** (*Edit > MIDI Transform > Quantize Region…*, `Ctrl+Shift+Q`).
+  3. **Arpeggiator** (`Ctrl+Shift+A`): turns chords into arpeggios (up, down, up & down, down & up, random,
+     as played; rate, octave range, gate).
+  4. **Scale Quantize**: moves the notes into a key and scale (12 scales, key C to B).
+  5. **Humanize**: randomises timing and velocity of programmed notes.
+  6. **Chord Trigger**: turns every note into a chord (major, minor, diminished, augmented, sus2, sus4,
+     major 7, minor 7, dominant 7, octave) with inversions.
+  The MIDI transformations work on the selected MIDI region, are one undo step each and are applied to the
+  notes (they are not real-time MIDI plug-ins).
 
 ### What is new in v0.6
 - **Pan and send automation** next to volume: *Edit > Automation Parameter* chooses which lane `A` edits.
@@ -102,6 +120,8 @@ files in `translations/`: add `fr.tsv` (copy `ko.tsv`, translate the right-hand 
 | Delete | `Del` | Musical Typing | `Ctrl+K` |
 | Cut / copy / paste region | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Duplicate track | `Ctrl+Shift+D` |
 | Add marker | `M` | Previous / next marker | `Alt+Left` / `Alt+Right` |
+| Bounce in place | `Ctrl+Alt+B` | Arpeggiate region | `Ctrl+Shift+A` |
+| Quantize region (strength, swing) | `Ctrl+Shift+Q` | | |
 | Mute region | `Ctrl+M` | Move track up / down | `Ctrl+Alt+Up` / `Down` |
 | Tap tempo | `Shift+T` | Automation on / off | `A` |
 | New audio / instrument / drum machine track | `Ctrl+Alt+A` / `S` / `D` | New Drummer track | `Ctrl+Alt+R` |
@@ -153,7 +173,7 @@ Without `VST3_SDK_DIR` (or if the SDK fails to build) MiniDAW is built without V
 SDK is available under GPL-3.0, which is compatible with MiniDAW's license. Set `MINIDAW_VERSION` to
 override the version string. The GitHub Actions workflow in `.github/workflows/build.yml` runs
 `bash build.sh all` and attaches the installer and the portable ZIP to a release when a tag such as
-`v0.6` is pushed.
+`v0.7` is pushed.
 
 ## Architecture
 

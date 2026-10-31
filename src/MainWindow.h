@@ -73,7 +73,7 @@ private:
     QSplitter *m_hsplit, *m_vsplit;
 
     QAction *aNew, *aOpen, *aSave, *aSaveAs, *aImport, *aImportMidi, *aExportMidi, *aBounce, *aPrefs, *aQuit;
-    QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation, *aCut, *aCopy, *aPaste, *aDuplicateTrack, *aAddMarker, *aNextMarker, *aPrevMarker, *aTapTempo, *aMoveUp, *aMoveDown, *aMuteRegion;
+    QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation, *aCut, *aCopy, *aPaste, *aDuplicateTrack, *aAddMarker, *aNextMarker, *aPrevMarker, *aTapTempo, *aMoveUp, *aMoveDown, *aMuteRegion, *aBounceInPlace, *aArp, *aQuantize, *aScaleQ, *aHumanize, *aChord;
     QAction *aNewAudio, *aNewInstrument, *aNewDrums, *aNewDrummer, *aDeleteTrack, *aTempoTrack, *aMeter;
     QAction *aRewind, *aPlay, *aStop, *aRecord, *aCycle, *aMetronome, *aCountIn;
     QAction *aInspector, *aMixer, *aSmart, *aRoll, *aSteps, *aDrummerTab, *aLoopBrowser, *aEditors, *aTyping, *aAbout;
@@ -85,6 +85,11 @@ private:
     QMenu* m_recentMenu = nullptr;
     std::vector<qint64> m_taps;   // tap tempo: timestamps in ms
 
+    void arpeggiateDialog();
+    void quantizeDialog();
+    void scaleDialog();
+    void humanizeDialog();
+    void chordDialog();
     void checkRecovery();
     void addRecent(const QString& path);
     void updateRecentMenu();
