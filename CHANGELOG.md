@@ -2,6 +2,31 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.9] - 2026-11-02
+
+### Added
+- **Qt-free user interface (experimental, `MiniDAWNative.exe`)**: `src/ui` is a software-rendered UI toolkit (pixel
+  canvas, anti-aliased shapes and text) with its own look: control bar with transport and LCD, toolbar menus
+  (File, Edit, Functions, View), arrangement with ruler / track headers / regions with waveforms and note
+  previews, drag to move and resize regions, snap, zoom, a mixer with insert slots, pan knobs, dB faders and
+  level meters, context menus and keyboard shortcuts. `src/native/Win32App.cpp` is the whole Windows shell
+  (window, GDI text, file dialogs, drag and drop of audio files, WASAPI output, microphone recording). The UI
+  is tested headless (`tests/ui_tests.cpp` renders screenshots and replays mouse and keyboard input).
+  Build it with `bash build.sh native`; `bash build.sh all` builds it next to the Qt version.
+- Eight more **Logic Pro style editing features** (also in the native *Functions* menu): **Fix Overlaps**,
+  **Remove Duplicate Notes**, **Fixed Note Length**, **Retrograde**, **Invert Pitches**, **Scale Velocity**,
+  **Strip Silence** (cuts quiet parts out of an audio region) and **Measure Loudness** (integrated LUFS,
+  ITU-R BS.1770 / EBU R128). They live in the Qt-free core (`MidiOps`, `dsp/AudioAnalysis`) and are covered by tests.
+- `tools/gen_font.py` generates the built-in anti-aliased font tables (`src/ui/FontData.cpp`, Liberation Sans,
+  SIL Open Font License 1.1).
+
+### Not done yet
+- The Qt version is still the complete editor and is still built: piano roll, drum step editor, inspector,
+  preferences, plug-in windows, automation lanes, markers, tempo editing and the loop browser exist only
+  there. The native UI does not have them yet, and its texts are English only. Qt will be removed once the
+  native UI reaches parity.
+- The new v0.9 editing features have no dialogs in the Qt version.
+
 ## [0.8_1] - 2026-11-01
 
 ### Fixed

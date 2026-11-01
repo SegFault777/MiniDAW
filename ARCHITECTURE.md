@@ -56,6 +56,15 @@ longer depend on Qt either).
 | `src/*.cpp` (other) | the user interface |
 | `tests/` | Qt-free tests of the DSP, the plug-in API and the whole core |
 
+## The native user interface (v0.9)
+
+`src/ui` (Qt-free) draws into a `ui::Canvas`, a plain ARGB pixel buffer with clipping, anti-aliased shapes and
+text. `ui::NativeUi` paints the whole window, records the clickable rectangles while painting (immediate-mode
+hit testing, so layout and hit areas cannot drift apart) and reacts to plain mouse and keyboard events. It
+talks to the engine only through `core::Session`. `src/native/Win32App.cpp` is the only Windows-specific
+file: it copies the canvas to the window, converts input messages, renders text with GDI (all of Unicode) and
+opens WASAPI through `src/platform`. On other machines (tests, screenshots) the built-in font tables are used.
+
 ## What still depends on Qt
 
 | Area | Qt classes it needs |

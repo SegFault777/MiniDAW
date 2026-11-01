@@ -10,7 +10,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 > sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
 > VST is a trademark of Steinberg Media Technologies GmbH.
 
-**Version 0.8_1** · License: GPL-3.0-or-later
+**Version 0.9** · License: GPL-3.0-or-later
 
 ## Features
 
@@ -24,6 +24,16 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 - **Duplicate Track** (`Ctrl+Shift+D`) copies a track with its regions, instrument and effects.
 - **Cycle** range (right-drag on the ruler), metronome (accents follow the time signature) and an
   optional one-bar **count-in**. **Volume automation** per track. Undo / redo for edits and tempo changes.
+
+### What is new in v0.9
+- **Native user interface without Qt (experimental)**: `MiniDAWNative.exe` is built next to `MiniDAW.exe`. It has
+  its own look (slate colours, teal accent), the transport and a LCD, an arrangement with waveforms and note
+  previews, a mixer, menus and shortcuts, and it opens and saves the same `.mdaw` projects. It does not have the
+  piano roll, the drum step editor, the inspector, preferences, automation lanes and plug-in windows yet, so the
+  Qt version stays the main program for now.
+- Eight more **Logic Pro style editing features**: Fix Overlaps, Remove Duplicate Notes, Fixed Note Length,
+  Retrograde, Invert Pitches, Scale Velocity, **Strip Silence** and **Measure Loudness** (LUFS). They are in the
+  native *Functions* menu.
 
 ### What is new in v0.8
 - **Platform layer without Qt** (`src/platform/`): own WASAPI audio output / input, winmm MIDI input and

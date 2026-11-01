@@ -18,7 +18,7 @@
 #   * VST3_SDK_DIR points to a checkout of https://github.com/steinbergmedia/vst3sdk (with submodules).
 #     When it is set and builds cleanly, MiniDAW is built with VST3 hosting. Otherwise the build
 #     continues without it.
-#   * MINIDAW_VERSION overrides the version string (default 0.8_1).
+#   * MINIDAW_VERSION overrides the version string (default 0.9).
 set -euo pipefail
 
 # Git Bash would otherwise rewrite arguments such as /nologo into file paths.
@@ -28,7 +28,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$ROOT/src"
 BUILD="$ROOT/build"
 DIST="$ROOT/dist/MiniDAW"
-VERSION="${MINIDAW_VERSION:-0.8_1}"
+VERSION="${MINIDAW_VERSION:-0.9}"
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 4)}"
 TARGET="${1:-build}"
 
@@ -166,6 +166,28 @@ do_build() {
     echo "built $BUILD/MiniDAW.exe"
 }
 
+# Builds build/MiniDAWNative.exe: the Qt-free user interface (src/ui + src/native), no Qt libraries needed.
+do_native() {
+    command -v cl >/dev/null 2>&1 || die "cl.exe not found: activate the MSVC x64 environment first"
+    local SRC_W; SRC_W="$(cygpath -m "$SRC")"
+    mkdir -p "$BUILD"
+    rm -rf "$BUILD/native"
+    local NATIVE=(cl -nologo -std:c++20 -O2 -EHsc -MD -utf-8 -permissive- -Zc:__cplusplus -W3 -DNDEBUG -DUNICODE -D_UNICODE -DWIN32
+        "-DMINIDAW_VERSION=\"$VERSION\"" -I"$SRC_W")
+    local sources=("$SRC"/native/*.cpp "$SRC"/ui/*.cpp "$SRC"/dsp/*.cpp "$SRC"/core/*.cpp "$SRC"/platform/*.cpp)
+    local res=()
+    if [ -f "$ROOT/resources/app.rc" ]; then
+        (cd "$ROOT/resources" && rc -nologo -fo "$(cygpath -m "$BUILD")/native_app.res" app.rc) && res=("$(cygpath -m "$BUILD")/native_app.res")
+    fi
+    echo "== native compile ($JOBS jobs)"
+    OBJS=()
+    compile_all native "${NATIVE[@]}" -- "${sources[@]}" || die "native compilation failed"
+    echo "== native link"
+    cl -nologo "${OBJS[@]}" "${res[@]}" -Fe"$(cygpath -m "$BUILD")/MiniDAWNative.exe" -link -SUBSYSTEM:WINDOWS -ENTRY:mainCRTStartup \
+        winmm.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib shell32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib || die "native linking failed"
+    echo "built $BUILD/MiniDAWNative.exe"
+}
+
 # Builds the example plug-ins of plugin-sdk/examples into dist/MiniDAW/plugins (failures are not fatal).
 build_example_plugins() {
     local out="$DIST/plugins" tmp="$BUILD/plugins" f name
@@ -186,6 +208,7 @@ do_deploy() {
     rm -rf "$ROOT/dist"
     mkdir -p "$DIST"
     cp "$BUILD/MiniDAW.exe" "$DIST/"
+    [ -f "$BUILD/MiniDAWNative.exe" ] && cp "$BUILD/MiniDAWNative.exe" "$DIST/"   # experimental Qt-free UI (v0.9)
     windeployqt --release --no-translations --no-system-d3d-compiler "$(cygpath -m "$DIST/MiniDAW.exe")"
     cp -r "$ROOT/translations" "$DIST/translations"   # language files (plain text, one per language)
     cp -r "$ROOT/loops" "$DIST/loops"                 # sample loops for the Loop Browser
@@ -213,7 +236,8 @@ case "$TARGET" in
     build) do_build ;;
     deploy) do_deploy ;;
     installer) do_installer ;;
-    all) do_build; do_deploy; do_installer ;;
+    native) do_native ;;
+    all) do_build; (do_native) || warn "the experimental native UI could not be built (the Qt version is unaffected)"; do_deploy; do_installer ;;
     clean) do_clean ;;
-    *) die "unknown target '$TARGET' (build | deploy | installer | all | clean)" ;;
+    *) die "unknown target '$TARGET' (build | native | deploy | installer | all | clean)" ;;
 esac
