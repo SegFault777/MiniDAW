@@ -254,3 +254,30 @@ Minor 7th	小七和弦
 Dominant 7th	属七和弦
 Octave	八度
 Inversion	转位
+Legato	连奏
+Transpose…	移调…
+Crescendo / Decrescendo…	渐强 / 渐弱…
+Repeat Region…	重复区域…
+Join Regions	合并区域
+Detect Tempo…	检测速度…
+Convert Pattern to MIDI Region	将模式转换为 MIDI 区域
+Select a region first.	请先选择一个区域。
+Select an audio region first.	请先选择一个音频区域。
+Select a drum machine track first.	请先选择一个鼓机轨道。
+Interval	音程
+semitones	半音
+Crescendo / Decrescendo	渐强 / 渐弱
+Start velocity	起始力度
+End velocity	结束力度
+Repeat Region	重复区域
+Number of copies	副本数量
+Detect Tempo	检测速度
+No clear tempo was found in this region.	在此区域中未找到明确的速度。
+Detected tempo: %1 BPM	检测到的速度：%1 BPM
+Follow project tempo	跟随项目速度
+Set project tempo	将项目速度设为此值
+%1 (MIDI)	%1 (MIDI)
+The pattern is empty.	模式为空。
+Only regions of the same kind can be joined.	只能合并相同类型的区域。
+There is no region after this one to join.	此区域之后没有可合并的区域。
+These audio regions cannot be joined: they must be neighbours that play the same recording one after the other.	无法合并这些音频区域：它们必须是依次播放同一段录音的相邻区域。

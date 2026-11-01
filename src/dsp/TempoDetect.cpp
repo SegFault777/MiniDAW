@@ -59,7 +59,15 @@ double detectTempo(const float* st, size_t frames, double minBpm, double maxBpm)
     double best = 0;
     size_t bestLag = 0;
     for (size_t l = lagMin; l <= lagMax; ++l) {
-        double s = a[l] + 0.5 * a[2 * l] + 0.25 * a[4 * l];
+        // Sub-multiple support: a real beat of lag l is usually backed by a pulse at l/2 (e.g. the hi-hat), while a
+        // lag of 3 grid steps (a 3:2 error) is not.
+        const size_t h = l / 2;
+        const double half = std::max({a[h > 0 ? h - 1 : 0], a[h], a[h + 1]});
+        double s = a[l] + 0.5 * a[2 * l] + 0.25 * a[4 * l] + 0.5 * std::max(0.0, half);
+        // A lag whose pulse sits at a third of it but not at a half is a 3:2 mistake (3 grid steps instead of 2 or 4).
+        const size_t t3 = l / 3;
+        const double third = std::max({a[t3 > 0 ? t3 - 1 : 0], a[t3], a[t3 + 1]});
+        s -= 0.5 * std::max(0.0, third - std::max(0.0, half));
         const double bpm = 60.0 * frameRate / double(l);
         const double prior = std::exp(-0.5 * std::pow(std::log2(bpm / 120.0) / 1.2, 2.0));   // mild preference for common tempi
         s *= prior;
@@ -67,6 +75,16 @@ double detectTempo(const float* st, size_t frames, double minBpm, double maxBpm)
         if (s > best) { best = s; bestLag = l; }
     }
     if (bestLag == 0 || best < 0.02 * var) return 0;   // no clear pulse
+
+    // Octave check: the comb favours long periods (a beat train also repeats at 2x), so if half the lag is
+    // an almost equally strong period and the doubled tempo is still in range, prefer the faster pulse.
+    for (;;) {
+        const size_t half = bestLag / 2;
+        if (half < lagMin || half < 3) break;
+        size_t hl = half;
+        for (size_t k = half - 1; k <= half + 1; ++k) if (a[k] > a[hl]) hl = k;
+        if (a[hl] >= 0.7 * a[bestLag] && a[hl] > 0) bestLag = hl; else break;
+    }
 
     // Parabolic interpolation around the best lag for a fractional period.
     double lag = double(bestLag);

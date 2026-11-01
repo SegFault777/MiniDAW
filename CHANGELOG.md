@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8] - 2026-11-01
+
+### Changed
+- **Platform layer without Qt** (`src/platform/`): audio output and input use WASAPI shared mode directly
+  (event driven, converted to 44.1 kHz stereo), MIDI keyboards use winmm, and MP3 / AAC / M4A / FLAC / WMA
+  are decoded with Media Foundation (WAV is read by the core). The Qt Multimedia module is no longer needed.
+  A silent "null" audio device makes the whole audio path testable without hardware.
+- Translation files are parsed by the Qt-free `core::I18n`; `Translator` is only a thin shell around it.
+- `Engine` no longer uses `QAudioSink`, `QAudioSource`, `QAudioDecoder` or `QThread`: it owns the platform
+  streams, a decode worker thread and a 3 second device poll.
+- Saved audio device ids changed from the Qt format to WASAPI endpoint ids. An old device choice in the
+  preferences is ignored and the system default device is used (no error). OGG still does not open with
+  Media Foundation's default codecs (same as before).
+
+### Added
+- Seven **Logic Pro style editing features**: **Legato**, **Transpose…**, **Crescendo / Decrescendo…**
+  (Edit > MIDI Transform), **Repeat Region…** (`Ctrl+R`), **Join Regions** (`Ctrl+J`), **Detect Tempo…**
+  for audio regions (a Smart Tempo like analysis: follow the project tempo or set the project tempo) and
+  **Convert Pattern to MIDI Region** for drum machine tracks (Track menu).
+- Tests for the platform layer (`tests/platform_tests.cpp`), the new MIDI operations and the tempo detector.
+
+### Fixed
+- Tempo detection no longer reports half the tempo of fast clicks (160 BPM was found as 80 BPM) and no longer
+  confuses a pattern with a hi-hat on every 8th note for a tempo three grid steps long (a 100 BPM drum loop
+  was found as 133 BPM). Very busy material with several competing pulses can still be wrong; the dialog lets
+  you decide whether to use the result.
+
 ## [0.7] - 2026-10-31
 
 ### Changed

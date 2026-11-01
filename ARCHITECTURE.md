@@ -1,16 +1,21 @@
 # MiniDAW architecture
 
 MiniDAW is moving from "a Qt application" to "an engine with a user interface on top". Version 0.7 completed
-the first step: the engine no longer depends on Qt.
+the first step (the engine no longer depends on Qt), version 0.8 the second (audio, MIDI and decoding no
+longer depend on Qt either).
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │ User interface (Qt Widgets)   MainWindow, Timeline, PianoRoll,│
 │                               Panels, Controls, Browser ...   │
 ├──────────────────────────────────────────────────────────────┤
-│ Platform layer (Qt)           Engine.cpp  audio output/input, │
-│                               file decoding, QSettings,       │
-│                               translations, VST3 + plug-ins   │
+│ Qt adapter                    Engine.cpp  hooks, signals,     │
+│                               QSettings, QTranslator shell,   │
+│                               VST3 + plug-ins (QLibrary)      │
+├──────────────────────────────────────────────────────────────┤
+│ platform (no Qt)              src/platform/  WASAPI audio,    │
+│                               winmm MIDI, Media Foundation    │
+│                               decoding, silent test device    │
 ├──────────────────────────────────────────────────────────────┤
 │ core::Session (no Qt)         src/core/                       │
 │   project model, undo, tempo, transport, recording, rendering,│
@@ -24,8 +29,8 @@ the first step: the engine no longer depends on Qt.
 
 ## Rules
 
-* `src/dsp` and `src/core` include only the C++ standard library and each other. No `Q...` type may appear
-  there. `tests/run.sh` compiles them with a plain `g++` on a machine without Qt, which enforces this.
+* `src/dsp`, `src/core` and `src/platform` include only the C++ standard library (plus the Windows API in
+  the Windows-only platform files) and each other. No `Q...` type may appear there. `tests/run.sh` compiles them with a plain `g++` on a machine without Qt, which enforces this.
 * The core never talks to hardware or windows. It asks the platform layer through `core::Session::Hooks`:
   decode a file, start / stop the microphone, create a VST3 effect, translate a text, tell the user
   something, notify that the model changed.
@@ -43,27 +48,28 @@ the first step: the engine no longer depends on Qt.
 | `src/core/Base.h`, `Model.h` | constants, `Text` (translated text with `%1`), tracks, regions, notes, markers |
 | `src/core/Session.*` | the engine: model edits, undo / redo, transport, recording, `renderBlock`, master bus |
 | `src/core/ProjectIO.cpp` | project files (save, load, autosave), MIDI file import / export, audio import, bounce to WAV |
-| `src/core/Features.cpp`, `MidiOps.*` | Bounce in Place, arpeggiator, quantize with swing, scale quantize, humanize, chord trigger |
+| `src/core/Features.cpp`, `MidiOps.*` | Bounce in Place, arpeggiator, quantize, scale quantize, humanize, chord trigger, legato, transpose, velocity ramp, repeat / join regions, tempo detection, pattern to MIDI |
 | `src/core/Json.*`, `Files.*`, `AudioIO.*` | JSON, UTF-8 file helpers, WAV reader / writer, resampler, waveform peaks |
-| `src/Engine.*` | Qt adapter: audio devices, `QAudioDecoder`, hooks, signals |
+| `src/core/I18n.*` | translation table parser (used by the Qt `Translator` shell) |
+| `src/platform/` | `Audio.*` + `AudioWasapi.cpp` (devices, output / input streams, silent "null" device), `Midi.*` (winmm), `Decode.*` (WAV + Media Foundation) |
+| `src/Engine.*` | Qt adapter: owns the platform streams and a decode worker thread, hooks, signals |
 | `src/*.cpp` (other) | the user interface |
 | `tests/` | Qt-free tests of the DSP, the plug-in API and the whole core |
 
-## What still depends on Qt (about 5,700 lines)
+## What still depends on Qt
 
-| Area | Lines | Qt classes it needs |
-| --- | --- | --- |
-| Widgets: main window, timeline, piano roll, mixer / inspector, knobs, browser, preferences | ~3,600 | `QWidget`, `QPainter`, `QMenu`, `QDialog` ... |
-| Audio devices and decoding | ~350 | `QAudioSink`, `QAudioSource`, `QAudioDecoder`, `QMediaDevices` |
-| Settings, translations, plug-in lists | ~300 | `QSettings`, `QTranslator`, `QLibrary` |
-| VST3 host glue | ~470 | `QString`, `QLibrary` |
+| Area | Qt classes it needs |
+| --- | --- |
+| Widgets: main window, timeline, piano roll, mixer / inspector, knobs, browser, preferences | `QWidget`, `QPainter`, `QMenu`, `QDialog` ... |
+| Settings, language shell, plug-in lists | `QSettings`, `QTranslator`, `QLibrary` |
+| VST3 host glue | `QString`, `QLibrary` |
 
-## Next steps towards a fully own engine
+Audio devices, MIDI input and file decoding no longer use Qt (v0.8). Replacing `QSettings` is left to the
+UI toolkit step because only the user interface uses it.
 
-1. **Platform layer without Qt**: WASAPI output / input, WinMM MIDI, a single-header decoder library for
-   MP3 / FLAC / OGG, a settings file and the translation tables read by the core. The `Hooks` interface is
-   the seam; each piece can replace its Qt counterpart on its own.
-2. **Own UI toolkit** (Win32 + Direct2D): drawing primitives, a small widget set (button, slider, combo box,
-   menu, dialog, text field), then the screens one by one: Preferences, Browser, Mixer, Piano Roll,
-   Timeline, Main window. Because the screens only use `Engine`, each screen can be ported separately
-   while the others still run on Qt.
+## Next step towards a fully own engine
+
+**Own UI toolkit** (Win32 + Direct2D): drawing primitives, a small widget set (button, slider, combo box,
+menu, dialog, text field), then the screens one by one: Preferences, Browser, Mixer, Piano Roll,
+Timeline, Main window. Because the screens only use `Engine`, each screen can be ported separately
+while the others still run on Qt.

@@ -73,7 +73,7 @@ private:
     QSplitter *m_hsplit, *m_vsplit;
 
     QAction *aNew, *aOpen, *aSave, *aSaveAs, *aImport, *aImportMidi, *aExportMidi, *aBounce, *aPrefs, *aQuit;
-    QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation, *aCut, *aCopy, *aPaste, *aDuplicateTrack, *aAddMarker, *aNextMarker, *aPrevMarker, *aTapTempo, *aMoveUp, *aMoveDown, *aMuteRegion, *aBounceInPlace, *aArp, *aQuantize, *aScaleQ, *aHumanize, *aChord;
+    QAction *aUndo, *aRedo, *aDelete, *aDuplicate, *aSplit, *aSnap, *aAutomation, *aCut, *aCopy, *aPaste, *aDuplicateTrack, *aAddMarker, *aNextMarker, *aPrevMarker, *aTapTempo, *aMoveUp, *aMoveDown, *aMuteRegion, *aBounceInPlace, *aArp, *aQuantize, *aScaleQ, *aHumanize, *aChord, *aLegato, *aTranspose, *aCrescendo, *aRepeat, *aJoin, *aDetectTempo, *aPatternToMidi;
     QAction *aNewAudio, *aNewInstrument, *aNewDrums, *aNewDrummer, *aDeleteTrack, *aTempoTrack, *aMeter;
     QAction *aRewind, *aPlay, *aStop, *aRecord, *aCycle, *aMetronome, *aCountIn;
     QAction *aInspector, *aMixer, *aSmart, *aRoll, *aSteps, *aDrummerTab, *aLoopBrowser, *aEditors, *aTyping, *aAbout;
@@ -90,6 +90,11 @@ private:
     void scaleDialog();
     void humanizeDialog();
     void chordDialog();
+    void transposeDialog();
+    void velocityRampDialog();
+    void repeatDialog();
+    void detectTempoDialog();
+    void patternToMidiDialog();
     void checkRecovery();
     void addRecent(const QString& path);
     void updateRecentMenu();

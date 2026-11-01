@@ -254,3 +254,30 @@ Minor 7th	Menor 7.ª
 Dominant 7th	Dominante 7.ª
 Octave	Octava
 Inversion	Inversión
+Legato	Legato
+Transpose…	Transponer…
+Crescendo / Decrescendo…	Crescendo / Decrescendo…
+Repeat Region…	Repetir región…
+Join Regions	Unir regiones
+Detect Tempo…	Detectar tempo…
+Convert Pattern to MIDI Region	Convertir patrón en región MIDI
+Select a region first.	Selecciona primero una región.
+Select an audio region first.	Selecciona primero una región de audio.
+Select a drum machine track first.	Selecciona primero una pista de caja de ritmos.
+Interval	Intervalo
+semitones	semitonos
+Crescendo / Decrescendo	Crescendo / Decrescendo
+Start velocity	Velocidad inicial
+End velocity	Velocidad final
+Repeat Region	Repetir región
+Number of copies	Número de copias
+Detect Tempo	Detectar tempo
+No clear tempo was found in this region.	No se encontró un tempo claro en esta región.
+Detected tempo: %1 BPM	Tempo detectado: %1 BPM
+Follow project tempo	Seguir el tempo del proyecto
+Set project tempo	Fijar el tempo del proyecto en este valor
+%1 (MIDI)	%1 (MIDI)
+The pattern is empty.	El patrón está vacío.
+Only regions of the same kind can be joined.	Solo se pueden unir regiones del mismo tipo.
+There is no region after this one to join.	No hay ninguna región después de esta para unir.
+These audio regions cannot be joined: they must be neighbours that play the same recording one after the other.	No se pueden unir estas regiones de audio: deben ser vecinas y reproducir la misma grabación una tras otra.

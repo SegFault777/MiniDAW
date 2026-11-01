@@ -10,7 +10,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 > sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
 > VST is a trademark of Steinberg Media Technologies GmbH.
 
-**Version 0.7** · License: GPL-3.0-or-later
+**Version 0.8** · License: GPL-3.0-or-later
 
 ## Features
 
@@ -24,6 +24,19 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 - **Duplicate Track** (`Ctrl+Shift+D`) copies a track with its regions, instrument and effects.
 - **Cycle** range (right-drag on the ruler), metronome (accents follow the time signature) and an
   optional one-bar **count-in**. **Volume automation** per track. Undo / redo for edits and tempo changes.
+
+### What is new in v0.8
+- **Platform layer without Qt** (`src/platform/`): own WASAPI audio output / input, winmm MIDI input and
+  Media Foundation decoding; the *Qt Multimedia* module is no longer required. Saved audio device choices from
+  older versions are ignored once and the system default device is used.
+- Seven more **Logic Pro style editing features**:
+  1. **Legato** (*Edit > MIDI Transform*): extends every note up to the next one.
+  2. **Transpose…**: moves the notes by -48 to +48 semitones.
+  3. **Crescendo / Decrescendo…**: velocity ramp from a start to an end velocity over the region.
+  4. **Repeat Region…** (`Ctrl+R`): puts N copies directly after the selected region.
+  5. **Join Regions** (`Ctrl+J`): merges a region with the next one (MIDI, or neighbouring parts of one recording).
+  6. **Detect Tempo…** (*Edit*): analyses an audio region and lets you follow the project tempo or set the project tempo.
+  7. **Convert Pattern to MIDI Region** (*Track*): turns the step pattern of a drum machine track into a MIDI region.
 
 ### What is new in v0.7
 - **Qt-free core** (first step towards MiniDAW's own engine): the whole music engine, project model, undo,
@@ -121,7 +134,7 @@ files in `translations/`: add `fr.tsv` (copy `ko.tsv`, translate the right-hand 
 | Cut / copy / paste region | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Duplicate track | `Ctrl+Shift+D` |
 | Add marker | `M` | Previous / next marker | `Alt+Left` / `Alt+Right` |
 | Bounce in place | `Ctrl+Alt+B` | Arpeggiate region | `Ctrl+Shift+A` |
-| Quantize region (strength, swing) | `Ctrl+Shift+Q` | | |
+| Quantize region (strength, swing) | `Ctrl+Shift+Q` | Repeat / join regions | `Ctrl+R` / `Ctrl+J` |
 | Mute region | `Ctrl+M` | Move track up / down | `Ctrl+Alt+Up` / `Down` |
 | Tap tempo | `Shift+T` | Automation on / off | `A` |
 | New audio / instrument / drum machine track | `Ctrl+Alt+A` / `S` / `D` | New Drummer track | `Ctrl+Alt+R` |
@@ -155,7 +168,7 @@ instruments in the Inspector's instrument menu. Plug-in state is saved with the 
 MiniDAW is built by a single shell script, `build.sh` (no CMake required).
 
 Requirements: Windows 10/11, Visual Studio 2022 or newer (MSVC x64 tools), Git Bash (or MSYS2),
-Qt 6.5 or newer (Qt 6.8 recommended) with the *Qt Multimedia* module, and optionally
+Qt 6.5 or newer (Qt 6.8 recommended; the Qt Multimedia module is not needed), and optionally
 [Inno Setup 6](https://jrsoftware.org/isinfo.php) for the installer.
 
 ```bash
@@ -173,13 +186,14 @@ Without `VST3_SDK_DIR` (or if the SDK fails to build) MiniDAW is built without V
 SDK is available under GPL-3.0, which is compatible with MiniDAW's license. Set `MINIDAW_VERSION` to
 override the version string. The GitHub Actions workflow in `.github/workflows/build.yml` runs
 `bash build.sh all` and attaches the installer and the portable ZIP to a release when a tag such as
-`v0.7` is pushed.
+`v0.8` is pushed.
 
 ## Architecture
 
 | Path | Purpose |
 |---|---|
-| `src/dsp/` | Qt-free DSP: parameters, effects, synth, drum kit, Drummer generator, tempo map, WSOLA stretcher, MIDI files |
+| `src/dsp/` | Qt-free DSP: parameters, effects, synth, drum kit, Drummer generator, tempo map, WSOLA stretcher, MIDI files, tempo detection |
+| `src/core/`, `src/platform/` | Qt-free engine (`Session`, project files, MIDI operations) and platform layer (WASAPI, winmm MIDI, Media Foundation decoding) |
 | `src/Engine.*`, `src/Project.cpp` | Project model, real-time mixer, transport, recording, undo, save / load, audio device handling |
 | `src/Timeline.*`, `src/PianoRoll.*` | Arrangement, tempo track and MIDI editors |
 | `src/Panels.*`, `src/Controls.*`, `src/Browser.*` | Inspector, mixer, step sequencer, Drummer editor, loop browser, knobs, faders, meters |
@@ -195,7 +209,7 @@ through a short mutex-protected section; effect and synth parameters are lock-fr
 
 ## Known limitations and roadmap
 
-- Output goes through Qt Multimedia (WASAPI shared mode, roughly 50 ms latency). ASIO or exclusive mode
+- Output uses MiniDAW's own WASAPI backend (shared mode, roughly 50 ms latency). ASIO or exclusive mode
   is planned.
 - VST3 parameters are edited in the plug-in's own window; they are not yet exposed as automation lanes.
   Plug-in state is stored, but a plug-in that is missing on another computer is skipped when loading.

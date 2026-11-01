@@ -15,6 +15,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
+#include <QInputDialog>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -46,7 +47,7 @@
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.7"
+#define MINIDAW_VERSION "0.8"
 #endif
 
 namespace {
@@ -294,6 +295,13 @@ void MainWindow::buildActions() {
     aScaleQ = make(tr("Scale Quantize…"), QKeySequence());
     aHumanize = make(tr("Humanize…"), QKeySequence());
     aChord = make(tr("Chord Trigger…"), QKeySequence());
+    aLegato = make(tr("Legato"), QKeySequence());
+    aTranspose = make(tr("Transpose…"), QKeySequence());
+    aCrescendo = make(tr("Crescendo / Decrescendo…"), QKeySequence());
+    aRepeat = make(tr("Repeat Region…"), QKeySequence(Qt::CTRL | Qt::Key_R));
+    aJoin = make(tr("Join Regions"), QKeySequence(Qt::CTRL | Qt::Key_J));
+    aDetectTempo = make(tr("Detect Tempo…"), QKeySequence());
+    aPatternToMidi = make(tr("Convert Pattern to MIDI Region"), QKeySequence());
     aTapTempo = make(tr("Tap Tempo"), QKeySequence(Qt::SHIFT | Qt::Key_T));
     aMoveUp = make(tr("Move Track Up"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_Up));
     aMoveDown = make(tr("Move Track Down"), QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_Down));
@@ -387,6 +395,20 @@ void MainWindow::buildActions() {
     connect(aScaleQ, &QAction::triggered, this, &MainWindow::scaleDialog);
     connect(aHumanize, &QAction::triggered, this, &MainWindow::humanizeDialog);
     connect(aChord, &QAction::triggered, this, &MainWindow::chordDialog);
+    connect(aLegato, &QAction::triggered, this, [this] {
+        int t, r;
+        if (selectedMidiRegion(this, m_timeline, m_engine, t, r)) m_engine.legatoRegion(t, r);
+    });
+    connect(aTranspose, &QAction::triggered, this, &MainWindow::transposeDialog);
+    connect(aCrescendo, &QAction::triggered, this, &MainWindow::velocityRampDialog);
+    connect(aRepeat, &QAction::triggered, this, &MainWindow::repeatDialog);
+    connect(aJoin, &QAction::triggered, this, [this] {
+        const int t = m_timeline->selectedTrack(), r = m_timeline->selectedRegion();
+        if (t < 0 || r < 0) { statusBar()->showMessage(tr("Select a region first."), 5000); return; }
+        m_engine.joinRegions(t, r);   // the core reports why a join is impossible
+    });
+    connect(aDetectTempo, &QAction::triggered, this, &MainWindow::detectTempoDialog);
+    connect(aPatternToMidi, &QAction::triggered, this, &MainWindow::patternToMidiDialog);
     connect(aQuantize, &QAction::triggered, this, &MainWindow::quantizeDialog);
     connect(aTapTempo, &QAction::triggered, this, [this] {
         const qint64 now = QDateTime::currentMSecsSinceEpoch();
@@ -466,9 +488,11 @@ void MainWindow::buildMenus() {
     {   // Logic Pro style MIDI transformations of the selected region
         QMenu* midi = edit->addMenu(tr("MIDI Transform"));
         midi->addActions({aQuantize, aScaleQ, aHumanize, aChord, aArp});
+        midi->addSeparator();
+        midi->addActions({aLegato, aTranspose, aCrescendo});
     }
     edit->addSeparator();
-    edit->addActions({aDelete, aDuplicate, aSplit});
+    edit->addActions({aDelete, aDuplicate, aSplit, aRepeat, aJoin, aDetectTempo});
     edit->addSeparator();
     edit->addActions({aSnap, aAutomation});
     {   // which parameter the automation lanes edit
@@ -490,7 +514,7 @@ void MainWindow::buildMenus() {
     QMenu* track = menuBar()->addMenu(tr("&Track"));
     track->addActions({aNewAudio, aNewInstrument, aNewDrummer, aNewDrums});
     track->addSeparator();
-    track->addActions({aDuplicateTrack, aBounceInPlace, aMoveUp, aMoveDown, aDeleteTrack});
+    track->addActions({aDuplicateTrack, aBounceInPlace, aPatternToMidi, aMoveUp, aMoveDown, aDeleteTrack});
 
     QMenu* transport = menuBar()->addMenu(tr("T&ransport"));
     transport->addActions({aPlay, aStop, aRecord, aRewind});
@@ -966,6 +990,109 @@ void MainWindow::humanizeDialog() {   // Logic Pro: Humanize
     p.velocity = velocity->value();
     p.seed = int(QDateTime::currentSecsSinceEpoch() & 0x7fff);
     m_engine.humanizeRegion(t, r, p);
+}
+
+void MainWindow::transposeDialog() {   // Logic Pro: Transpose
+    int t, r;
+    if (!selectedMidiRegion(this, m_timeline, m_engine, t, r)) return;
+    QSettings s;
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Transpose"));
+    auto* form = new QFormLayout(&dlg);
+    auto* semis = new QSpinBox;
+    semis->setRange(-48, 48);
+    semis->setSuffix(QStringLiteral(" ") + tr("semitones"));
+    semis->setValue(s.value("transpose/semitones", 12).toInt());
+    form->addRow(tr("Interval"), semis);
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+    s.setValue("transpose/semitones", semis->value());
+    m_engine.transposeRegion(t, r, semis->value());
+}
+
+void MainWindow::velocityRampDialog() {   // Logic Pro: Crescendo / Decrescendo
+    int t, r;
+    if (!selectedMidiRegion(this, m_timeline, m_engine, t, r)) return;
+    QSettings s;
+    QDialog dlg(this);
+    dlg.setWindowTitle(tr("Crescendo / Decrescendo"));
+    auto* form = new QFormLayout(&dlg);
+    auto* from = new QSpinBox;
+    from->setRange(1, 127);
+    from->setValue(s.value("ramp/from", 30).toInt());
+    auto* to = new QSpinBox;
+    to->setRange(1, 127);
+    to->setValue(s.value("ramp/to", 110).toInt());
+    form->addRow(tr("Start velocity"), from);
+    form->addRow(tr("End velocity"), to);
+    auto* bb = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    form->addRow(bb);
+    connect(bb, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(bb, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    if (dlg.exec() != QDialog::Accepted) return;
+    s.setValue("ramp/from", from->value());
+    s.setValue("ramp/to", to->value());
+    m_engine.velocityRampRegion(t, r, from->value(), to->value());
+}
+
+void MainWindow::repeatDialog() {   // Logic Pro: Repeat Regions
+    const int t = m_timeline->selectedTrack(), r = m_timeline->selectedRegion();
+    if (t < 0 || r < 0) { statusBar()->showMessage(tr("Select a region first."), 5000); return; }
+    QSettings s;
+    bool ok = false;
+    const int copies = QInputDialog::getInt(this, tr("Repeat Region"), tr("Number of copies"), s.value("repeat/copies", 3).toInt(), 1, 64, 1, &ok);
+    if (!ok) return;
+    s.setValue("repeat/copies", copies);
+    m_engine.repeatRegion(t, r, copies);
+}
+
+void MainWindow::detectTempoDialog() {   // Logic Pro: Smart Tempo analysis
+    const int t = m_timeline->selectedTrack(), r = m_timeline->selectedRegion();
+    const auto tracks = m_engine.snapshot();
+    if (t < 0 || r < 0 || t >= int(tracks.size()) || r >= int(tracks[size_t(t)].regions.size()) || tracks[size_t(t)].regions[size_t(r)].midi) {
+        statusBar()->showMessage(tr("Select an audio region first."), 5000);
+        return;
+    }
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    const double bpm = m_engine.detectRegionTempo(t, r);
+    QApplication::restoreOverrideCursor();
+    if (bpm <= 0) {
+        QMessageBox::information(this, tr("Detect Tempo"), tr("No clear tempo was found in this region."));
+        return;
+    }
+    const double semis = tracks[size_t(t)].regions[size_t(r)].semitones;
+    QMessageBox box(this);
+    box.setWindowTitle(tr("Detect Tempo"));
+    box.setText(tr("Detected tempo: %1 BPM").arg(bpm, 0, 'f', 1));
+    QPushButton* follow = box.addButton(tr("Follow project tempo"), QMessageBox::AcceptRole);
+    QPushButton* setTempo = box.addButton(tr("Set project tempo"), QMessageBox::AcceptRole);
+    box.addButton(QMessageBox::Cancel);
+    box.exec();
+    if (box.clickedButton() == follow) {
+        m_engine.setRegionFlex(t, r, true, bpm, semis);
+    } else if (box.clickedButton() == setTempo) {
+        m_engine.setBpm(std::clamp(std::round(bpm * 10.0) / 10.0, 20.0, 300.0));
+        m_timeline->refreshLayout();
+    }
+}
+
+void MainWindow::patternToMidiDialog() {   // drum machine pattern -> MIDI region
+    const int t = m_timeline->selectedTrack();
+    const auto tracks = m_engine.snapshot();
+    if (t < 0 || t >= int(tracks.size()) || tracks[size_t(t)].type != TrackType::Drums) {
+        statusBar()->showMessage(tr("Select a drum machine track first."), 5000);
+        return;
+    }
+    QSettings s;
+    bool ok = false;
+    const int bars = QInputDialog::getInt(this, tr("Convert Pattern to MIDI Region"), tr("Bars"), s.value("patternMidi/bars", 4).toInt(), 1, 64, 1, &ok);
+    if (!ok) return;
+    s.setValue("patternMidi/bars", bars);
+    const int nt = m_engine.convertPatternToMidi(t, bars);
+    if (nt >= 0) m_timeline->selectTrack(nt);
 }
 
 void MainWindow::chordDialog() {   // Logic Pro: Chord Trigger

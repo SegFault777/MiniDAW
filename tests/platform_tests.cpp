@@ -122,6 +122,8 @@ static void testI18n() {
         CHECK(tt.load(l.path) && tt.size() > 150);
         if (l.code == "ko") { hasKo = true; CHECK(l.name == "\xED\x95\x9C\xEA\xB5\xAD\xEC\x96\xB4"); CHECK(tt.find("Bounce in Place") != nullptr); }
         CHECK(tt.find("Chord Trigger…") != nullptr);                           // the newest strings are in every language
+        CHECK(tt.find("Legato") != nullptr && tt.find("Join Regions") != nullptr && tt.find("The pattern is empty.") != nullptr);   // v0.8 strings
+        { const std::string* v = tt.find("Detected tempo: %1 BPM"); CHECK(v && v->find("%1") != std::string::npos); }
         for (const char* key : {"%1 copy", "Marker %1"}) { const std::string* v = tt.find(key); CHECK(v && v->find("%1") != std::string::npos); }   // placeholders survive
     }
     CHECK(hasKo);

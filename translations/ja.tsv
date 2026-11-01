@@ -254,3 +254,30 @@ Minor 7th	マイナー7th
 Dominant 7th	ドミナント7th
 Octave	オクターブ
 Inversion	転回
+Legato	レガート
+Transpose…	トランスポーズ…
+Crescendo / Decrescendo…	クレッシェンド / デクレッシェンド…
+Repeat Region…	リージョンを繰り返し…
+Join Regions	リージョンを結合
+Detect Tempo…	テンポを検出…
+Convert Pattern to MIDI Region	パターンをMIDIリージョンに変換
+Select a region first.	先にリージョンを選択してください。
+Select an audio region first.	先にオーディオリージョンを選択してください。
+Select a drum machine track first.	先にドラムマシントラックを選択してください。
+Interval	音程
+semitones	半音
+Crescendo / Decrescendo	クレッシェンド / デクレッシェンド
+Start velocity	開始ベロシティ
+End velocity	終了ベロシティ
+Repeat Region	リージョンを繰り返し
+Number of copies	コピー数
+Detect Tempo	テンポを検出
+No clear tempo was found in this region.	このリージョンから明確なテンポを検出できませんでした。
+Detected tempo: %1 BPM	検出されたテンポ: %1 BPM
+Follow project tempo	プロジェクトテンポに追従
+Set project tempo	プロジェクトテンポをこの値に
+%1 (MIDI)	%1 (MIDI)
+The pattern is empty.	パターンが空です。
+Only regions of the same kind can be joined.	同じ種類のリージョン同士のみ結合できます。
+There is no region after this one to join.	このリージョンの後に結合するリージョンがありません。
+These audio regions cannot be joined: they must be neighbours that play the same recording one after the other.	これらのオーディオリージョンは結合できません。同じ録音を続けて再生する隣接リージョンである必要があります。

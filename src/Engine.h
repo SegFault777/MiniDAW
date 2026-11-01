@@ -106,6 +106,14 @@ public:
     bool scaleQuantizeRegion(int t, int r, const ScaleParams& p) { return m_s.scaleQuantizeRegion(t, r, p); }
     bool humanizeRegion(int t, int r, const HumanizeParams& p) { return m_s.humanizeRegion(t, r, p); }
     bool chordTriggerRegion(int t, int r, const ChordParams& p) { return m_s.chordTriggerRegion(t, r, p); }
+    // ---- more Logic Pro style editing (v0.8) ----
+    bool legatoRegion(int t, int r) { return m_s.legatoRegion(t, r); }
+    bool transposeRegion(int t, int r, int semitones) { return m_s.transposeRegion(t, r, semitones); }
+    bool velocityRampRegion(int t, int r, int from, int to) { return m_s.velocityRampRegion(t, r, from, to); }
+    int repeatRegion(int t, int r, int copies) { return m_s.repeatRegion(t, r, copies); }
+    bool joinRegions(int t, int r) { return m_s.joinRegions(t, r); }
+    double detectRegionTempo(int t, int r) const { return m_s.detectRegionTempo(t, r); }
+    int convertPatternToMidi(int track, int bars) { return m_s.convertPatternToMidi(track, bars); }
 
     // ---- Markers (kept sorted by position) ----
     std::vector<Marker> markers() const { return m_s.markers(); }
