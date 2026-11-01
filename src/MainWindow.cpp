@@ -47,8 +47,11 @@
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.8"
+#define MINIDAW_VERSION "0.8_1"
 #endif
+
+// Defined further down; the menu code at the top of the file already needs it.
+static bool selectedMidiRegion(MainWindow* w, Timeline* tl, Engine& e, int& t, int& r);
 
 namespace {
 constexpr const char* kFileFilter = "MiniDAW Project (*.mdaw)";

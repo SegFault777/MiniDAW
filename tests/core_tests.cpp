@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <fstream>
 #include "../src/core/Files.h"
+#include "../src/dsp/AudioAnalysis.h"
 #include "../src/dsp/TempoDetect.h"
 #include "../src/core/Json.h"
 #include "../src/core/Session.h"
@@ -533,10 +534,82 @@ static void testSessionNewTransforms() {
     int a = s.addTrack(TrackType::Audio, "au"); CHECK(!s.legatoRegion(a, 0) && !s.transposeRegion(99, 0, 1));
 }
 
+static std::vector<float> stereoSine(double seconds, float amp, double hz = 1000.0) {
+    std::vector<float> pcm(size_t(seconds * 44100) * 2);
+    for (size_t i = 0; i < pcm.size() / 2; ++i) pcm[2 * i] = pcm[2 * i + 1] = amp * std::sin(2 * 3.14159265358979 * hz * double(i) / 44100.0);
+    return pcm;
+}
+
+static void testV09() {
+    // ---- pure MIDI operations ----
+    std::vector<Note> ov = {{60, 0, 2, 100}, {60, 1, 2, 90}, {64, 0.5, 3, 80}};
+    auto fo = fixOverlaps(ov);
+    CHECK(fo.size() == 3 && std::fabs(fo[0].length - 1) < 1e-9 && std::fabs(fo[2].length - 2) < 1e-9);      // the C ends where the next C starts; the E and the last C are untouched
+    CHECK(fixOverlaps({{60, 0, 2, 100}, {62, 1, 1, 100}})[0].length == 2);                                    // other pitches do not matter
+    auto dd = removeDuplicateNotes({{60, 1, 0.5, 100}, {60, 1.005, 1, 90}, {64, 1, 0.5, 100}, {60, 2, 0.5, 100}});
+    CHECK(dd.size() == 3 && std::fabs(dd[0].length - 1) < 1e-9);                                              // the longer one of the pair survives
+    auto fl = fixedLength({{60, 0, 0.1, 100}, {62, 3.8, 0.1, 100}}, 4, 1);
+    CHECK(fl[0].length == 1 && std::fabs(fl[1].length - 0.2) < 1e-9);                                         // cut off at the region end
+    auto re = retrograde({{60, 0, 1, 100}, {62, 1, 1, 100}, {64, 3, 1, 100}}, 4);
+    CHECK(re.size() == 3 && re[0].pitch == 64 && re[0].start == 0 && re[1].pitch == 62 && re[1].start == 2 && re[2].pitch == 60 && re[2].start == 3);
+    auto iv = invertPitches({{60, 0, 1, 100}, {64, 1, 1, 100}, {72, 2, 1, 100}});
+    CHECK(iv[0].pitch == 72 && iv[1].pitch == 68 && iv[2].pitch == 60);                                       // mirrored between 60 and 72
+    CHECK(invertPitches({}).empty());
+    auto sv = scaleVelocity({{60, 0, 1, 100}, {60, 1, 1, 10}}, 50, 10);
+    CHECK(sv[0].velocity == 60 && sv[1].velocity == 15);
+    CHECK(scaleVelocity({{60, 0, 1, 100}}, 400, 100)[0].velocity == 127 && scaleVelocity({{60, 0, 1, 5}}, 1, -100)[0].velocity == 1);
+
+    // ---- loudness ----
+    const auto full = stereoSine(5, 1.0f), quiet = stereoSine(5, 0.1f);
+    const double lf = dsp::integratedLoudness(full.data(), full.size() / 2), lq = dsp::integratedLoudness(quiet.data(), quiet.size() / 2);
+    std::printf("loudness full scale %.2f, -20 dB %.2f\n", lf, lq);
+    CHECK(std::fabs(lf) < 0.6);                                   // a full-scale stereo 1 kHz sine is about 0 LUFS
+    CHECK(std::fabs((lf - lq) - 20.0) < 0.05);                    // 20 dB lower
+    std::vector<float> sil(44100 * 2 * 3, 0.f), tiny = stereoSine(3, 1e-5f);   // -100 dBFS: below the absolute gate
+    CHECK(dsp::integratedLoudness(sil.data(), sil.size() / 2) == dsp::kSilentLufs && dsp::integratedLoudness(tiny.data(), tiny.size() / 2) == dsp::kSilentLufs);
+    CHECK(dsp::integratedLoudness(full.data(), 1000) == dsp::kSilentLufs && dsp::integratedLoudness(nullptr, 100000) == dsp::kSilentLufs);
+    // a quiet passage between loud ones does not drag the result down (relative gate)
+    std::vector<float> mix = stereoSine(3, 1.0f); auto mq = stereoSine(3, 0.01f); auto m3 = stereoSine(3, 1.0f);
+    mix.insert(mix.end(), mq.begin(), mq.end()); mix.insert(mix.end(), m3.begin(), m3.end());
+    CHECK(std::fabs(dsp::integratedLoudness(mix.data(), mix.size() / 2) - lf) < 0.3);
+
+    // ---- strip silence ----
+    auto tone = stereoSine(1, 0.5f);
+    std::vector<float> clip = tone; clip.resize(clip.size() + 44100 * 2, 0.f); clip.insert(clip.end(), tone.begin(), tone.end());   // 1 s tone, 1 s silence, 1 s tone
+    auto rg = dsp::findSoundRanges(clip.data(), clip.size() / 2, -50, 4410, 441);
+    CHECK(rg.size() == 2 && rg[0].first == 0 && std::llabs(i64(rg[0].second) - (44100 + 441)) < 300 && std::llabs(i64(rg[1].first) - (88200 - 441)) < 300 && rg[1].second == 132300);
+    CHECK(dsp::findSoundRanges(clip.data(), clip.size() / 2, -50, 44100 * 3, 0).size() == 1);                    // gaps shorter than the minimum are kept
+    CHECK(dsp::findSoundRanges(sil.data(), sil.size() / 2, -50, 100, 0).empty());
+    S a; a.setBpm(120);
+    const std::string wav = tmpDir() + "/strip.wav"; std::string err; CHECK(writeWavFile(wav, clip, &err));
+    a.importAudio(wav, -1, 0);
+    const int n = a.stripSilenceRegion(0, 0, -50, 100, 10);
+    const auto tr = a.snapshot()[0].regions;
+    CHECK(n == 2 && tr.size() == 2 && std::fabs(tr[0].start) < 1e-9 && std::fabs(tr[1].start - 3.98) < 0.02);    // 120 bpm: 2 beats per second
+    CHECK(std::llabs(tr[0].frames + tr[1].frames - 88200) < 2200 && tr[1].offset > tr[0].offset + tr[0].frames);
+    a.undo(); CHECK(a.snapshot()[0].regions.size() == 1);
+    CHECK(a.stripSilenceRegion(0, 0, -50, 100, 10) == 2 && a.stripSilenceRegion(5, 0, -50, 100, 10) == 0);
+    a.setRegionFlex(0, 0, true, 100, 0); CHECK(a.stripSilenceRegion(0, 0, -50, 100, 10) == 0);                    // stretched regions are refused
+    // regions of a quiet file and MIDI
+    S b; b.importAudio(wav, -1, 0);
+    const double rl = b.regionLoudness(0, 0); CHECK(rl < -3 && rl > -20);
+    int mt = b.addTrack(TrackType::Instrument, "M"); b.addMidiRegion(mt, 0, 4);
+    CHECK(b.regionLoudness(mt, 0) == 1000 && b.regionLoudness(9, 0) == 1000);
+
+    // ---- through the session ----
+    S m; int t = m.addTrack(TrackType::Instrument, "K"); int r0 = m.addMidiRegion(t, 0, 4);
+    m.setRegionNotes(t, r0, {{60, 0, 2, 100}, {60, 1, 2, 90}, {64, 3, 0.5, 100}});
+    CHECK(m.fixOverlapsRegion(t, r0) && std::fabs(m.snapshot()[0].regions[0].notes[0].length - 1) < 1e-9);
+    CHECK(m.fixedLengthRegion(t, r0, 0.5) && m.snapshot()[0].regions[0].notes[1].length == 0.5 && !m.fixedLengthRegion(t, r0, 0));
+    CHECK(m.retrogradeRegion(t, r0) && m.invertRegion(t, r0) && m.scaleVelocityRegion(t, r0, 50, 0) && m.removeDuplicatesRegion(t, r0));
+    CHECK(m.snapshot()[0].regions[0].notes.size() == 3 && m.snapshot()[0].regions[0].notes[0].velocity <= 50);
+    CHECK(!b.fixOverlapsRegion(0, 0));                                                                           // audio regions are not MIDI
+}
+
 int main() {
     testJson(); testText(); testWav(); testSaveLoad(); testUndo(); testClipboardAndDuplicate(); testAutosave();
     testExport(); testBounce(); testAutomationPan(); testMidiOps(); testMidiOps2(); testSessionRegions(); testSessionTransforms();
-    testMidiOps3(); testTempoDetect(); testRegionCommands(); testConvertPattern(); testSessionNewTransforms();
+    testMidiOps3(); testTempoDetect(); testRegionCommands(); testConvertPattern(); testSessionNewTransforms(); testV09();
     std::printf("core fails=%d\n", fails);
     return fails;
 }

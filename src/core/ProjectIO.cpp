@@ -2,6 +2,7 @@
 // Copyright (C) 2026 MiniDAW contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Session: importing, project files, autosave and bounce.
+#include <cmath>
 #include <algorithm>
 #include <cstdio>
 #include <fstream>

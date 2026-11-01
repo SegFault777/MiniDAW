@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "MidiOps.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstdint>
 
 namespace core {
@@ -207,6 +209,64 @@ std::vector<Note> velocityRamp(const std::vector<Note>& notes, double regionBeat
         n.velocity = std::clamp(int(std::lround(fromVelocity + (toVelocity - fromVelocity) * k)), 1, 127);
     }
     return out;
+}
+
+// ---- v0.9 ----
+
+static void sortByStart(std::vector<Note>& v) {
+    std::stable_sort(v.begin(), v.end(), [](const Note& a, const Note& b) { return a.start < b.start; });
+}
+
+std::vector<Note> fixOverlaps(const std::vector<Note>& notes) {
+    std::vector<Note> v = notes;
+    sortByStart(v);
+    for (size_t i = 0; i < v.size(); ++i)
+        for (size_t j = i + 1; j < v.size(); ++j) {
+            if (v[j].pitch != v[i].pitch || v[j].start <= v[i].start + 1e-9) continue;   // same start: a duplicate, not an overlap
+            if (v[j].start < v[i].start + v[i].length) v[i].length = v[j].start - v[i].start;
+            break;   // only the next note of this pitch matters
+        }
+    return v;
+}
+
+std::vector<Note> removeDuplicateNotes(const std::vector<Note>& notes, double tolerance) {
+    std::vector<Note> v = notes, out;
+    sortByStart(v);
+    for (const Note& n : v) {
+        bool dup = false;
+        for (auto it = out.rbegin(); it != out.rend() && n.start - it->start <= tolerance; ++it)
+            if (it->pitch == n.pitch) { it->length = std::max(it->length, n.length); dup = true; break; }
+        if (!dup) out.push_back(n);
+    }
+    return out;
+}
+
+std::vector<Note> fixedLength(const std::vector<Note>& notes, double regionBeats, double length) {
+    std::vector<Note> v = notes;
+    for (Note& n : v) n.length = std::max(0.01, std::min(length, regionBeats - n.start));
+    return v;
+}
+
+std::vector<Note> retrograde(const std::vector<Note>& notes, double regionBeats) {
+    std::vector<Note> v = notes;
+    for (Note& n : v) n.start = std::max(0.0, regionBeats - (n.start + n.length));
+    sortByStart(v);
+    return v;
+}
+
+std::vector<Note> invertPitches(const std::vector<Note>& notes) {
+    if (notes.empty()) return {};
+    int lo = 127, hi = 0;
+    for (const Note& n : notes) { lo = std::min(lo, n.pitch); hi = std::max(hi, n.pitch); }
+    std::vector<Note> v = notes;
+    for (Note& n : v) n.pitch = std::clamp(lo + hi - n.pitch, 0, 127);
+    return v;
+}
+
+std::vector<Note> scaleVelocity(const std::vector<Note>& notes, int percent, int offset) {
+    std::vector<Note> v = notes;
+    for (Note& n : v) n.velocity = std::clamp(int(std::lround(n.velocity * percent / 100.0)) + offset, 1, 127);
+    return v;
 }
 
 }  // namespace core

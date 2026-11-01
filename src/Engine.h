@@ -114,6 +114,15 @@ public:
     bool joinRegions(int t, int r) { return m_s.joinRegions(t, r); }
     double detectRegionTempo(int t, int r) const { return m_s.detectRegionTempo(t, r); }
     int convertPatternToMidi(int track, int bars) { return m_s.convertPatternToMidi(track, bars); }
+    // ---- more Logic Pro style editing (v0.9) ----
+    bool fixOverlapsRegion(int t, int r) { return m_s.fixOverlapsRegion(t, r); }
+    bool removeDuplicatesRegion(int t, int r) { return m_s.removeDuplicatesRegion(t, r); }
+    bool fixedLengthRegion(int t, int r, double beats) { return m_s.fixedLengthRegion(t, r, beats); }
+    bool retrogradeRegion(int t, int r) { return m_s.retrogradeRegion(t, r); }
+    bool invertRegion(int t, int r) { return m_s.invertRegion(t, r); }
+    bool scaleVelocityRegion(int t, int r, int percent, int offset) { return m_s.scaleVelocityRegion(t, r, percent, offset); }
+    int stripSilenceRegion(int t, int r, double db, double minMs, double padMs) { return m_s.stripSilenceRegion(t, r, db, minMs, padMs); }
+    double regionLoudness(int t, int r) const { return m_s.regionLoudness(t, r); }
 
     // ---- Markers (kept sorted by position) ----
     std::vector<Marker> markers() const { return m_s.markers(); }

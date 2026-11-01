@@ -1,6 +1,8 @@
 // MiniDAW - a lightweight Logic Pro-inspired digital audio workstation
 // Copyright (C) 2026 MiniDAW contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include <cmath>
+#include <algorithm>
 #include "AudioIO.h"
 
 #include <cstring>

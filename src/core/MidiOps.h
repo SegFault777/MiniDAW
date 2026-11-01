@@ -71,4 +71,25 @@ std::vector<Note> transposeNotes(const std::vector<Note>& notes, int semitones);
 /// Velocity ramp over the region: a crescendo (from < to) or decrescendo (from > to).
 std::vector<Note> velocityRamp(const std::vector<Note>& notes, double regionBeats, int fromVelocity, int toVelocity);
 
+// ---- v0.9 ----
+
+/// Shortens notes that overlap a later note of the same pitch so that they end where that note starts
+/// (Logic's Fix Overlaps). The result is sorted by start.
+std::vector<Note> fixOverlaps(const std::vector<Note>& notes);
+
+/// Removes notes that repeat the same pitch at (nearly) the same start; the longer one is kept.
+std::vector<Note> removeDuplicateNotes(const std::vector<Note>& notes, double tolerance = 0.01);
+
+/// Gives every note the same length (never longer than the rest of the region).
+std::vector<Note> fixedLength(const std::vector<Note>& notes, double regionBeats, double length);
+
+/// Plays the notes backwards inside the region (Logic's Retrograde).
+std::vector<Note> retrograde(const std::vector<Note>& notes, double regionBeats);
+
+/// Mirrors the pitches around the middle of the lowest and the highest note (Logic's Invert).
+std::vector<Note> invertPitches(const std::vector<Note>& notes);
+
+/// velocity = velocity * percent / 100 + offset, kept in 1 .. 127.
+std::vector<Note> scaleVelocity(const std::vector<Note>& notes, int percent, int offset);
+
 }  // namespace core

@@ -10,7 +10,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 > sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
 > VST is a trademark of Steinberg Media Technologies GmbH.
 
-**Version 0.8** · License: GPL-3.0-or-later
+**Version 0.8_1** · License: GPL-3.0-or-later
 
 ## Features
 

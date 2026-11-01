@@ -128,6 +128,17 @@ public:
     double detectRegionTempo(int t, int r) const;
     /// Converts the step pattern of a drum machine track into a MIDI region on a new Drummer track.
     int convertPatternToMidi(int track, int bars);
+    // ---- more Logic Pro style editing (v0.9) ----
+    bool fixOverlapsRegion(int t, int r);
+    bool removeDuplicatesRegion(int t, int r);
+    bool fixedLengthRegion(int t, int r, double lengthBeats);
+    bool retrogradeRegion(int t, int r);
+    bool invertRegion(int t, int r);
+    bool scaleVelocityRegion(int t, int r, int percent, int offset);
+    /// Cuts the quiet parts out of an audio region (Logic's Strip Silence). Returns how many regions remain (0: failed).
+    int stripSilenceRegion(int t, int r, double thresholdDb, double minSilenceMs, double padMs);
+    /// Integrated loudness of an audio region in LUFS (dsp::kSilentLufs when silent or too short; 1000 when not audio).
+    double regionLoudness(int t, int r) const;
 
     // ---- Markers (kept sorted by position) ----
     std::vector<Marker> markers() const;

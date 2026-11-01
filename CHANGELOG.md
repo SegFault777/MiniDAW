@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.8_1] - 2026-11-01
+
+### Fixed
+- Windows build: `MainWindow.cpp` used `selectedMidiRegion` before its definition (C3861); `platform/Audio.cpp`
+  was missing `#include <algorithm>` (C2039 for `std::clamp`). Added the same missing standard includes to a few
+  other source files.
+
 ## [0.8] - 2026-11-01
 
 ### Changed

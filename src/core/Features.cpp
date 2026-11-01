@@ -2,7 +2,9 @@
 // Copyright (C) 2026 MiniDAW contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Session: Logic Pro style editing features (v0.7).
+#include <cmath>
 #include <algorithm>
+#include "../dsp/AudioAnalysis.h"
 #include "../dsp/TempoDetect.h"
 #include "Internal.h"
 #include "Session.h"
@@ -270,6 +272,93 @@ int Session::convertPatternToMidi(int track, int bars) {
     }
     changed(true);
     return idx;
+}
+
+// ---- v0.9 ----
+
+bool Session::fixOverlapsRegion(int t, int r) {
+    return editNotes(t, r, [&](const std::vector<Note>& n, double) { return fixOverlaps(n); });
+}
+
+bool Session::removeDuplicatesRegion(int t, int r) {
+    return editNotes(t, r, [&](const std::vector<Note>& n, double) { return removeDuplicateNotes(n); });
+}
+
+bool Session::fixedLengthRegion(int t, int r, double lengthBeats) {
+    if (!(lengthBeats > 0)) return false;
+    return editNotes(t, r, [&](const std::vector<Note>& n, double len) { return fixedLength(n, len, lengthBeats); });
+}
+
+bool Session::retrogradeRegion(int t, int r) {
+    return editNotes(t, r, [&](const std::vector<Note>& n, double len) { return retrograde(n, len); });
+}
+
+bool Session::invertRegion(int t, int r) {
+    return editNotes(t, r, [&](const std::vector<Note>& n, double) { return invertPitches(n); });
+}
+
+bool Session::scaleVelocityRegion(int t, int r, int percent, int offset) {
+    return editNotes(t, r, [&](const std::vector<Note>& n, double) { return scaleVelocity(n, std::clamp(percent, 1, 400), std::clamp(offset, -126, 126)); });
+}
+
+int Session::stripSilenceRegion(int t, int r, double thresholdDb, double minSilenceMs, double padMs) {
+    Region a;
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        if (t < 0 || t >= int(m_tracks.size()) || r < 0 || r >= int(m_tracks[size_t(t)].regions.size())) return 0;
+        a = m_tracks[size_t(t)].regions[size_t(r)];
+    }
+    if (a.midi) return 0;
+    if (!a.audio) { message(tr("This audio is still loading.")); return 0; }
+    if (a.flexed()) { message(tr("Strip Silence needs a region that is not time-stretched or transposed.")); return 0; }
+    if (a.offset < 0 || a.frames <= 0 || a.offset + a.frames > a.audio->frames()) return 0;
+    constexpr double kRateD = 44100.0;
+    const auto ranges = dsp::findSoundRanges(a.audio->pcm.data() + a.offset * 2, size_t(a.frames), std::clamp(thresholdDb, -90.0, -1.0),
+                                             size_t(std::max(0.0, minSilenceMs) * kRateD / 1000.0), size_t(std::max(0.0, padMs) * kRateD / 1000.0));
+    if (ranges.empty()) { message(tr("The region is silent, nothing was kept.")); return 0; }
+    if (ranges.size() == 1 && ranges[0].first == 0 && ranges[0].second == size_t(a.frames)) return 1;   // nothing to strip
+    checkpoint();
+    const auto tm = tempoMap();
+    const double startFrame = tm->beatToFrame(a.start);
+    std::vector<Region> parts;
+    for (size_t k = 0; k < ranges.size(); ++k) {
+        const i64 b = i64(ranges[k].first), e = i64(ranges[k].second);
+        Region x = a;
+        x.offset = a.offset + b;
+        x.frames = e - b;
+        x.srcOffset = a.srcOffset + b;
+        x.srcFrames = e - b;
+        x.start = tm->frameToBeat(startFrame + double(b));
+        const i64 cut = std::min<i64>(220, x.frames / 2);   // 5 ms fades on the new edges avoid clicks
+        x.fadeIn = k == 0 && ranges[k].first == 0 ? a.fadeIn : cut;
+        x.fadeOut = k + 1 == ranges.size() && ranges[k].second == size_t(a.frames) ? a.fadeOut : cut;
+        parts.push_back(std::move(x));
+    }
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        if (t >= int(m_tracks.size()) || r >= int(m_tracks[size_t(t)].regions.size())) return 0;
+        auto& regs = m_tracks[size_t(t)].regions;
+        regs[size_t(r)] = parts[0];
+        regs.insert(regs.begin() + r + 1, parts.begin() + 1, parts.end());
+    }
+    changed(false);
+    return int(parts.size());
+}
+
+double Session::regionLoudness(int t, int r) const {
+    std::shared_ptr<const AudioData> src;
+    i64 off = 0, n = 0;
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        if (t < 0 || t >= int(m_tracks.size()) || r < 0 || r >= int(m_tracks[size_t(t)].regions.size())) return 1000;
+        const Region& rg = m_tracks[size_t(t)].regions[size_t(r)];
+        if (rg.midi || !rg.audio) return 1000;
+        src = rg.audio;
+        off = rg.offset;
+        n = rg.frames;
+    }
+    if (n <= 0 || off < 0 || off + n > src->frames()) return dsp::kSilentLufs;
+    return dsp::integratedLoudness(src->pcm.data() + off * 2, size_t(n));
 }
 
 }  // namespace core
