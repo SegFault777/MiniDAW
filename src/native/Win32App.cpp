@@ -3,6 +3,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Windows shell of the Qt-free user interface (v0.9): one window, GDI text, WASAPI audio through src/platform.
 // Everything here only moves pixels and input events between Windows and ui::NativeUi.
+// windows.h must not define the min / max macros: dsp/Param.h has members called min and max.
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <windowsx.h>
 #include <commdlg.h>
@@ -26,7 +33,7 @@
 #include "../ui/Ui.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.10"
+#define MINIDAW_VERSION "0.10_1"
 #endif
 
 namespace {

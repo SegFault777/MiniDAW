@@ -438,7 +438,7 @@ void NativeUi::drawPianoRoll(Canvas& c, const Rect& r) {
         else c.strokeRoundRect(nr, 3, withAlpha(rgba(0, 0, 0), 120));
     }
     const double px = xOf(m_s.positionBeats() - regionStart);
-    if (px >= m_prGrid.x && px < m_prGrid.right()) c.vline(px, m_prGrid.y, m_prGrid.bottom() - 1, withAlpha(kAccent, 235));
+    if (px >= m_prGrid.x && px < m_prGrid.right()) c.vline(int(px), m_prGrid.y, m_prGrid.bottom() - 1, withAlpha(kAccent, 235));
     c.popClip();
     addHit(m_prGrid, Hit::PianoGrid);
     // keyboard

@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.10_1] - 2026-11-03
+
+### Fixed
+- Native build (MSVC): `Win32App.cpp` included `windows.h` without `NOMINMAX`, so the `min` / `max` macros broke the
+  members called `min` and `max` in `dsp/Param.h` (C4003, C2059) and everything after it. `NOMINMAX` and
+  `WIN32_LEAN_AND_MEAN` are now defined before the include (and passed on the compiler command line of the native
+  target). Also silenced the `fopen` / `sscanf` deprecation warnings and a double-to-int conversion warning.
+
 ## [0.10] - 2026-11-03
 
 ### Added (native version, `MiniDAWNative.exe`)
