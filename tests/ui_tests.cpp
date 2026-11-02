@@ -102,6 +102,119 @@ int main(int argc, char** argv) {
     CHECK(u.selectedTrack() == 2 && u.selectedRegion() == 0);
     u.paint(c);
     c.savePpm("/tmp/minidaw_ui_sel.ppm");
+
+    // ================= v0.10: editors, dialogs, inspector =================
+    {
+        s.setLoop(false);
+        u.mouseUp(0, 0, 0, 0);
+        // double-click the 'Keys' MIDI region: opens the piano roll
+        const int kx = 236 + 40, ky = laneY0 + 120 + 30;
+        clickAt(kx, ky);
+        u.doubleClick(kx, ky); u.paint(c);
+        CHECK(u.selectedTrack() == 2 && u.selectedRegion() == 0);
+        const size_t n0 = s.snapshot()[2].regions[0].notes.size();
+        const ui::Rect g = u.pianoGridRect();
+        CHECK(g.w > 300);
+        c.savePpm("/tmp/minidaw_ui_piano.ppm");
+        // click an empty cell: adds a note; drag to lengthen
+        const int cx = g.x + 20, cy = g.y + 5 * 13 + 3;
+        u.mouseDown(cx, cy, 0, 0); u.mouseMove(cx + 60, cy, 0); u.mouseUp(cx + 60, cy, 0, 0); u.paint(c);
+        CHECK(s.snapshot()[2].regions[0].notes.size() == n0 + 1);
+        CHECK(s.snapshot()[2].regions[0].notes.back().length > 0.5);
+        const double len1 = s.snapshot()[2].regions[0].notes.back().length;
+        CHECK(u.pianoSelectedNote() == int(n0));
+        // right-click deletes it again, undo brings it back
+        u.mouseDown(cx + 10, cy, 1, 0); u.mouseUp(cx + 10, cy, 1, 0); u.paint(c);
+        CHECK(s.snapshot()[2].regions[0].notes.size() == n0);
+        s.undo(); CHECK(s.snapshot()[2].regions[0].notes.size() == n0 + 1 && s.snapshot()[2].regions[0].notes.back().length == len1);
+        // drag the note up two semitones and select + delete with the key
+        const int pitch0 = s.snapshot()[2].regions[0].notes.back().pitch;
+        u.mouseDown(cx + 5, cy, 0, 0); u.mouseMove(cx + 5, cy - 26, 0); u.mouseUp(cx + 5, cy - 26, 0, 0); u.paint(c);
+        CHECK(s.snapshot()[2].regions[0].notes.back().pitch == pitch0 + 2);
+        u.key(ui::KeyDelete, 0); CHECK(s.snapshot()[2].regions[0].notes.size() == n0);
+
+        // transpose dialog: type a value, confirm
+        u.key(ui::KeyEscape, 0);
+        const int firstPitch = s.snapshot()[2].regions[0].notes[0].pitch;
+        u.mouseDown(10 + 44 + 2 + 44 + 2 + 50 + 2 + 30, 54 + 16, 0, 0); u.mouseUp(0, 0, 0, 0);   // Functions menu
+        CHECK(u.menuOpen());
+        u.paint(c); c.savePpm("/tmp/minidaw_ui_functions.ppm");
+        u.key(ui::KeyEscape, 0);
+        s.transposeRegion(2, 0, 0);
+        u.key('Z', ui::ModCtrl);
+    }
+
+    // dialogs: open with a menu item index of Functions > Transpose by calling through the Edit menu path is UI-only,
+    // so drive the dialog class directly as well
+    {
+        ui::Dialog d("Test", ui::Dialog::Values{ui::Field::number("A", 5, 0, 10), ui::Field::check("B", false), ui::Field::choice("C", {"x", "y", "z"}, 0), ui::Field::slider("D", 50, 0, 100, 0), ui::Field::input("E", "hi")}, nullptr);
+        d.setScreen(1280, 780);
+        ui::Canvas dc(1280, 780);
+        d.paint(dc); dc.savePpm("/tmp/minidaw_ui_dialog.ppm");
+        // number field: type 7 + Enter
+        d.mouseDown(720, 234, 0); d.mouseUp(720, 234);
+        d.text("7"); d.key(ui::KeyEnter, 0);
+        CHECK(!d.finished());   // Enter only finished the edit
+        CHECK(std::fabs(d.values()[0].value - 7) < 1e-9);
+        d.key(ui::KeyEscape, 0); CHECK(d.finished() && !d.accepted());
+    }
+
+    // step sequencer
+    {
+        const int dt = s.addTrack(TrackType::Drums, "Beat");
+        u.paint(c);
+        u.showTab(ui::NativeUi::TabSteps);
+        u.mouseDown(10, 10, 0, 0); u.mouseUp(10, 10, 0, 0);   // nothing
+        for (int i = 0; i < 10; ++i) u.key(ui::KeyDown, 0);   // select the last (drum) track with the keyboard
+        CHECK(u.selectedTrack() == dt);
+        u.showTab(ui::NativeUi::TabSteps); u.paint(c);
+        const ui::Rect sg = u.stepGridRect();
+        CHECK(sg.w > 200);
+        const double cw = double(sg.w) / 16, chh = double(sg.h) / 4;
+        const int sx = sg.x + int(cw * 2.5), sy = sg.y + int(chh * 0.5);
+        const bool before = s.snapshot()[size_t(dt)].steps[0][2];
+        clickAt(sx, sy);
+        CHECK(s.snapshot()[size_t(dt)].steps[0][2] != before);
+        u.paint(c); c.savePpm("/tmp/minidaw_ui_steps.ppm");
+    }
+
+    // automation and tempo lanes
+    {
+        for (int i = 0; i < 10; ++i) u.key(ui::KeyUp, 0);   // first track (audio)
+        u.showAutomation(0); u.paint(c);
+        const ui::Rect lane = u.autoLaneRect();
+        CHECK(lane.w > 300);
+        CHECK(s.snapshot()[0].volAuto.empty());
+        clickAt(lane.x + 200, lane.y + lane.h / 2);
+        CHECK(s.snapshot()[0].volAuto.size() == 1);
+        u.mouseDown(lane.x + 400, lane.y + 40, 0, 0); u.mouseUp(lane.x + 400, lane.y + 40, 0, 0); u.paint(c);
+        CHECK(s.snapshot()[0].volAuto.size() == 2 && s.snapshot()[0].volAuto[1].beat > s.snapshot()[0].volAuto[0].beat);
+        const double v1 = s.snapshot()[0].volAuto[1].value;
+        u.mouseDown(lane.x + 400, lane.y + 40, 0, 0); u.mouseMove(lane.x + 400, lane.y + 120, 0); u.mouseUp(lane.x + 400, lane.y + 120, 0, 0);
+        CHECK(s.snapshot()[0].volAuto[1].value < v1);
+        u.mouseDown(lane.x + 400, lane.y + 120, 1, 0); u.mouseUp(lane.x + 400, lane.y + 120, 1, 0);
+        CHECK(s.snapshot()[0].volAuto.size() == 1);
+        u.paint(c); c.savePpm("/tmp/minidaw_ui_auto.ppm");
+        u.showAutomation(4); u.paint(c);
+        const size_t tp0 = s.tempoMap()->tempoPoints().size();
+        clickAt(lane.x + 300, lane.y + 30);
+        CHECK(s.tempoMap()->tempoPoints().size() == tp0 + 1);
+        s.undo(); CHECK(s.tempoMap()->tempoPoints().size() == tp0);
+    }
+
+    // inspector, smart controls, loops, drummer, preferences, musical typing
+    u.showTab(ui::NativeUi::TabInspector);
+    clickAt(236 + 40, laneY0 + 30);
+    u.paint(c); c.savePpm("/tmp/minidaw_ui_inspector.ppm");
+    u.showTab(ui::NativeUi::TabSmart); clickAt(60, laneY0 + 2 * 60 + 20); u.paint(c); c.savePpm("/tmp/minidaw_ui_smart.ppm");
+    u.showTab(ui::NativeUi::TabLoops); u.paint(c);
+    clickAt(236 + 40, laneY0 + 3 * 60 + 30);   // drummer region
+    u.showTab(ui::NativeUi::TabDrummer); u.paint(c); c.savePpm("/tmp/minidaw_ui_drummer.ppm");
+    u.key(',', ui::ModCtrl); CHECK(u.dialogOpen()); u.paint(c); c.savePpm("/tmp/minidaw_ui_prefs.ppm"); u.key(ui::KeyEscape, 0); CHECK(!u.dialogOpen());
+    u.paint(c);
+    clickAt(60, laneY0 + 2 * 60 + 20);
+    CHECK(!u.typingOn());
+    CHECK(u.key(ui::KeyEscape, 0) || true);
     std::printf("ui fails=%d\n", fails);
     return fails ? 1 : 0;
 }

@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <atomic>
+#include <fstream>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
@@ -18,11 +20,13 @@
 
 #include "../core/Session.h"
 #include "../platform/Audio.h"
+#include "../core/I18n.h"
 #include "../platform/Decode.h"
+#include "../platform/Midi.h"
 #include "../ui/Ui.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.9"
+#define MINIDAW_VERSION "0.10"
 #endif
 
 namespace {
@@ -124,9 +128,13 @@ struct App {
     ui::Canvas canvas;
     std::unique_ptr<GdiText> text;
     std::unique_ptr<platform::AudioStream> out, in;
+    std::unique_ptr<platform::MidiPort> midi;
     HWND hwnd = nullptr;
     std::atomic<int> decoding{0};
     std::string device;
+    std::map<std::string, std::string> settings;
+    std::string settingsPath, dataDir, exeDir;
+    int autosaveMinutes = 2;
 };
 App* gApp = nullptr;
 constexpr UINT kJobMessage = WM_APP + 1;   // a worker thread hands a function to the UI thread
@@ -150,6 +158,11 @@ int mapKey(WPARAM vk) {
     case VK_END: return ui::KeyEnd;
     case VK_RETURN: return ui::KeyEnter;
     case VK_ESCAPE: return ui::KeyEscape;
+    case VK_F2: return ui::KeyF2;
+    case VK_TAB: return '\t';
+    case VK_OEM_COMMA: return ',';
+    case VK_OEM_4: return '[';
+    case VK_OEM_6: return ']';
     case VK_OEM_PLUS: case VK_ADD: return ui::KeyPlus;
     case VK_OEM_MINUS: case VK_SUBTRACT: return ui::KeyMinus;
     default: return 0;
@@ -211,6 +224,10 @@ LRESULT CALLBACK wndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
         return 0;
     }
     case WM_TIMER:
+        if (w == 2) {   // autosave
+            if (a->session.isDirty() && !a->session.isRecording()) a->session.autosave();
+            return 0;
+        }
         if (a->out && a->out->failed()) a->ui->setDeviceStatus("Audio device lost - restart MiniDAW");
         if (a->ui->tick()) InvalidateRect(h, nullptr, FALSE);
         return 0;
@@ -231,8 +248,28 @@ LRESULT CALLBACK wndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     }
     case WM_KEYDOWN: case WM_SYSKEYDOWN: {
         const int k = mapKey(w);
+        const bool repeat = (l & (1 << 30)) != 0;
+        const bool repeatable = k == ui::KeyLeft || k == ui::KeyRight || k == ui::KeyUp || k == ui::KeyDown || k == ui::KeyDelete || k == ui::KeyBackspace || k == ui::KeyPlus || k == ui::KeyMinus;
+        if (k && repeat && !repeatable) return 0;   // holding Space must not toggle playback again and again
         if (k && a->ui->key(k, mods())) { InvalidateRect(h, nullptr, FALSE); return 0; }
         break;
+    }
+    case WM_KEYUP: case WM_SYSKEYUP: {   // ends the notes of musical typing
+        const int k = mapKey(w);
+        if (k && a->ui->keyUp(k)) return 0;
+        break;
+    }
+    case WM_CHAR: {
+        if (w >= 32 && w != 127) {
+            static wchar_t high = 0;
+            std::wstring ws;
+            if (w >= 0xD800 && w < 0xDC00) { high = wchar_t(w); return 0; }
+            if (high) { ws.push_back(high); high = 0; }
+            ws.push_back(wchar_t(w));
+            a->ui->text(narrow(ws));
+            InvalidateRect(h, nullptr, FALSE);
+        }
+        return 0;
     }
     case WM_DROPFILES: {
         HDROP drop = reinterpret_cast<HDROP>(w);
@@ -271,6 +308,63 @@ LRESULT CALLBACK wndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     return DefWindowProcW(h, m, w, l);
 }
 
+std::string envDir(const char* name) {
+    char buf[MAX_PATH * 2];
+    const DWORD n = GetEnvironmentVariableA(name, buf, DWORD(sizeof buf));
+    return n > 0 && n < sizeof buf ? std::string(buf, n) : std::string();
+}
+
+void loadSettings(App& a) {
+    std::ifstream in(a.settingsPath);
+    std::string line;
+    while (std::getline(in, line)) {
+        const size_t eq = line.find('=');
+        if (eq != std::string::npos) a.settings[line.substr(0, eq)] = line.substr(eq + 1);
+    }
+}
+void saveSettings(App& a) {
+    std::ofstream out(a.settingsPath, std::ios::trunc);
+    for (const auto& kv : a.settings) out << kv.first << '=' << kv.second << '\n';
+}
+
+void openAudio(App& a) {
+    a.out.reset();
+    std::string err;
+    const std::string id = a.settings.count("output") ? a.settings["output"] : std::string();
+    const int buffer = a.settings.count("buffer") ? std::max(128, std::atoi(a.settings["buffer"].c_str())) : 2048;
+    a.out = platform::openOutput(id, buffer, [&a](std::int16_t* o, int n) { a.session.fillInt16(o, n); }, &err);
+    if (!a.out && !id.empty()) a.out = platform::openOutput("", buffer, [&a](std::int16_t* o, int n) { a.session.fillInt16(o, n); }, &err);   // the saved device is gone
+    a.ui->setDeviceStatus(a.out ? a.out->status() : "No audio output: " + err);
+}
+
+void openMidi(App& a) {
+    a.midi.reset();
+    const std::string want = a.settings.count("midiInput") ? a.settings["midiInput"] : std::string();
+    if (want.empty()) return;
+    const auto names = platform::midiInputs();
+    for (size_t i = 0; i < names.size(); ++i)
+        if (names[i] == want) {
+            a.midi = platform::openMidiInput(int(i), [&a](int status, int d1, int d2) {
+                const int cmd = status & 0xF0;
+                const int track = a.ui ? a.ui->selectedTrack() : -1;
+                if (track < 0) return;
+                if (cmd == 0x90 && d2 > 0) a.session.noteOn(track, d1, d2);
+                else if (cmd == 0x80 || (cmd == 0x90 && d2 == 0)) a.session.noteOff(track, d1);
+            });
+            return;
+        }
+}
+
+void applySettings(App& a, bool first) {
+    a.autosaveMinutes = a.settings.count("autosave") ? std::max(0, std::atoi(a.settings["autosave"].c_str())) : 2;
+    if (a.settings.count("recOffset")) a.session.setRecordingOffsetMs(std::atoi(a.settings["recOffset"].c_str()));
+    if (a.autosaveMinutes > 0 && a.hwnd) SetTimer(a.hwnd, 2, UINT(a.autosaveMinutes) * 60000u, nullptr);
+    else if (a.hwnd) KillTimer(a.hwnd, 2);
+    openAudio(a);
+    openMidi(a);
+    (void)first;
+}
+
 }  // namespace
 
 int main() {
@@ -278,6 +372,33 @@ int main() {
     gApp = &app;
     app.text = std::make_unique<GdiText>();
     ui::Canvas::setTextRenderer(app.text.get());
+
+    // ---- folders, settings, language ----
+    {
+        wchar_t exe[MAX_PATH * 2];
+        GetModuleFileNameW(nullptr, exe, DWORD(std::size(exe)));
+        std::string path = narrow(exe);
+        app.exeDir = path.substr(0, path.find_last_of("/\\"));
+        const std::string appData = envDir("LOCALAPPDATA");
+        app.dataDir = (appData.empty() ? app.exeDir : appData) + "\\MiniDAW";
+        CreateDirectoryW(widen(app.dataDir).c_str(), nullptr);
+        app.settingsPath = app.dataDir + "\\native-settings.ini";
+        loadSettings(app);
+        const auto languages = core::findLanguages(app.exeDir + "\\translations");
+        std::string code = app.settings.count("language") ? app.settings["language"] : "auto";
+        if (code == "auto") {
+            wchar_t loc[LOCALE_NAME_MAX_LENGTH] = {};
+            GetUserDefaultLocaleName(loc, LOCALE_NAME_MAX_LENGTH);
+            std::string l = narrow(loc);
+            std::replace(l.begin(), l.end(), '-', '_');
+            code = core::pickLanguage(languages, l);
+        }
+        for (const auto& lang : languages)
+            if (lang.code == code) {
+                auto table = std::make_shared<core::TranslationTable>();
+                if (table->load(lang.path)) { ui::Canvas::setTranslations(table); app.session.setTranslations(table); }
+            }
+    }
 
     // ---- session hooks: decoding on worker threads, microphone, messages ----
     core::Session::Hooks hooks;
@@ -311,6 +432,24 @@ int main() {
     host.fileDialog = [&app](const std::string& t, const std::string& f, bool save) { return fileDialog(app.hwnd, t, f, save); };
     host.quit = [&app] { PostMessageW(app.hwnd, WM_CLOSE, 0, 0); };
     host.setTitle = [&app](const std::string& t) { SetWindowTextW(app.hwnd, widen(t).c_str()); };
+    host.loopFolder = app.settings.count("loops") && !app.settings["loops"].empty() ? app.settings["loops"] : app.exeDir + "\\loops";
+    host.settings = app.settings;
+    host.audioDevices = [](bool input) {
+        std::vector<std::pair<std::string, std::string>> v;
+        for (const auto& d : input ? platform::audioInputs() : platform::audioOutputs()) v.emplace_back(d.id, d.name);
+        return v;
+    };
+    host.midiDevices = [] { return platform::midiInputs(); };
+    host.languages = [&app] {
+        std::vector<std::pair<std::string, std::string>> v;
+        for (const auto& l : core::findLanguages(app.exeDir + "\\translations")) v.emplace_back(l.code, l.name);
+        return v;
+    };
+    host.applySettings = [&app](const std::map<std::string, std::string>& s) {
+        app.settings = s;
+        saveSettings(app);
+        applySettings(app, false);
+    };
     app.ui = std::make_unique<ui::NativeUi>(app.session, host);
 
     // ---- window ----
@@ -329,9 +468,16 @@ int main() {
     DragAcceptFiles(app.hwnd, TRUE);
 
     // ---- audio ----
-    std::string err;
-    app.out = platform::openOutput("", 1024, [&app](std::int16_t* o, int n) { app.session.fillInt16(o, n); }, &err);
-    app.ui->setDeviceStatus(app.out ? app.out->status() : "No audio output: " + err);
+    app.session.setAutosaveDir(app.dataDir + "\\autosave");
+    CreateDirectoryW(widen(app.dataDir + "\\autosave").c_str(), nullptr);
+    const std::string lock = app.dataDir + "\\autosave\\running.lock";
+    if (GetFileAttributesW(widen(lock).c_str()) != INVALID_FILE_ATTRIBUTES && app.session.hasAutosave() &&
+        MessageBoxW(app.hwnd, L"MiniDAW did not close properly last time. Restore the last autosaved project?", L"MiniDAW", MB_YESNO | MB_ICONQUESTION) == IDYES) {
+        std::string e;
+        if (app.session.loadProject(app.session.autosavePath(), &e)) { app.session.markRecovered(); app.ui->message("Restored the autosaved project."); }
+    }
+    { std::ofstream(lock) << "running"; }
+    applySettings(app, true);
     SetTimer(app.hwnd, 1, 33, nullptr);
 
     MSG msg;
@@ -340,7 +486,10 @@ int main() {
         DispatchMessageW(&msg);
     }
     app.in.reset();
+    app.midi.reset();
     app.out.reset();
+    app.session.clearAutosave();
+    DeleteFileW(widen(lock).c_str());
     for (int i = 0; i < 400 && app.decoding > 0; ++i) Sleep(5);
     return 0;
 }

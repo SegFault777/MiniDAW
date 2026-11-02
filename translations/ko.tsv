@@ -345,3 +345,142 @@ The pattern is empty.	패턴이 비어 있습니다.
 Only regions of the same kind can be joined.	같은 종류의 리전끼리만 합칠 수 있습니다.
 There is no region after this one to join.	이 리전 뒤에 합칠 리전이 없습니다.
 These audio regions cannot be joined: they must be neighbours that play the same recording one after the other.	이 오디오 리전들은 합칠 수 없습니다. 같은 녹음을 이어서 재생하는 인접 리전이어야 합니다.
+File	파일
+Edit	편집
+Track	트랙
+Functions	기능
+View	보기
++  Add Track	+  트랙 추가
+Loops	루프
+New Project	새 프로젝트
+Open...	열기...
+Open Recent...	최근 항목 열기...
+No recent projects	최근 프로젝트 없음
+Save As...	다른 이름으로 저장...
+Import Audio...	오디오 가져오기...
+Import MIDI File...	MIDI 파일 가져오기...
+Export MIDI File...	MIDI 파일 내보내기...
+Bounce to WAV...	WAV로 바운스...
+Preferences...	환경설정...
+Cut Region	리전 잘라내기
+Copy Region	리전 복사
+Paste Region	리전 붙여넣기
+Delete Region	리전 삭제
+Rename...	이름 바꾸기...
+Snap to Grid: On	그리드에 맞추기: 켜짐
+Snap to Grid: Off	그리드에 맞추기: 꺼짐
+Rename Track...	트랙 이름 바꾸기...
+Convert Pattern to MIDI Region...	패턴을 MIDI 리전으로 변환...
+Repeat Region...	리전 반복...
+Quantize...	퀀타이즈...
+Scale Quantize...	스케일 퀀타이즈...
+Humanize...	휴머나이즈...
+Arpeggiate...	아르페지오...
+Chord Trigger...	코드 트리거...
+Transpose...	트랜스포즈...
+Crescendo / Decrescendo...	크레셴도 / 디크레셴도...
+Fixed Note Length...	고정 음 길이...
+Scale Velocity...	벨로시티 스케일...
+Fix Overlaps	겹침 수정
+Remove Duplicate Notes	중복 노트 제거
+Retrograde	역행
+Invert Pitches	음높이 반전
+Strip Silence...	무음 구간 제거...
+Detect Tempo...	템포 감지...
+Reverse Region	리전 뒤집기
+Normalize Region	리전 노멀라이즈
+Measure Loudness	라우드니스 측정
+Hide Bottom Panel	하단 패널 숨기기
+Show Bottom Panel	하단 패널 보이기
+Hide Inspector	인스펙터 숨기기
+Show Inspector	인스펙터 보이기
+Zoom In	확대
+Zoom Out	축소
+Tempo...	템포...
+Time Signature...	박자표...
+Rename Marker...	마커 이름 바꾸기...
+Metronome	메트로놈
+Count-in	카운트인
+Musical Typing: On	음악 타이핑: 켜짐
+Musical Typing: Off	음악 타이핑: 꺼짐
+Cancel	취소
+Close	닫기
+Quantize	퀀타이즈
+Strip	제거
+Also quantize note lengths	음 길이도 퀀타이즈
+Pentatonic Major	펜타토닉 메이저
+Pentatonic Minor	펜타토닉 마이너
+Random seed	난수 시드
+Up / Down	위 / 아래
+Down / Up	아래 / 위
+As played	연주 순서대로
+Octaves	옥타브
+Sus2	서스2
+Sus4	서스4
+Major 7	메이저 7
+Minor 7	마이너 7
+Dominant 7	도미넌트 7
+Fixed Note Length	고정 음 길이
+Length	길이
+1 Bar	1마디
+Scale Velocity	벨로시티 스케일
+Offset	오프셋
+Strip Silence	무음 구간 제거
+Threshold	임계값
+Minimum silence	최소 무음 길이
+Padding	여유
+Follows project tempo	프로젝트 템포를 따라가는 중
+Project tempo	프로젝트 템포
+Normalize level	노멀라이즈 레벨
+Rename Region	리전 이름 바꾸기
+256 samples (5 ms)	256 샘플 (5 ms)
+512 samples (11 ms)	512 샘플 (11 ms)
+1024 samples (23 ms)	1024 샘플 (23 ms)
+2048 samples (46 ms)	2048 샘플 (46 ms)
+4096 samples (92 ms)	4096 샘플 (92 ms)
+English	English
+Restart MiniDAW to apply a new language. Autosave 0 = off.	새 언어는 MiniDAW를 다시 시작해야 적용됩니다. 자동 저장 0 = 끔.
+Ready	준비됨
+OUT	출력
+Region	리전
+Inserts	인서트
++ Add effect	+ 이펙트 추가
+Synth	신스
+Center	중앙
+Send A (reverb)	센드 A (리버브)
+Send B (echo)	센드 B (에코)
+Fade in	페이드 인
+Fade out	페이드 아웃
+No region selected.	선택된 리전이 없습니다.
+Select a track or a region to see its properties.	속성을 보려면 트랙이나 리전을 선택하세요.
+Select a track to edit its instrument and effects.	악기와 이펙트를 편집하려면 트랙을 선택하세요.
+This track has no instrument or effects. Add an effect in the Inspector.	이 트랙에는 악기나 이펙트가 없습니다. 인스펙터에서 이펙트를 추가하세요.
+Select a MIDI region (double-click one) to edit its notes.	노트를 편집하려면 MIDI 리전을 선택하세요(더블클릭).
+Select a Drummer region (double-click an empty lane of a Drummer track to create one).	드러머 리전을 선택하세요(드러머 트랙의 빈 곳을 더블클릭하면 만들어집니다).
+Complexity	복잡도
+Loudness	음량
+Fills: On	필인: 켜짐
+Fills: Off	필인: 꺼짐
+New variation	새 변형
+Clear pattern	패턴 지우기
+Choose folder...	폴더 선택...
+Stop preview	미리듣기 중지
+loading...	불러오는 중...
+Ctrl+Shift+S	Ctrl+Shift+S
+Select a track or a region first.	먼저 트랙이나 리전을 선택하세요.
+Arm a track with the R button first.	먼저 R 버튼으로 트랙을 녹음 대기시키세요.
+Region copied.	리전을 복사했습니다.
+Legato applied.	레가토를 적용했습니다.
+Overlaps fixed.	겹침을 수정했습니다.
+Duplicate notes removed.	중복 노트를 제거했습니다.
+Region reversed.	리전을 뒤집었습니다.
+Pitches inverted.	음높이를 반전했습니다.
+Preferences saved.	환경설정을 저장했습니다.
+New project.	새 프로젝트입니다.
+Musical typing off.	음악 타이핑을 껐습니다.
+File dialogs are not available here.	여기서는 파일 대화상자를 사용할 수 없습니다.
+Use File > Import Audio to add audio.	오디오를 추가하려면 파일 > 오디오 가져오기를 사용하세요.
+Drum machine patterns are not part of the native UI yet.	드럼 머신 패턴은 아직 네이티브 UI에서 지원하지 않습니다.
+Too quiet or too short to measure.	너무 조용하거나 짧아서 측정할 수 없습니다.
+Qt-free native version. GPL-3.0-or-later. Fonts: Liberation Sans (SIL OFL).	Qt 없는 네이티브 버전. GPL-3.0-or-later. 글꼴: Liberation Sans (SIL OFL).
+MiniDAW - a lightweight Logic Pro-inspired digital audio workstation.	MiniDAW - Logic Pro에서 영감을 받은 가벼운 디지털 오디오 워크스테이션.

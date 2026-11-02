@@ -65,6 +65,11 @@ talks to the engine only through `core::Session`. `src/native/Win32App.cpp` is t
 file: it copies the canvas to the window, converts input messages, renders text with GDI (all of Unicode) and
 opens WASAPI through `src/platform`. On other machines (tests, screenshots) the built-in font tables are used.
 
+The bottom panel, the dialogs and the lanes follow the same rules: controls (`uiSlider`, `uiAction`) register their
+hit area and callback while they are painted, editors with their own geometry (piano roll, step grid, automation
+lane) handle the mouse themselves, and every text goes through `Canvas::translate`, so translations need no
+extra code. `ui::Dialog` collects values and the caller applies them in its OK callback.
+
 ## What still depends on Qt
 
 | Area | Qt classes it needs |

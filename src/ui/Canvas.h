@@ -5,8 +5,11 @@
 // Qt-free software 2D canvas: an ARGB pixel buffer with clipping, anti-aliased shapes and text. The window layer
 // only has to copy the buffer to the screen, so everything above it can be tested and screenshotted on any machine.
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
+
+namespace core { class TranslationTable; }
 
 namespace ui {
 
@@ -86,6 +89,10 @@ public:
     /// Installs the text renderer used by every canvas (nullptr restores the built-in ASCII renderer).
     static void setTextRenderer(TextRenderer* r);
     static TextRenderer* textRenderer();
+    /// Every string that is drawn is looked up here first (the English text is the key), so the whole UI can be
+    /// translated without touching the code that draws it. nullptr turns translation off.
+    static void setTranslations(std::shared_ptr<const core::TranslationTable> table);
+    static const std::string& translate(const std::string& s);
 
     bool savePpm(const std::string& path) const;
 

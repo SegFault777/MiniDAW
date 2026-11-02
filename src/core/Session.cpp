@@ -479,6 +479,12 @@ void Session::setRegionMute(int t, int r, bool mute) {
     changed(false);
 }
 
+void Session::renameRegion(int t, int r, const std::string& name) {
+    checkpoint();
+    REGION_OP(rg.name = name;)
+    changed(false);
+}
+
 void Session::moveTrack(int from, int to) {
     {
         std::lock_guard<std::mutex> l(m_mutex);

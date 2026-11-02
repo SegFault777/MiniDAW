@@ -50,7 +50,8 @@ Rect NativeUi::arrangeArea() const {
     const int y = kControlH + kToolbarH;
     return {0, y, m_w, std::max(0, m_h - y - kStatusH - (m_mixer ? kMixerH : 0))};
 }
-Rect NativeUi::mixerArea() const { return m_mixer ? Rect{0, m_h - kStatusH - kMixerH, m_w, kMixerH} : Rect{}; }
+Rect NativeUi::bottomArea() const { return m_mixer ? Rect{0, m_h - kStatusH - kMixerH, m_w, kMixerH} : Rect{}; }
+Rect NativeUi::paneContent() const { const Rect b = bottomArea(); return {b.x, b.y + 30, b.w, b.h - 30}; }
 
 double NativeUi::snapStep() const { return m_snapOn ? kSnapBeats[m_snapIdx] : 0.0; }
 double NativeUi::snapBeat(double b) const {
@@ -78,13 +79,17 @@ void NativeUi::paint(Canvas& c) {
     m_tracks = m_s.snapshot();
     if (m_selTrack >= int(m_tracks.size())) m_selTrack = m_selRegion = -1;
     m_hits.clear();
+    m_sliderFns.clear();
+    m_actionFns.clear();
     c.clear(kBg);
     drawArrange(c);
-    if (m_mixer) drawMixer(c);
+    if (m_mixer) drawBottom(c);
     drawToolbar(c);
     drawControlBar(c);
     drawStatus(c);
     drawMenu(c);
+    if (m_dialog && m_dialog->finished()) m_dialog.reset();
+    if (m_dialog) { m_dialog->setScreen(m_w, m_h); m_dialog->paint(c); }
     m_dirty = false;
 }
 
@@ -172,7 +177,7 @@ void NativeUi::drawToolbar(Canvas& c) {
     c.fillRect(bar, kPanel);
     c.hline(0, m_w - 1, bar.bottom() - 1, kLine);
     int x = 10;
-    const struct { const char* label; Hit kind; int w; } menus[] = {{"File", Hit::MenuFile, 44}, {"Edit", Hit::MenuEdit, 44}, {"Functions", Hit::MenuFunctions, 74}, {"View", Hit::MenuView, 44}};
+    const struct { const char* label; Hit kind; int w; } menus[] = {{"File", Hit::MenuFile, 44}, {"Edit", Hit::MenuEdit, 44}, {"Track", Hit::MenuTrack, 50}, {"Functions", Hit::MenuFunctions, 74}, {"View", Hit::MenuView, 44}};
     for (const auto& m : menus) {
         const Rect r{x, bar.y + 5, m.w, 22};
         const bool hover = r.contains(m_hoverX, m_hoverY);
@@ -230,6 +235,19 @@ void NativeUi::drawArrange(Canvas& c) {
                 c.vline(bx, area.y + 19, area.y + kRulerH - 2, rgba(90, 98, 114));
                 if (m_ppb >= 24) c.vline(bx, laneY, area.bottom() - 1, withAlpha(rgba(255, 255, 255), 10));
             }
+    }
+    {   // markers
+        const auto marks = m_s.markers();
+        for (int i = 0; i < int(marks.size()); ++i) {
+            const int mx = int(beatToX(marks[size_t(i)].beat));
+            if (mx < kHeaderW - 4 || mx > m_w) continue;
+            const std::string nm = marks[size_t(i)].name.empty() ? "Marker " + std::to_string(i + 1) : marks[size_t(i)].name;
+            const int w = std::min(120, c.textWidth(nm, Font::Regular11) + 12);
+            c.fillRoundRect({mx, area.y + 1, w, 12}, 3, rgba(120, 82, 230));
+            c.textIn({mx + 4, area.y + 1, w - 6, 12}, nm, rgba(240, 236, 255), Font::Regular11);
+            c.vline(mx, area.y + 1, area.bottom() - 1, withAlpha(rgba(150, 110, 255), 70));
+            addHit({mx - 2, area.y, w + 4, 14}, Hit::Marker, i);
+        }
     }
     c.popClip();
     addHit({kHeaderW, area.y, area.w - kHeaderW, kRulerH}, Hit::Ruler);
@@ -391,7 +409,7 @@ void NativeUi::drawStrip(Canvas& c, const Rect& r, const core::Track* t, int ti)
     if (!master) addHit({int(kx) - 15, int(ky) - 15, 30, 30}, Hit::Pan, ti);
     c.text(int(kx), int(ky) + 16, master ? "" : (std::fabs(pan) < 0.02f ? "C" : num(pan < 0 ? "L%.0f" : "R%.0f", std::fabs(pan) * 100)), kDim, Font::Regular11, Align::Center);
     // fader + meter
-    const Rect travel{r.x + 32, r.y + 152, 8, kMixerH - 152 - 62};
+    const Rect travel{r.x + 32, r.y + 152, 8, r.h - 152 - 66};
     const float vol = master ? m_s.masterVolume() : t->volume;
     c.fillRoundRect({travel.x + 2, travel.y, 4, travel.h}, 2, rgba(12, 13, 16));
     for (double db : {6.0, 0.0, -6.0, -12.0, -24.0, -48.0}) {
@@ -425,14 +443,12 @@ void NativeUi::drawStrip(Canvas& c, const Rect& r, const core::Track* t, int ti)
 }
 
 void NativeUi::drawMixer(Canvas& c) {
-    const Rect area = mixerArea();
+    const Rect area = paneContent();
     c.fillRect(area, kPanel);
-    c.hline(0, m_w - 1, area.y, kLine);
-    c.hline(0, m_w - 1, area.y + 1, withAlpha(rgba(255, 255, 255), 14));
     const int masterW = kStripW + 8;
     c.pushClip({0, area.y + 2, m_w - masterW, area.h - 2});
     for (int i = 0; i < int(m_tracks.size()); ++i) {
-        const Rect r{i * kStripW - int(m_scrollY * 0), area.y + 2, kStripW, area.h - 2};
+        const Rect r{i * kStripW, area.y + 2, kStripW, area.h - 2};
         if (r.right() < 0 || r.x > m_w) continue;
         drawStrip(c, r, &m_tracks[size_t(i)], i);
     }

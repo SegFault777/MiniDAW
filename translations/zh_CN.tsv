@@ -281,3 +281,146 @@ The pattern is empty.	模式为空。
 Only regions of the same kind can be joined.	只能合并相同类型的区域。
 There is no region after this one to join.	此区域之后没有可合并的区域。
 These audio regions cannot be joined: they must be neighbours that play the same recording one after the other.	无法合并这些音频区域：它们必须是依次播放同一段录音的相邻区域。
+File	文件
+Edit	编辑
+Track	轨道
+Functions	功能
+View	视图
++  Add Track	+  添加轨道
+Loops	循环片段
+New Project	新建项目
+Open...	打开...
+Open Recent...	打开最近项目...
+No recent projects	没有最近的项目
+Save As...	另存为...
+Import Audio...	导入音频...
+Import MIDI File...	导入 MIDI 文件...
+Export MIDI File...	导出 MIDI 文件...
+Bounce to WAV...	导出为 WAV...
+Preferences...	偏好设置...
+Cut Region	剪切区域
+Copy Region	复制区域
+Paste Region	粘贴区域
+Delete Region	删除区域
+Rename...	重命名...
+Snap to Grid: On	对齐网格: 开
+Snap to Grid: Off	对齐网格: 关
+Rename Track...	重命名轨道...
+Convert Pattern to MIDI Region...	将模式转换为 MIDI 区域...
+Repeat Region...	重复区域...
+Quantize...	量化...
+Scale Quantize...	音阶量化...
+Humanize...	人性化...
+Arpeggiate...	琶音...
+Chord Trigger...	和弦触发...
+Transpose...	移调...
+Crescendo / Decrescendo...	渐强 / 渐弱...
+Fixed Note Length...	固定音符长度...
+Scale Velocity...	力度缩放...
+Fix Overlaps	修复重叠
+Remove Duplicate Notes	删除重复音符
+Retrograde	逆行
+Invert Pitches	音高反转
+Strip Silence...	去除静音...
+Detect Tempo...	检测速度...
+Reverse Region	反转区域
+Normalize Region	标准化区域
+Measure Loudness	测量响度
+Hide Bottom Panel	隐藏底部面板
+Show Bottom Panel	显示底部面板
+Hide Inspector	隐藏检查器
+Show Inspector	显示检查器
+Zoom In	放大
+Zoom Out	缩小
+Tempo...	速度...
+Time Signature...	拍号...
+Rename Marker...	重命名标记...
+Metronome	节拍器
+Count-in	预备拍
+Musical Typing: On	音乐键盘: 开
+Musical Typing: Off	音乐键盘: 关
+Cancel	取消
+Close	关闭
+Quantize	量化
+Strip	去除
+Also quantize note lengths	同时量化音符长度
+Pentatonic Major	大调五声音阶
+Pentatonic Minor	小调五声音阶
+Random seed	随机种子
+Up / Down	向上 / 向下
+Down / Up	向下 / 向上
+As played	按演奏顺序
+Octaves	八度
+Sus2	挂二
+Sus4	挂四
+Major 7	大七
+Minor 7	小七
+Dominant 7	属七
+Fixed Note Length	固定音符长度
+Length	长度
+1 Bar	1 小节
+Scale Velocity	力度缩放
+Offset	偏移
+Strip Silence	去除静音
+Threshold	阈值
+Minimum silence	最短静音长度
+Padding	边距
+Follows project tempo	正在跟随项目速度
+Project tempo	项目速度
+Normalize level	标准化电平
+Rename Region	重命名区域
+256 samples (5 ms)	256 采样 (5 ms)
+512 samples (11 ms)	512 采样 (11 ms)
+1024 samples (23 ms)	1024 采样 (23 ms)
+2048 samples (46 ms)	2048 采样 (46 ms)
+4096 samples (92 ms)	4096 采样 (92 ms)
+English	English
+Restart MiniDAW to apply a new language. Autosave 0 = off.	更改语言需重启 MiniDAW。自动保存 0 = 关闭。
+Ready	就绪
+OUT	输出
+Region	区域
+Instrument	乐器
+Inserts	插入效果
++ Add effect	+ 添加效果
+Audio track	音频轨道
+Synth	合成器
+Drum Kit	鼓组
+Center	居中
+Send A (reverb)	发送 A (混响)
+Send B (echo)	发送 B (回声)
+Fade in	淡入
+Fade out	淡出
+No region selected.	未选择区域。
+Select a track or a region to see its properties.	选择轨道或区域以查看其属性。
+Select a track to edit its instrument and effects.	选择轨道以编辑其乐器和效果。
+This track has no instrument or effects. Add an effect in the Inspector.	此轨道没有乐器或效果。请在检查器中添加效果。
+Select a MIDI region (double-click one) to edit its notes.	选择 MIDI 区域(双击)以编辑音符。
+Select a Drum Machine track to edit its pattern.	选择鼓机轨道以编辑其模式。
+Select a Drummer region (double-click an empty lane of a Drummer track to create one).	选择鼓手区域(双击鼓手轨道的空白处可创建)。
+Complexity	复杂度
+Loudness	响度
+Fills: On	过门: 开
+Fills: Off	过门: 关
+New variation	新变化
+Clear pattern	清除模式
+Choose folder...	选择文件夹...
+Stop preview	停止试听
+loading...	加载中...
+Ctrl+Shift+S	Ctrl+Shift+S
+Select a track or a region first.	请先选择轨道或区域。
+Arm a track with the R button first.	请先用 R 按钮准备录音轨道。
+Region copied.	已复制区域。
+Legato applied.	已应用连奏。
+Overlaps fixed.	已修复重叠。
+Duplicate notes removed.	已删除重复音符。
+Region reversed.	已反转区域。
+Pitches inverted.	已反转音高。
+Preferences saved.	已保存偏好设置。
+New project.	新项目。
+Musical typing off.	已关闭音乐键盘。
+File dialogs are not available here.	此处无法使用文件对话框。
+Use File > Import Audio to add audio.	请使用 文件 > 导入音频 来添加音频。
+Drum machine patterns are not part of the native UI yet.	鼓机模式尚未包含在原生界面中。
+Too quiet or too short to measure.	声音太小或太短,无法测量。
+Qt-free native version. GPL-3.0-or-later. Fonts: Liberation Sans (SIL OFL).	无 Qt 的原生版本。GPL-3.0-or-later。字体: Liberation Sans (SIL OFL)。
+MiniDAW - a lightweight Logic Pro-inspired digital audio workstation.	MiniDAW - 受 Logic Pro 启发的轻量级数字音频工作站。

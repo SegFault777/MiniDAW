@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include "../core/I18n.h"
 #include "FontData.h"
 
 namespace ui {
@@ -77,6 +78,10 @@ private:
 BuiltinText gBuiltin;
 TextRenderer* gRenderer = nullptr;
 }  // namespace
+
+namespace { std::shared_ptr<const core::TranslationTable> gTable; }
+void Canvas::setTranslations(std::shared_ptr<const core::TranslationTable> table) { gTable = std::move(table); }
+const std::string& Canvas::translate(const std::string& s) { return gTable ? gTable->translate(s) : s; }
 
 void Canvas::setTextRenderer(TextRenderer* r) { gRenderer = r; }
 TextRenderer* Canvas::textRenderer() { return gRenderer ? gRenderer : &gBuiltin; }
@@ -238,18 +243,20 @@ void Canvas::fillTriangle(double x0, double y0, double x1, double y1, double x2,
         }
 }
 
-int Canvas::textWidth(const std::string& s, Font f) { return textRenderer()->width(s, f); }
+int Canvas::textWidth(const std::string& s, Font f) { return textRenderer()->width(translate(s), f); }
 int Canvas::lineHeight(Font f) { return textRenderer()->lineHeight(f); }
 
-void Canvas::text(int x, int y, const std::string& s, Rgba c, Font f, Align a) {
-    if (s.empty()) return;
-    const int w = textWidth(s, f);
+void Canvas::text(int x, int y, const std::string& src, Rgba c, Font f, Align a) {
+    if (src.empty()) return;
+    const std::string& s = translate(src);
+    const int w = textRenderer()->width(s, f);
     if (a == Align::Center) x -= w / 2;
     else if (a == Align::Right) x -= w;
     textRenderer()->draw(*this, x, y, s, c, f);
 }
 
-std::string Canvas::fit(const std::string& s, int maxWidth, Font f) {
+std::string Canvas::fit(const std::string& src, int maxWidth, Font f) {
+    const std::string s = translate(src);
     if (textWidth(s, f) <= maxWidth) return s;
     std::string t = s;
     while (!t.empty()) {

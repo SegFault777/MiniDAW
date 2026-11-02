@@ -2,6 +2,36 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.10] - 2026-11-03
+
+### Added (native version, `MiniDAWNative.exe`)
+- **Dialogs** (`ui/Dialog`): a modal panel with number, slider, check box, choice, text and button fields. Used by
+  Transpose, Crescendo, Repeat, Quantize (grid, strength, swing, lengths), Scale Quantize, Humanize, Arpeggiate,
+  Chord Trigger, Fixed Note Length, Scale Velocity, Strip Silence, Detect Tempo, Convert Pattern to MIDI, Tempo,
+  Time Signature, Bounce (range, format, dither, normalize, tail), Rename and Preferences.
+- **Bottom panel with tabs**: Mixer, **Inspector** (track colour, volume, pan, sends, instrument presets, insert
+  effects with bypass / remove, region name / mute / gain / fades / reverse / normalize / follow tempo / transpose),
+  **Smart Controls** (every parameter of the instrument and of each insert), **Piano Roll** (add, move, resize,
+  delete notes, velocity lane, keyboard with audition, zoom and scroll), **Step Sequencer**, **Drummer** editor
+  (style, complexity, loudness, swing, fills, new variation, bars), **Automation** (volume, pan, sends and the
+  project tempo lane) and the **Loop Browser** (folder scan, tempo from the file name, preview, add at the playhead).
+- Markers on the ruler (add, jump, drag, rename, delete), cycle range by Shift-dragging the ruler, tap tempo,
+  musical typing, recent projects, Cut / Mute region, Duplicate / Move / Rename track, Bounce in Place.
+- **Preferences**: output / input device, buffer size, recording latency compensation, MIDI keyboard, language,
+  autosave interval and loops folder, stored in `%LOCALAPPDATA%\MiniDAW\settings.ini`. Autosave and crash
+  recovery use the same files as the Qt version.
+- **Translations**: every drawn text is looked up in the `translations/*.tsv` files (`ui::Canvas::setTranslations`),
+  so the whole UI follows the language setting without touching the drawing code. About 140 new texts were added
+  to the Korean, Japanese, Chinese and Spanish files.
+- `Session::renameRegion`; the CI workflow builds the native version in its own job.
+
+### Not done yet
+- VST3 and plug-in SDK (`.mdplugin`) hosting and their windows are only in the Qt version; the native version has
+  the built-in instruments and effects.
+- Multi-selection, rubber-band selection and copy / paste of notes in the piano roll; per-step velocity in the step
+  sequencer; Score and Musical Typing keyboard display; drag and drop of loops onto a lane.
+- Qt is still built, because of the plug-in hosting above.
+
 ## [0.9] - 2026-11-02
 
 ### Added

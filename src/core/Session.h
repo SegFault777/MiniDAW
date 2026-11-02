@@ -93,6 +93,7 @@ public:
     int duplicateTrack(int i);
     void setRegionAudio(int t, int r, float gainDb, i64 fadeInFrames, i64 fadeOutFrames);
     void setRegionMute(int t, int r, bool mute);
+    void renameRegion(int t, int r, const std::string& name);
     void moveTrack(int from, int to);
     void setTrackColor(int i, Color color);
     void reverseRegion(int t, int r);

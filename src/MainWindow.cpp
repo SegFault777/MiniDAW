@@ -47,7 +47,7 @@
 #include "Timeline.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.9"
+#define MINIDAW_VERSION "0.10"
 #endif
 
 // Defined further down; the menu code at the top of the file already needs it.

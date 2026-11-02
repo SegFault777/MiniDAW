@@ -11,6 +11,16 @@ permissions:
   contents: write   # needed to upload release assets when a tag is pushed
 
 jobs:
+  # Unit tests of the Qt-free code (engine, platform layer, user interface) on Linux with g++.
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install g++
+        run: sudo apt-get update && sudo apt-get install -y g++
+      - name: Run the tests
+        run: bash tests/run.sh
+
   windows:
     runs-on: windows-latest
     steps:
@@ -41,7 +51,7 @@ jobs:
         id: ver
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.9-dev' }
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.10-dev' }
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Install Inno Setup
@@ -73,3 +83,45 @@ jobs:
           files: |
             installer-out/*.exe
             MiniDAW-windows-x64-portable.zip
+
+  # The Qt-free native version needs neither Qt nor the VST3 SDK, so it gets its own job: a compile error shows up
+  # as a failed check of its own (the Qt job above only warns about it).
+  native:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Determine version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.10-dev' }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Build the native version
+        shell: bash
+        env:
+          MINIDAW_VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          bash build.sh native
+          mkdir -p native-out
+          cp build/MiniDAWNative.exe native-out/
+          cp -r translations native-out/translations
+          cd native-out && 7z a -tzip ../MiniDAW-native-windows-x64.zip . > /dev/null
+
+      - name: Upload native build
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniDAW-native
+          path: MiniDAW-native-windows-x64.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: MiniDAW-native-windows-x64.zip

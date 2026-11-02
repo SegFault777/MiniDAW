@@ -281,3 +281,146 @@ The pattern is empty.	パターンが空です。
 Only regions of the same kind can be joined.	同じ種類のリージョン同士のみ結合できます。
 There is no region after this one to join.	このリージョンの後に結合するリージョンがありません。
 These audio regions cannot be joined: they must be neighbours that play the same recording one after the other.	これらのオーディオリージョンは結合できません。同じ録音を続けて再生する隣接リージョンである必要があります。
+File	ファイル
+Edit	編集
+Track	トラック
+Functions	機能
+View	表示
++  Add Track	+  トラックを追加
+Loops	ループ
+New Project	新規プロジェクト
+Open...	開く...
+Open Recent...	最近使った項目を開く...
+No recent projects	最近のプロジェクトはありません
+Save As...	名前を付けて保存...
+Import Audio...	オーディオを読み込む...
+Import MIDI File...	MIDIファイルを読み込む...
+Export MIDI File...	MIDIファイルを書き出す...
+Bounce to WAV...	WAVにバウンス...
+Preferences...	環境設定...
+Cut Region	リージョンをカット
+Copy Region	リージョンをコピー
+Paste Region	リージョンをペースト
+Delete Region	リージョンを削除
+Rename...	名前を変更...
+Snap to Grid: On	グリッドにスナップ: オン
+Snap to Grid: Off	グリッドにスナップ: オフ
+Rename Track...	トラック名を変更...
+Convert Pattern to MIDI Region...	パターンをMIDIリージョンに変換...
+Repeat Region...	リージョンを繰り返し...
+Quantize...	クオンタイズ...
+Scale Quantize...	スケールクオンタイズ...
+Humanize...	ヒューマナイズ...
+Arpeggiate...	アルペジオ...
+Chord Trigger...	コードトリガー...
+Transpose...	トランスポーズ...
+Crescendo / Decrescendo...	クレッシェンド / デクレッシェンド...
+Fixed Note Length...	固定ノート長...
+Scale Velocity...	ベロシティをスケール...
+Fix Overlaps	オーバーラップを修正
+Remove Duplicate Notes	重複ノートを削除
+Retrograde	レトログラード
+Invert Pitches	ピッチを反転
+Strip Silence...	無音部分を削除...
+Detect Tempo...	テンポを検出...
+Reverse Region	リージョンを逆再生
+Normalize Region	リージョンをノーマライズ
+Measure Loudness	ラウドネスを測定
+Hide Bottom Panel	下部パネルを隠す
+Show Bottom Panel	下部パネルを表示
+Hide Inspector	インスペクタを隠す
+Show Inspector	インスペクタを表示
+Zoom In	拡大
+Zoom Out	縮小
+Tempo...	テンポ...
+Time Signature...	拍子記号...
+Rename Marker...	マーカー名を変更...
+Metronome	メトロノーム
+Count-in	カウントイン
+Musical Typing: On	ミュージックタイピング: オン
+Musical Typing: Off	ミュージックタイピング: オフ
+Cancel	キャンセル
+Close	閉じる
+Quantize	クオンタイズ
+Strip	削除
+Also quantize note lengths	ノート長もクオンタイズ
+Pentatonic Major	ペンタトニック・メジャー
+Pentatonic Minor	ペンタトニック・マイナー
+Random seed	乱数シード
+Up / Down	アップ / ダウン
+Down / Up	ダウン / アップ
+As played	演奏順
+Octaves	オクターブ
+Sus2	サス2
+Sus4	サス4
+Major 7	メジャー7
+Minor 7	マイナー7
+Dominant 7	ドミナント7
+Fixed Note Length	固定ノート長
+Length	長さ
+1 Bar	1小節
+Scale Velocity	ベロシティをスケール
+Offset	オフセット
+Strip Silence	無音部分を削除
+Threshold	スレッショルド
+Minimum silence	最小無音長
+Padding	パディング
+Follows project tempo	プロジェクトテンポに追従中
+Project tempo	プロジェクトテンポ
+Normalize level	ノーマライズレベル
+Rename Region	リージョン名を変更
+256 samples (5 ms)	256サンプル (5 ms)
+512 samples (11 ms)	512サンプル (11 ms)
+1024 samples (23 ms)	1024サンプル (23 ms)
+2048 samples (46 ms)	2048サンプル (46 ms)
+4096 samples (92 ms)	4096サンプル (92 ms)
+English	English
+Restart MiniDAW to apply a new language. Autosave 0 = off.	新しい言語を適用するにはMiniDAWを再起動してください。自動保存 0 = オフ。
+Ready	準備完了
+OUT	出力
+Region	リージョン
+Instrument	インストゥルメント
+Inserts	インサート
++ Add effect	+ エフェクトを追加
+Audio track	オーディオトラック
+Synth	シンセ
+Drum Kit	ドラムキット
+Center	センター
+Send A (reverb)	センドA (リバーブ)
+Send B (echo)	センドB (エコー)
+Fade in	フェードイン
+Fade out	フェードアウト
+No region selected.	リージョンが選択されていません。
+Select a track or a region to see its properties.	プロパティを表示するにはトラックまたはリージョンを選択してください。
+Select a track to edit its instrument and effects.	インストゥルメントとエフェクトを編集するにはトラックを選択してください。
+This track has no instrument or effects. Add an effect in the Inspector.	このトラックにはインストゥルメントもエフェクトもありません。インスペクタでエフェクトを追加してください。
+Select a MIDI region (double-click one) to edit its notes.	ノートを編集するにはMIDIリージョンを選択してください (ダブルクリック)。
+Select a Drum Machine track to edit its pattern.	パターンを編集するにはドラムマシントラックを選択してください。
+Select a Drummer region (double-click an empty lane of a Drummer track to create one).	ドラマーリージョンを選択してください (ドラマートラックの空きレーンをダブルクリックで作成)。
+Complexity	複雑さ
+Loudness	ラウドネス
+Fills: On	フィル: オン
+Fills: Off	フィル: オフ
+New variation	新しいバリエーション
+Clear pattern	パターンをクリア
+Choose folder...	フォルダを選択...
+Stop preview	プレビューを停止
+loading...	読み込み中...
+Ctrl+Shift+S	Ctrl+Shift+S
+Select a track or a region first.	先にトラックまたはリージョンを選択してください。
+Arm a track with the R button first.	先にRボタンでトラックを録音待機にしてください。
+Region copied.	リージョンをコピーしました。
+Legato applied.	レガートを適用しました。
+Overlaps fixed.	オーバーラップを修正しました。
+Duplicate notes removed.	重複ノートを削除しました。
+Region reversed.	リージョンを反転しました。
+Pitches inverted.	ピッチを反転しました。
+Preferences saved.	環境設定を保存しました。
+New project.	新規プロジェクトです。
+Musical typing off.	ミュージックタイピングをオフにしました。
+File dialogs are not available here.	ここではファイルダイアログを使用できません。
+Use File > Import Audio to add audio.	オーディオを追加するにはファイル > オーディオを読み込むを使用してください。
+Drum machine patterns are not part of the native UI yet.	ドラムマシンのパターンはまだネイティブUIにありません。
+Too quiet or too short to measure.	音が小さすぎるか短すぎて測定できません。
+Qt-free native version. GPL-3.0-or-later. Fonts: Liberation Sans (SIL OFL).	Qt不使用のネイティブ版。GPL-3.0-or-later。フォント: Liberation Sans (SIL OFL)。
+MiniDAW - a lightweight Logic Pro-inspired digital audio workstation.	MiniDAW - Logic Proに着想を得た軽量なデジタルオーディオワークステーション。

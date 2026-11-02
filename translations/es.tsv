@@ -281,3 +281,146 @@ The pattern is empty.	El patrón está vacío.
 Only regions of the same kind can be joined.	Solo se pueden unir regiones del mismo tipo.
 There is no region after this one to join.	No hay ninguna región después de esta para unir.
 These audio regions cannot be joined: they must be neighbours that play the same recording one after the other.	No se pueden unir estas regiones de audio: deben ser vecinas y reproducir la misma grabación una tras otra.
+File	Archivo
+Edit	Edición
+Track	Pista
+Functions	Funciones
+View	Ver
++  Add Track	+  Añadir pista
+Loops	Loops
+New Project	Proyecto nuevo
+Open...	Abrir...
+Open Recent...	Abrir reciente...
+No recent projects	No hay proyectos recientes
+Save As...	Guardar como...
+Import Audio...	Importar audio...
+Import MIDI File...	Importar archivo MIDI...
+Export MIDI File...	Exportar archivo MIDI...
+Bounce to WAV...	Exportar a WAV...
+Preferences...	Preferencias...
+Cut Region	Cortar región
+Copy Region	Copiar región
+Paste Region	Pegar región
+Delete Region	Eliminar región
+Rename...	Cambiar nombre...
+Snap to Grid: On	Ajustar a la cuadrícula: sí
+Snap to Grid: Off	Ajustar a la cuadrícula: no
+Rename Track...	Cambiar nombre de pista...
+Convert Pattern to MIDI Region...	Convertir patrón en región MIDI...
+Repeat Region...	Repetir región...
+Quantize...	Cuantizar...
+Scale Quantize...	Cuantizar a escala...
+Humanize...	Humanizar...
+Arpeggiate...	Arpegiar...
+Chord Trigger...	Disparador de acordes...
+Transpose...	Transponer...
+Crescendo / Decrescendo...	Crescendo / Decrescendo...
+Fixed Note Length...	Duración fija de nota...
+Scale Velocity...	Escalar velocidad...
+Fix Overlaps	Corregir solapamientos
+Remove Duplicate Notes	Quitar notas duplicadas
+Retrograde	Retrógrado
+Invert Pitches	Invertir alturas
+Strip Silence...	Eliminar silencios...
+Detect Tempo...	Detectar tempo...
+Reverse Region	Invertir región
+Normalize Region	Normalizar región
+Measure Loudness	Medir sonoridad
+Hide Bottom Panel	Ocultar panel inferior
+Show Bottom Panel	Mostrar panel inferior
+Hide Inspector	Ocultar inspector
+Show Inspector	Mostrar inspector
+Zoom In	Acercar
+Zoom Out	Alejar
+Tempo...	Tempo...
+Time Signature...	Compás...
+Rename Marker...	Cambiar nombre de marcador...
+Metronome	Metrónomo
+Count-in	Cuenta previa
+Musical Typing: On	Escritura musical: sí
+Musical Typing: Off	Escritura musical: no
+Cancel	Cancelar
+Close	Cerrar
+Quantize	Cuantizar
+Strip	Eliminar
+Also quantize note lengths	Cuantizar también la duración
+Pentatonic Major	Pentatónica mayor
+Pentatonic Minor	Pentatónica menor
+Random seed	Semilla aleatoria
+Up / Down	Arriba / Abajo
+Down / Up	Abajo / Arriba
+As played	Como se tocó
+Octaves	Octavas
+Sus2	Sus2
+Sus4	Sus4
+Major 7	Mayor 7
+Minor 7	Menor 7
+Dominant 7	Dominante 7
+Fixed Note Length	Duración fija de nota
+Length	Duración
+1 Bar	1 compás
+Scale Velocity	Escalar velocidad
+Offset	Desplazamiento
+Strip Silence	Eliminar silencios
+Threshold	Umbral
+Minimum silence	Silencio mínimo
+Padding	Margen
+Follows project tempo	Sigue el tempo del proyecto
+Project tempo	Tempo del proyecto
+Normalize level	Nivel de normalización
+Rename Region	Cambiar nombre de región
+256 samples (5 ms)	256 muestras (5 ms)
+512 samples (11 ms)	512 muestras (11 ms)
+1024 samples (23 ms)	1024 muestras (23 ms)
+2048 samples (46 ms)	2048 muestras (46 ms)
+4096 samples (92 ms)	4096 muestras (92 ms)
+English	English
+Restart MiniDAW to apply a new language. Autosave 0 = off.	Reinicia MiniDAW para aplicar un idioma nuevo. Autoguardado 0 = desactivado.
+Ready	Listo
+OUT	SALIDA
+Region	Región
+Instrument	Instrumento
+Inserts	Inserciones
++ Add effect	+ Añadir efecto
+Audio track	Pista de audio
+Synth	Sintetizador
+Drum Kit	Batería
+Center	Centro
+Send A (reverb)	Envío A (reverb)
+Send B (echo)	Envío B (eco)
+Fade in	Fundido de entrada
+Fade out	Fundido de salida
+No region selected.	No hay región seleccionada.
+Select a track or a region to see its properties.	Selecciona una pista o una región para ver sus propiedades.
+Select a track to edit its instrument and effects.	Selecciona una pista para editar su instrumento y efectos.
+This track has no instrument or effects. Add an effect in the Inspector.	Esta pista no tiene instrumento ni efectos. Añade un efecto en el inspector.
+Select a MIDI region (double-click one) to edit its notes.	Selecciona una región MIDI (doble clic) para editar sus notas.
+Select a Drum Machine track to edit its pattern.	Selecciona una pista de caja de ritmos para editar su patrón.
+Select a Drummer region (double-click an empty lane of a Drummer track to create one).	Selecciona una región de baterista (doble clic en un carril vacío de una pista de baterista para crearla).
+Complexity	Complejidad
+Loudness	Sonoridad
+Fills: On	Fills: sí
+Fills: Off	Fills: no
+New variation	Nueva variación
+Clear pattern	Borrar patrón
+Choose folder...	Elegir carpeta...
+Stop preview	Detener vista previa
+loading...	cargando...
+Ctrl+Shift+S	Ctrl+Shift+S
+Select a track or a region first.	Selecciona primero una pista o una región.
+Arm a track with the R button first.	Arma primero una pista con el botón R.
+Region copied.	Región copiada.
+Legato applied.	Legato aplicado.
+Overlaps fixed.	Solapamientos corregidos.
+Duplicate notes removed.	Notas duplicadas eliminadas.
+Region reversed.	Región invertida.
+Pitches inverted.	Alturas invertidas.
+Preferences saved.	Preferencias guardadas.
+New project.	Proyecto nuevo.
+Musical typing off.	Escritura musical desactivada.
+File dialogs are not available here.	Los cuadros de diálogo de archivo no están disponibles aquí.
+Use File > Import Audio to add audio.	Usa Archivo > Importar audio para añadir audio.
+Drum machine patterns are not part of the native UI yet.	Los patrones de caja de ritmos aún no forman parte de la interfaz nativa.
+Too quiet or too short to measure.	Demasiado silencioso o corto para medir.
+Qt-free native version. GPL-3.0-or-later. Fonts: Liberation Sans (SIL OFL).	Versión nativa sin Qt. GPL-3.0-or-later. Fuente: Liberation Sans (SIL OFL).
+MiniDAW - a lightweight Logic Pro-inspired digital audio workstation.	MiniDAW - una estación de audio digital ligera inspirada en Logic Pro.
