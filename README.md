@@ -1,7 +1,8 @@
 # MiniDAW
 
-A lightweight, fast digital audio workstation for Windows, built with Qt 6 and inspired by the
-workflow of Logic Pro. It stays approachable for beginners and still offers what a producer expects:
+A lightweight, fast digital audio workstation for Windows, written without any UI framework (its own
+software-rendered UI toolkit on Win32) and inspired by the workflow of Logic Pro. Documentation:
+[docs/](docs/README.md) (user manual, developer guide, project documents). It stays approachable for beginners and still offers what a producer expects:
 a multitrack arrangement, MIDI editing, a built-in synthesizer and **Drummer**, a **Loop Browser**,
 channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and time-signature tracks**,
 **time stretching**, automation, recording and bouncing.
@@ -10,7 +11,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 > sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
 > VST is a trademark of Steinberg Media Technologies GmbH.
 
-**Version 0.10_1** · License: GPL-3.0-or-later
+**Version 0.11** · License: GPL-3.0-or-later
 
 ## Features
 
@@ -24,6 +25,16 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 - **Duplicate Track** (`Ctrl+Shift+D`) copies a track with its regions, instrument and effects.
 - **Cycle** range (right-drag on the ruler), metronome (accents follow the time signature) and an
   optional one-bar **count-in**. **Volume automation** per track. Undo / redo for edits and tempo changes.
+
+### What is new in v0.11
+- **The native version is now the product**: `MiniDAW-<version>-setup.exe` installs it (and upgrades an old Qt
+  installation); the Qt version only remains as a portable zip.
+- **Plug-ins without Qt**: MiniDAW plug-ins (`plugin-sdk`) and **VST3** instruments and effects, with their own editor windows.
+- **New look and workflow, designed from a comparison of Logic Pro and Ableton Live** (`docs/project/ui-design.md`): a searchable
+  **Browser** with drag and drop (loops, instruments, effects), a **Devices** tab with a chain of cards and knobs, three track
+  heights, a hover help line in the status bar.
+- Piano roll **multi-selection** (Shift-click, rubber band, `Ctrl+A`), copy / paste / duplicate of notes.
+- **Documentation** in [`docs/`](docs/README.md): user manual, developer guide and project documents.
 
 ### What is new in v0.10
 - The native version (`MiniDAWNative.exe`, no Qt) now has almost everything of the Qt version: piano roll, step
@@ -58,7 +69,7 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 - **Qt-free core** (first step towards MiniDAW's own engine): the whole music engine, project model, undo,
   project files (own JSON reader / writer), autosave, bounce and MIDI operations now live in `src/core/` and
   `src/dsp/` and use only the C++ standard library. Qt remains for the user interface, audio devices and file
-  decoding. The core has its own test suite that runs without Qt. See [ARCHITECTURE.md](ARCHITECTURE.md).
+  decoding. The core has its own test suite that runs without Qt. See [docs/dev/architecture.md](docs/dev/architecture.md).
 - Six **Logic Pro style editing features**:
   1. **Bounce in Place** (`Ctrl+Alt+B`): renders a track with instrument, effects, fader and pan to a new
      audio track and mutes the original.
@@ -165,63 +176,57 @@ instrument lane to create a MIDI region, or of a Drummer lane to create a Drumme
 ## Installing
 
 Download `MiniDAW-<version>-setup.exe` from the [Releases](../../releases) page and run it. The
-installer places MiniDAW in `Program Files`, adds a Start menu entry and can associate `.mdaw` files.
-A portable ZIP is published next to every installer.
+installer places MiniDAW in `Program Files` (or in your own folder without administrator rights), adds a Start
+menu entry and can associate `.mdaw` files; it upgrades an older Qt installation. A portable ZIP
+(`MiniDAW-windows-x64-portable.zip`) is published next to every installer, and the old Qt version only as
+`MiniDAW-Qt-windows-x64-portable.zip`. See [docs/user/installation.md](docs/user/installation.md).
 
 ### No sound?
-Open *Preferences > Audio*. The status line shows which device and format MiniDAW opened. Choose
-another output device or a larger buffer and press *Play Test Tone*. MiniDAW tries the device's own
-format automatically if 44.1 kHz / 16-bit is not accepted.
+Open *File > Preferences...* and choose another output device or a larger buffer. The status line shows
+the device MiniDAW opened. More in [docs/user/troubleshooting.md](docs/user/troubleshooting.md).
 
-### VST3 plug-ins
-Installers built by the release workflow include VST3 hosting. MiniDAW scans
-`C:\Program Files\Common Files\VST3` and `%LOCALAPPDATA%\Programs\Common\VST3` at start-up; add more
-folders in *Preferences > Plug-ins*. VST3 effects appear in the *Audio FX* slot menus and VST3
-instruments in the Inspector's instrument menu. Plug-in state is saved with the project.
+### Plug-ins
+MiniDAW plug-ins (`plugin-sdk/`) are loaded from `<install folder>\plugins` and `%LOCALAPPDATA%\MiniDAW\plugins`.
+VST3 plug-ins are scanned in `C:\Program Files\Common Files\VST3` and `%LOCALAPPDATA%\Programs\Common\VST3` (more
+folders in *Preferences*); installers built with the VST3 SDK host them. They appear in the **Browser** (Effects /
+Instruments); their own windows open from the *E* button of a device card. See
+[docs/user/plugins.md](docs/user/plugins.md).
 
 ## Building from source
 
-MiniDAW is built by a single shell script, `build.sh` (no CMake required).
+MiniDAW is built by a single shell script, `build.sh` (no CMake required). The native version needs **no Qt**.
 
-Requirements: Windows 10/11, Visual Studio 2022 or newer (MSVC x64 tools), Git Bash (or MSYS2),
-Qt 6.5 or newer (Qt 6.8 recommended; the Qt Multimedia module is not needed), and optionally
-[Inno Setup 6](https://jrsoftware.org/isinfo.php) for the installer.
+Requirements: Windows 10/11, Visual Studio 2022 or newer (MSVC x64 tools), Git Bash (or MSYS2), and optionally
+[Inno Setup 6](https://jrsoftware.org/isinfo.php) for the installer. The old Qt version additionally needs Qt 6.5+.
 
 ```bash
 # In Git Bash started from the "x64 Native Tools Command Prompt" (so that cl.exe is on PATH):
-export QT_DIR=C:/Qt/6.8.3/msvc2022_64
 export VST3_SDK_DIR=C:/dev/vst3sdk     # optional: git clone --recurse-submodules https://github.com/steinbergmedia/vst3sdk
-./build.sh            # moc + compile + link  -> build/MiniDAW.exe
-./build.sh deploy     # windeployqt           -> dist/MiniDAW and a portable ZIP
-./build.sh installer  # Inno Setup            -> installer-out/MiniDAW-<version>-setup.exe
-./build.sh all        # everything above
+./build.sh native-release   # build + portable folder / ZIP + installer -> installer-out/MiniDAW-<version>-setup.exe
+./build.sh native           # only build/MiniDAWNative.exe
+./build.sh qt               # the old Qt version as a portable ZIP (needs QT_DIR)
 ./build.sh clean
 ```
 
-Without `VST3_SDK_DIR` (or if the SDK fails to build) MiniDAW is built without VST3 hosting. The VST3
-SDK is available under GPL-3.0, which is compatible with MiniDAW's license. Set `MINIDAW_VERSION` to
-override the version string. The GitHub Actions workflow in `.github/workflows/build.yml` runs
-`bash build.sh all` and attaches the installer and the portable ZIP to a release when a tag such as
-`v0.8` is pushed.
+The tests need only `g++`: `bash tests/run.sh` (also on Linux). Without `VST3_SDK_DIR` (or if the SDK fails to
+build) MiniDAW is built without VST3 hosting. Set `MINIDAW_VERSION` to override the version string. The GitHub
+Actions workflow in `.github/workflows/build.yml` runs the tests, builds the installer and attaches it and the portable
+ZIP to a release when a tag such as `v0.11` is pushed. Details: [docs/dev/building.md](docs/dev/building.md).
 
 ## Architecture
 
 | Path | Purpose |
 |---|---|
-| `src/dsp/` | Qt-free DSP: parameters, effects, synth, drum kit, Drummer generator, tempo map, WSOLA stretcher, MIDI files, tempo detection |
-| `src/core/`, `src/platform/` | Qt-free engine (`Session`, project files, MIDI operations) and platform layer (WASAPI, winmm MIDI, Media Foundation decoding) |
-| `src/Engine.*`, `src/Project.cpp` | Project model, real-time mixer, transport, recording, undo, save / load, audio device handling |
-| `src/Timeline.*`, `src/PianoRoll.*` | Arrangement, tempo track and MIDI editors |
-| `src/Panels.*`, `src/Controls.*`, `src/Browser.*` | Inspector, mixer, step sequencer, Drummer editor, loop browser, knobs, faders, meters |
-| `src/MainWindow.*`, `src/Preferences.*`, `src/Theme.*`, `src/Translator.*`, `src/MidiInput.*` | Control bar, menus, settings, theme, languages, MIDI keyboards |
-| `src/vst3/` | VST3 host (compiled only when the VST3 SDK is available) |
-| `translations/`, `loops/` | Language files and sample loops shipped next to the executable |
+| `src/dsp/` | Qt-free DSP: parameters, effects, synth, drum kit, Drummer generator, tempo map, WSOLA stretcher, MIDI files, tempo detection, loudness |
+| `src/core/` | Qt-free engine: `Session`, project files, MIDI operations, translations |
+| `src/platform/` | WASAPI audio, winmm MIDI, Media Foundation decoding, MiniDAW plug-in host |
+| `src/ui/` | Qt-free software-rendered UI toolkit and the whole user interface |
+| `src/native/` | The Windows shell (`Win32App.cpp`) and the VST3 host (`Vst3Native.cpp`) |
+| `src/*.cpp`, `src/Engine.*`, `src/vst3/` | The old Qt user interface (kept as a portable build only) |
+| `translations/`, `loops/`, `plugin-sdk/` | Language files, sample loops, plug-in SDK shipped next to the executable |
+| `docs/` | User manual (`user/`), developer guide (`dev/`), project documents (`project/`) |
 
-Audio runs on a dedicated thread. The mixer renders any time range of the project from a pure function
-of the playback position, so playback, looping and offline bouncing share one code path. Musical
-positions are stored in beats and converted to audio frames through the tempo map, so tempo ramps and
-time-signature changes affect everything consistently. The audio thread shares the project with the UI
-through a short mutex-protected section; effect and synth parameters are lock-free atomics.
+See [docs/dev/architecture.md](docs/dev/architecture.md) for the layers, the rules and the threads.
 
 ## Known limitations and roadmap
 

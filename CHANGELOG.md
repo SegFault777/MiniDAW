@@ -2,6 +2,36 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.11] - 2026-11-04
+
+### Changed
+- **The native (Qt-free) version is now the product.** `build.sh native-release` builds it, creates the portable zip
+  (`MiniDAW-windows-x64-portable.zip`) and the Inno Setup installer (`installer/MiniDAW.iss`, which upgrades an old
+  Qt installation and removes its leftover files). The Qt version is only built as `MiniDAW-Qt-windows-x64-portable.zip`
+  (`build.sh qt`; its installer script is `installer/MiniDAW-Qt.iss`). The CI workflow has the jobs `tests` (Linux),
+  `native` (installer, portable zip, release) and `qt`.
+- **UI redesign** after comparing Logic Pro and Ableton Live (see `docs/project/ui-design.md`): the loop browser is now a
+  searchable **Browser** on the right with loops, instruments and effects; items can be **dragged onto tracks** (loops and
+  instruments also onto an empty part of the arrangement). *Smart Controls* became **Devices**: a chain of cards with
+  rotary **knobs**, bypass / remove / editor buttons, pages for many parameters and an "Add an effect" card.
+  Three **track heights** (View menu), a **hover help line** in the status bar, `I` opens the Inspector tab.
+- Command line: `MiniDAW.exe project.mdaw` opens a project (file association).
+
+### Added
+- **MiniDAW plug-ins without Qt** (`platform/PluginHost`, tested on Linux) and **VST3 hosting without Qt**
+  (`native/Vst3Native`, built when `VST3_SDK_DIR` is set; falls back to a build without VST3 if it fails): instruments and
+  effects, their own editor windows (`E` button), plug-in state in the project file, plug-in scan in the background,
+  Preferences: VST3 folders and *Rescan plug-ins*.
+- Piano roll **multi-selection**: Shift-click, Shift-drag rubber band, `Ctrl+A`; move, resize, change velocity and delete the
+  selection together; `Ctrl+C` / `Ctrl+X` / `Ctrl+V` / `Ctrl+D` for notes.
+- About 150 new texts in the Korean, Japanese, Chinese and Spanish translations; messages with names use `%1` patterns.
+- **Documentation** in `docs/` (`user/`, `dev/`, `project/`).
+
+### Not done yet
+- The native version is not DPI aware (Windows scales it, slightly blurry on high-resolution screens).
+- No clip launcher (session view), no score view. See `docs/project/roadmap.md`.
+- `src/native/*` (Win32 shell, VST3 host) is only verified by the Windows CI build.
+
 ## [0.10_1] - 2026-11-03
 
 ### Fixed
@@ -26,7 +56,7 @@ All notable changes to this project are documented in this file.
 - Markers on the ruler (add, jump, drag, rename, delete), cycle range by Shift-dragging the ruler, tap tempo,
   musical typing, recent projects, Cut / Mute region, Duplicate / Move / Rename track, Bounce in Place.
 - **Preferences**: output / input device, buffer size, recording latency compensation, MIDI keyboard, language,
-  autosave interval and loops folder, stored in `%LOCALAPPDATA%\MiniDAW\settings.ini`. Autosave and crash
+  autosave interval and loops folder, stored in `%LOCALAPPDATA%\MiniDAW\native-settings.ini`. Autosave and crash
   recovery use the same files as the Qt version.
 - **Translations**: every drawn text is looked up in the `translations/*.tsv` files (`ui::Canvas::setTranslations`),
   so the whole UI follows the language setting without touching the drawing code. About 140 new texts were added

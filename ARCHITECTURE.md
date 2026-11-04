@@ -1,89 +1,12 @@
 # MiniDAW architecture
 
-MiniDAW is moving from "a Qt application" to "an engine with a user interface on top". Version 0.7 completed
-the first step (the engine no longer depends on Qt), version 0.8 the second (audio, MIDI and decoding no
-longer depend on Qt either).
+The architecture notes moved to [docs/dev/architecture.md](docs/dev/architecture.md) (Korean). In short:
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│ User interface (Qt Widgets)   MainWindow, Timeline, PianoRoll,│
-│                               Panels, Controls, Browser ...   │
-├──────────────────────────────────────────────────────────────┤
-│ Qt adapter                    Engine.cpp  hooks, signals,     │
-│                               QSettings, QTranslator shell,   │
-│                               VST3 + plug-ins (QLibrary)      │
-├──────────────────────────────────────────────────────────────┤
-│ platform (no Qt)              src/platform/  WASAPI audio,    │
-│                               winmm MIDI, Media Foundation    │
-│                               decoding, silent test device    │
-├──────────────────────────────────────────────────────────────┤
-│ core::Session (no Qt)         src/core/                       │
-│   project model, undo, tempo, transport, recording, rendering,│
-│   bounce / export, project files, autosave, MIDI operations   │
-├──────────────────────────────────────────────────────────────┤
-│ dsp (no Qt)                   src/dsp/  synth, drum kit,      │
-│   effects, tempo map, time stretch, Drummer, MIDI files,      │
-│   audio operations, MiniDAW plug-in API (plugin-sdk)          │
-└──────────────────────────────────────────────────────────────┘
-```
+* `src/dsp`, `src/core`, `src/platform`, `src/ui` use only the C++ standard library (no Qt); they are compiled
+  and tested with plain `g++` by `tests/run.sh`.
+* `core::Session` is the engine; the user interface talks to it only through its public API and `Session::Hooks`.
+* `src/ui` is a software-rendered, Qt-free UI toolkit; `src/native/Win32App.cpp` is the only Windows shell.
+* The old Qt version (`src/*.cpp`, `src/Engine.*`, `src/vst3`) is kept as a portable build only.
 
-## Rules
-
-* `src/dsp`, `src/core` and `src/platform` include only the C++ standard library (plus the Windows API in
-  the Windows-only platform files) and each other. No `Q...` type may appear there. `tests/run.sh` compiles them with a plain `g++` on a machine without Qt, which enforces this.
-* The core never talks to hardware or windows. It asks the platform layer through `core::Session::Hooks`:
-  decode a file, start / stop the microphone, create a VST3 effect, translate a text, tell the user
-  something, notify that the model changed.
-* The user interface only uses `Engine`, which forwards to the `Session` (the same API as before v0.7)
-  and turns hook calls into Qt signals. `QtBridge.h` converts `std::string` / `core::Color` to `QString` /
-  `QColor` for drawing.
-* Threads: the audio thread calls `Session::fillInt16` and `pushRecorded`; everything else runs on the user
-  interface thread. The model is guarded by one mutex, the tempo map is an immutable shared pointer that is
-  swapped atomically.
-
-## Where things are
-
-| Directory | Contents |
-| --- | --- |
-| `src/core/Base.h`, `Model.h` | constants, `Text` (translated text with `%1`), tracks, regions, notes, markers |
-| `src/core/Session.*` | the engine: model edits, undo / redo, transport, recording, `renderBlock`, master bus |
-| `src/core/ProjectIO.cpp` | project files (save, load, autosave), MIDI file import / export, audio import, bounce to WAV |
-| `src/core/Features.cpp`, `MidiOps.*` | Bounce in Place, arpeggiator, quantize, scale quantize, humanize, chord trigger, legato, transpose, velocity ramp, repeat / join regions, tempo detection, pattern to MIDI |
-| `src/core/Json.*`, `Files.*`, `AudioIO.*` | JSON, UTF-8 file helpers, WAV reader / writer, resampler, waveform peaks |
-| `src/core/I18n.*` | translation table parser (used by the Qt `Translator` shell) |
-| `src/platform/` | `Audio.*` + `AudioWasapi.cpp` (devices, output / input streams, silent "null" device), `Midi.*` (winmm), `Decode.*` (WAV + Media Foundation) |
-| `src/Engine.*` | Qt adapter: owns the platform streams and a decode worker thread, hooks, signals |
-| `src/*.cpp` (other) | the user interface |
-| `tests/` | Qt-free tests of the DSP, the plug-in API and the whole core |
-
-## The native user interface (v0.9)
-
-`src/ui` (Qt-free) draws into a `ui::Canvas`, a plain ARGB pixel buffer with clipping, anti-aliased shapes and
-text. `ui::NativeUi` paints the whole window, records the clickable rectangles while painting (immediate-mode
-hit testing, so layout and hit areas cannot drift apart) and reacts to plain mouse and keyboard events. It
-talks to the engine only through `core::Session`. `src/native/Win32App.cpp` is the only Windows-specific
-file: it copies the canvas to the window, converts input messages, renders text with GDI (all of Unicode) and
-opens WASAPI through `src/platform`. On other machines (tests, screenshots) the built-in font tables are used.
-
-The bottom panel, the dialogs and the lanes follow the same rules: controls (`uiSlider`, `uiAction`) register their
-hit area and callback while they are painted, editors with their own geometry (piano roll, step grid, automation
-lane) handle the mouse themselves, and every text goes through `Canvas::translate`, so translations need no
-extra code. `ui::Dialog` collects values and the caller applies them in its OK callback.
-
-## What still depends on Qt
-
-| Area | Qt classes it needs |
-| --- | --- |
-| Widgets: main window, timeline, piano roll, mixer / inspector, knobs, browser, preferences | `QWidget`, `QPainter`, `QMenu`, `QDialog` ... |
-| Settings, language shell, plug-in lists | `QSettings`, `QTranslator`, `QLibrary` |
-| VST3 host glue | `QString`, `QLibrary` |
-
-Audio devices, MIDI input and file decoding no longer use Qt (v0.8). Replacing `QSettings` is left to the
-UI toolkit step because only the user interface uses it.
-
-## Next step towards a fully own engine
-
-**Own UI toolkit** (Win32 + Direct2D): drawing primitives, a small widget set (button, slider, combo box,
-menu, dialog, text field), then the screens one by one: Preferences, Browser, Mixer, Piano Roll,
-Timeline, Main window. Because the screens only use `Engine`, each screen can be ported separately
-while the others still run on Qt.
+All documentation lives in [docs/](docs/README.md): `docs/user/` (users), `docs/dev/` (developers),
+`docs/project/` (project management).

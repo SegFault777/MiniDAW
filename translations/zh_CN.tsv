@@ -424,3 +424,79 @@ Drum machine patterns are not part of the native UI yet.	鼓机模式尚未包�
 Too quiet or too short to measure.	声音太小或太短,无法测量。
 Qt-free native version. GPL-3.0-or-later. Fonts: Liberation Sans (SIL OFL).	无 Qt 的原生版本。GPL-3.0-or-later。字体: Liberation Sans (SIL OFL)。
 MiniDAW - a lightweight Logic Pro-inspired digital audio workstation.	MiniDAW - 受 Logic Pro 启发的轻量级数字音频工作站。
+Browser	浏览器
+Nothing matches.	没有匹配项。
+Instruments	乐器
+Effects	效果
+built in	内置
+Devices	设备
+Editor	编辑器
+Add an effect	添加效果
+This device has no parameters here.	此设备在此没有可调参数。
+Select a track to see its devices.	选择轨道以查看其设备。
+MiniDAW plug-ins	MiniDAW 插件
+VST3 plug-ins	VST3 插件
+VST3 folders (separate with ;)	VST3 文件夹 (用 ; 分隔)
+Rescan plug-ins	重新扫描插件
+Scanning plug-ins in the background...	正在后台扫描插件...
+Plug-in scan finished.	插件扫描完成。
+This plug-in has no editor window.	此插件没有编辑窗口。
+Show Browser	显示浏览器
+Hide Browser	隐藏浏览器
+Track Height: Compact	轨道高度: 紧凑
+Track Height: Normal	轨道高度: 标准
+Track Height: Tall	轨道高度: 高
+Select a Software Instrument track first.	请先选择软件乐器轨道。
+Select a track first.	请先选择轨道。
+Drop an effect on a track.	请把效果拖到轨道上。
+Drop an instrument on a Software Instrument track, or on an empty part of the arrangement.	请把乐器拖到软件乐器轨道或编排区的空白处。
+No tempo found - use Detect Tempo and choose 'Follow project tempo'.	未找到速度。请使用检测速度并选择“跟随项目速度”。
+No tracks - use  + Add Track	没有轨道,请使用 + 添加轨道
+Added %1	已添加 %1
+Instrument: %1	乐器: %1
+Opened %1	已打开 %1
+Could not open the project: %1	无法打开项目: %1
+Importing %1	正在导入 %1
+Imported %1	已导入 %1
+Exported %1	已导出 %1
+Could not import: %1	无法导入: %1
+Could not export: %1	无法导出: %1
+Could not save: %1	无法保存: %1
+Bounced to %1	已导出到 %1
+Could not bounce: %1	无法导出: %1
+New track with %1	带有 %1 的新轨道
+Octave %1	八度 %1
+%1 added as an insert.	已将 %1 添加为插入效果。
+%1 region after Strip Silence.	去除静音后有 %1 个区域。
+%1 regions after Strip Silence.	去除静音后有 %1 个区域。
+Go to the start (Enter)	跳到开头 (Enter)
+Play / pause (Space)	播放 / 暂停 (空格)
+Record into the armed tracks (R)	录制到已准备的轨道 (R)
+Cycle on / off (C). Shift-drag the ruler to set the cycle range	循环开/关 (C)。按住 Shift 拖动标尺可设置范围
+Metronome (K)	节拍器 (K)
+Count-in before recording	录音前预备拍
+Add an audio, instrument, drum machine or Drummer track	添加音频、乐器、鼓机或鼓手轨道
+Grid for moving and drawing: click to change the value	移动和绘制用的网格: 点击更改
+Zoom (Ctrl + mouse wheel)	缩放 (Ctrl + 鼠标滚轮)
+Show or hide the bottom panel (X)	显示或隐藏底部面板 (X)
+Click to move the playhead. Shift-drag sets the cycle range	点击移动播放头。按住 Shift 拖动设置循环范围
+Drag to move, drag the right edge to resize, double-click to edit, right-click for functions	拖动移动,拖动右边缘调整大小,双击编辑,右键打开功能
+Drag to resize the region	拖动调整区域大小
+Click to jump to the marker, drag to move it, right-click for more	点击跳到标记,拖动移动,右键更多
+Click to select the track, right-click for track functions	点击选择轨道,右键打开轨道功能
+Arm for recording	准备录音
+Volume - double-click to reset	音量 - 双击重置
+Volume - double-click to reset to -1.9 dB	音量 - 双击重置为 -1.9 dB
+Pan - drag up or down, double-click to centre	声像 - 上下拖动,双击居中
+Drag up or down to change - hold Shift for fine control - double-click to reset	上下拖动更改 - 按住 Shift 微调 - 双击重置
+Drag to change	拖动更改
+Switch the bottom panel	切换底部面板
+Double-click to add, or drag onto a track (loops and instruments also onto an empty part of the arrangement)	双击添加,或拖到轨道上(循环片段和乐器也可拖到编排区空白处)
+Click and type to filter the browser	点击并输入以筛选浏览器
+Click to add a note, drag to move or resize, right-click to delete	点击添加音符,拖动移动或调整大小,右键删除
+Click a key to hear the note	点击琴键试听
+Drag to change a note's velocity	拖动更改音符力度
+Click to toggle a step, drag to paint	点击切换步进,拖动涂抹
+Click to add a point, drag to move it, right-click to delete it	点击添加点,拖动移动,右键删除
+Click to add a point, drag to move it, right-click to delete it.	点击添加点,拖动移动,右键删除。
+%1 notes copied.	已复制 %1 个音符。

@@ -11,6 +11,7 @@
 #include "../src/platform/Audio.h"
 #include "../src/platform/Decode.h"
 #include "../src/platform/Midi.h"
+#include "../src/platform/PluginHost.h"
 int fails = 0;
 #define CHECK(c) do { if (!(c)) { std::printf("FAIL line %d: %s\n", __LINE__, #c); ++fails; } } while (0)
 using namespace core;
@@ -145,6 +146,19 @@ static void testI18n() {
 
 int main() {
     testDevices(); testOutputStream(); testRecording(); testDecode(); testI18n();
+    {   // MiniDAW plug-ins without Qt: scan a folder, create effects, process audio
+        platform::scanNativePlugins({"/tmp/mdplugins", "/tmp/does-not-exist"});
+        platform::scanNativePlugins({"/tmp/mdplugins"});   // a second scan must not list anything twice
+        const auto list = platform::nativePlugins();
+        CHECK(list.size() == 2);
+        bool trem = false;
+        for (const auto& i : list) trem |= i.id == "native:minidaw.example.tremolo" && i.name == "Tremolo";
+        CHECK(trem);
+        auto fx = platform::createNativePlugin("native:minidaw.example.tremolo");
+        CHECK(fx != nullptr && std::string(fx->displayName()) == "Tremolo");
+        CHECK(platform::createNativePlugin("native:nothing") == nullptr);
+        if (fx) { std::vector<float> io(2 * 512, 0.5f); fx->process(io.data(), 512); CHECK(std::isfinite(io[100])); }
+    }
     std::printf("platform fails=%d\n", fails);
     return fails;
 }

@@ -18,7 +18,7 @@ const std::vector<std::string> kKeys = {"C", "C#", "D", "D#", "E", "F", "F#", "G
 
 void NativeUi::openDialog(std::unique_ptr<Dialog> d) {
     m_menu.clear();
-    d->setScreen(m_w, m_h);
+    d->setScreen(m_winW, m_h);
     m_dialog = std::move(d);
     m_dirty = true;
 }
@@ -141,7 +141,7 @@ void NativeUi::dlgStripSilence() {
         openDialog(std::make_unique<Dialog>("Strip Silence", Dialog::Values{Field::slider("Threshold", last("ssDb", -40), -80, -10, 0, " dB"), Field::number("Minimum silence", last("ssMin", 100), 10, 2000, 10, 0, " ms"), Field::number("Padding", last("ssPad", 10), 0, 500, 5, 0, " ms")}, [this, t, r](const Dialog::Values& v) {
             m_last["ssDb"] = v[0].value; m_last["ssMin"] = v[1].value; m_last["ssPad"] = v[2].value;
             const int n = m_s.stripSilenceRegion(t, r, v[0].value, v[1].value, v[2].value);
-            if (n > 0) message(std::to_string(n) + (n == 1 ? " region" : " regions") + " after Strip Silence.");
+            if (n > 0) message(msg(n == 1 ? "%1 region after Strip Silence." : "%1 regions after Strip Silence.", std::to_string(n)));
         }, "Strip"));
     });
 }
@@ -208,7 +208,7 @@ void NativeUi::dlgBounce() {
         opt.normalizeDb = float(v[4].value);
         opt.tail = v[5].checked;
         std::string err;
-        message(m_s.exportAudio(path, opt, &err) ? "Bounced to " + path : "Could not bounce: " + err);
+        message(m_s.exportAudio(path, opt, &err) ? msg("Bounced to %1", path) : msg("Could not bounce: %1", err));
     }, "Bounce"));
 }
 
@@ -269,6 +269,8 @@ void NativeUi::dlgPreferences() {
                              Field::choice("Language", langNames, langIdx),
                              Field::number("Autosave every", std::stod(get("autosave", "2")), 0, 60, 1, 0, " min"),
                              Field::input("Loops folder", get("loops", m_host.loopFolder.c_str())),
+                             Field::input("VST3 folders (separate with ;)", get("vst3Folders", "")),
+                             Field::button("Rescan plug-ins", [this] { if (m_host.rescanPlugins) { m_host.rescanPlugins(); message("Scanning plug-ins in the background..."); } }),
                              Field::note("Restart MiniDAW to apply a new language. Autosave 0 = off.")};
     openDialog(std::make_unique<Dialog>("Preferences", std::move(fields), [this, outs, ins, midis, langList, bufs](const Dialog::Values& v) {
         std::map<std::string, std::string> s = m_host.settings;
@@ -280,6 +282,7 @@ void NativeUi::dlgPreferences() {
         s["language"] = langList[size_t(v[5].index)].first;
         s["autosave"] = std::to_string(int(v[6].value));
         s["loops"] = v[7].text;
+        s["vst3Folders"] = v[8].text;
         m_host.settings = s;
         if (!v[7].text.empty() && v[7].text != m_host.loopFolder) { m_host.loopFolder = v[7].text; m_loopsLoaded = false; }
         m_s.setRecordingOffsetMs(int(v[3].value));

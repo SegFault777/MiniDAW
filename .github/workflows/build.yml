@@ -21,7 +21,63 @@ jobs:
       - name: Run the tests
         run: bash tests/run.sh
 
-  windows:
+  # The native (Qt-free) version is the product: it gets the installer and the portable zip.
+  native:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Get the VST3 SDK (optional)
+        shell: bash
+        continue-on-error: true
+        run: |
+          git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/steinbergmedia/vst3sdk.git "$RUNNER_TEMP/vst3sdk"
+          echo "VST3_SDK_DIR=$RUNNER_TEMP/vst3sdk" >> "$GITHUB_ENV"
+
+      - name: Determine version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.11-dev' }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Build, deploy and create the installer
+        shell: bash
+        env:
+          MINIDAW_VERSION: ${{ steps.ver.outputs.version }}
+        run: bash build.sh native-release
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniDAW-installer
+          path: installer-out/*.exe
+
+      - name: Upload portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniDAW-portable
+          path: MiniDAW-windows-x64-portable.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            installer-out/*.exe
+            MiniDAW-windows-x64-portable.zip
+
+  # The old Qt version is still built (portable zip only) until the native version has nothing left to learn from it.
+  qt:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,77 +107,23 @@ jobs:
         id: ver
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.10_1-dev' }
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.11-dev' }
           "version=$v" >> $env:GITHUB_OUTPUT
 
-      - name: Install Inno Setup
-        shell: pwsh
-        run: choco install innosetup -y --no-progress
-
-      - name: Build, deploy and create installer
+      - name: Build and deploy the Qt version
         shell: bash
         env:
           MINIDAW_VERSION: ${{ steps.ver.outputs.version }}
-        run: bash build.sh all
+        run: bash build.sh qt
 
-      - name: Upload installer
+      - name: Upload the Qt portable build
         uses: actions/upload-artifact@v4
         with:
-          name: MiniDAW-installer
-          path: installer-out/*.exe
-
-      - name: Upload portable build
-        uses: actions/upload-artifact@v4
-        with:
-          name: MiniDAW-portable
-          path: MiniDAW-windows-x64-portable.zip
+          name: MiniDAW-Qt-portable
+          path: MiniDAW-Qt-windows-x64-portable.zip
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            installer-out/*.exe
-            MiniDAW-windows-x64-portable.zip
-
-  # The Qt-free native version needs neither Qt nor the VST3 SDK, so it gets its own job: a compile error shows up
-  # as a failed check of its own (the Qt job above only warns about it).
-  native:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
-      - name: Determine version
-        id: ver
-        shell: pwsh
-        run: |
-          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.10_1-dev' }
-          "version=$v" >> $env:GITHUB_OUTPUT
-
-      - name: Build the native version
-        shell: bash
-        env:
-          MINIDAW_VERSION: ${{ steps.ver.outputs.version }}
-        run: |
-          bash build.sh native
-          mkdir -p native-out
-          cp build/MiniDAWNative.exe native-out/
-          cp -r translations native-out/translations
-          cd native-out && 7z a -tzip ../MiniDAW-native-windows-x64.zip . > /dev/null
-
-      - name: Upload native build
-        uses: actions/upload-artifact@v4
-        with:
-          name: MiniDAW-native
-          path: MiniDAW-native-windows-x64.zip
-
-      - name: Publish release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: MiniDAW-native-windows-x64.zip
+          files: MiniDAW-Qt-windows-x64-portable.zip

@@ -484,3 +484,77 @@ Drum machine patterns are not part of the native UI yet.	드럼 머신 패턴은
 Too quiet or too short to measure.	너무 조용하거나 짧아서 측정할 수 없습니다.
 Qt-free native version. GPL-3.0-or-later. Fonts: Liberation Sans (SIL OFL).	Qt 없는 네이티브 버전. GPL-3.0-or-later. 글꼴: Liberation Sans (SIL OFL).
 MiniDAW - a lightweight Logic Pro-inspired digital audio workstation.	MiniDAW - Logic Pro에서 영감을 받은 가벼운 디지털 오디오 워크스테이션.
+Browser	브라우저
+Nothing matches.	일치하는 항목이 없습니다.
+Instruments	악기
+Effects	이펙트
+built in	내장
+Devices	디바이스
+Editor	편집기
+Add an effect	이펙트 추가
+This device has no parameters here.	이 디바이스는 여기서 조절할 파라미터가 없습니다.
+Select a track to see its devices.	디바이스를 보려면 트랙을 선택하세요.
+MiniDAW plug-ins	MiniDAW 플러그인
+VST3 plug-ins	VST3 플러그인
+VST3 folders (separate with ;)	VST3 폴더 (;로 구분)
+Rescan plug-ins	플러그인 다시 검색
+Scanning plug-ins in the background...	백그라운드에서 플러그인을 검색하는 중...
+Plug-in scan finished.	플러그인 검색이 끝났습니다.
+This plug-in has no editor window.	이 플러그인에는 편집 창이 없습니다.
+Show Browser	브라우저 보기
+Hide Browser	브라우저 숨기기
+Track Height: Compact	트랙 높이: 작게
+Track Height: Normal	트랙 높이: 보통
+Track Height: Tall	트랙 높이: 크게
+Select a Software Instrument track first.	먼저 소프트웨어 악기 트랙을 선택하세요.
+Select a track first.	먼저 트랙을 선택하세요.
+Drop an effect on a track.	이펙트를 트랙 위에 놓으세요.
+Drop an instrument on a Software Instrument track, or on an empty part of the arrangement.	악기는 소프트웨어 악기 트랙이나 편곡 영역의 빈 곳에 놓으세요.
+No tempo found - use Detect Tempo and choose 'Follow project tempo'.	템포를 찾지 못했습니다. 템포 감지에서 '프로젝트 템포를 따라가기'를 선택하세요.
+No tracks - use  + Add Track	트랙이 없습니다. + 트랙 추가를 사용하세요
+Added %1	%1 추가됨
+Instrument: %1	악기: %1
+Opened %1	%1 열림
+Could not open the project: %1	프로젝트를 열 수 없습니다: %1
+Importing %1	%1 가져오는 중
+Exported %1	%1 내보냄
+Could not import: %1	가져올 수 없습니다: %1
+Could not export: %1	내보낼 수 없습니다: %1
+Could not save: %1	저장할 수 없습니다: %1
+Could not bounce: %1	바운스할 수 없습니다: %1
+New track with %1	%1 가 들어 있는 새 트랙
+Octave %1	옥타브 %1
+%1 added as an insert.	%1 을(를) 인서트로 추가했습니다.
+%1 region after Strip Silence.	무음 제거 후 리전 %1개
+%1 regions after Strip Silence.	무음 제거 후 리전 %1개
+Go to the start (Enter)	처음으로 이동 (Enter)
+Play / pause (Space)	재생 / 일시정지 (Space)
+Record into the armed tracks (R)	녹음 대기 중인 트랙에 녹음 (R)
+Cycle on / off (C). Shift-drag the ruler to set the cycle range	사이클 켜기/끄기 (C). 눈금자를 Shift+드래그하면 범위가 정해집니다
+Metronome (K)	메트로놈 (K)
+Count-in before recording	녹음 전 카운트인
+Add an audio, instrument, drum machine or Drummer track	오디오, 악기, 드럼 머신, 드러머 트랙을 추가합니다
+Grid for moving and drawing: click to change the value	이동과 그리기에 쓰는 그리드: 클릭하면 값이 바뀝니다
+Zoom (Ctrl + mouse wheel)	확대/축소 (Ctrl + 마우스 휠)
+Show or hide the bottom panel (X)	하단 패널 보이기/숨기기 (X)
+Click to move the playhead. Shift-drag sets the cycle range	클릭하면 재생 헤드가 이동합니다. Shift+드래그는 사이클 범위입니다
+Drag to move, drag the right edge to resize, double-click to edit, right-click for functions	끌어서 이동, 오른쪽 가장자리를 끌어 크기 조절, 더블클릭으로 편집, 오른쪽 클릭으로 기능
+Drag to resize the region	끌어서 리전 크기를 조절합니다
+Click to jump to the marker, drag to move it, right-click for more	클릭하면 마커로 이동, 끌면 마커 이동, 오른쪽 클릭으로 더 보기
+Click to select the track, right-click for track functions	클릭하면 트랙 선택, 오른쪽 클릭으로 트랙 기능
+Arm for recording	녹음 대기
+Volume - double-click to reset	볼륨 - 더블클릭하면 초기화
+Volume - double-click to reset to -1.9 dB	볼륨 - 더블클릭하면 -1.9 dB로 초기화
+Pan - drag up or down, double-click to centre	팬 - 위아래로 끌기, 더블클릭하면 중앙
+Drag up or down to change - hold Shift for fine control - double-click to reset	위아래로 끌어 조절 - Shift는 미세 조절 - 더블클릭하면 초기화
+Drag to change	끌어서 조절
+Switch the bottom panel	하단 패널 전환
+Double-click to add, or drag onto a track (loops and instruments also onto an empty part of the arrangement)	더블클릭하면 추가, 트랙으로 끌어다 놓아도 됩니다(루프와 악기는 편곡 영역의 빈 곳에도 가능)
+Click and type to filter the browser	클릭한 뒤 입력하면 목록이 걸러집니다
+Click to add a note, drag to move or resize, right-click to delete	클릭하면 노트 추가, 끌어서 이동/크기 조절, 오른쪽 클릭으로 삭제
+Click a key to hear the note	건반을 클릭하면 소리를 들을 수 있습니다
+Drag to change a note's velocity	끌어서 노트의 벨로시티를 바꿉니다
+Click to toggle a step, drag to paint	클릭하면 스텝 켜기/끄기, 끌어서 칠하기
+Click to add a point, drag to move it, right-click to delete it	클릭하면 점 추가, 끌어서 이동, 오른쪽 클릭으로 삭제
+Click to add a point, drag to move it, right-click to delete it.	클릭하면 점 추가, 끌어서 이동, 오른쪽 클릭으로 삭제합니다.
+%1 notes copied.	%1개의 노트를 복사했습니다.

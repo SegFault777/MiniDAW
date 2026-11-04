@@ -8,7 +8,7 @@
 #include "Translator.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.10_1"
+#define MINIDAW_VERSION "0.11"
 #endif
 
 int main(int argc, char** argv) {

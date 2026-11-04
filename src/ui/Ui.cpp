@@ -81,22 +81,24 @@ void NativeUi::paint(Canvas& c) {
     m_hits.clear();
     m_sliderFns.clear();
     m_actionFns.clear();
+    m_knobs.clear();
     c.clear(kBg);
     drawArrange(c);
     if (m_mixer) drawBottom(c);
+    drawBrowser(c);
     drawToolbar(c);
     drawControlBar(c);
     drawStatus(c);
     drawMenu(c);
     if (m_dialog && m_dialog->finished()) m_dialog.reset();
-    if (m_dialog) { m_dialog->setScreen(m_w, m_h); m_dialog->paint(c); }
+    if (m_dialog) { m_dialog->setScreen(m_winW, m_h); m_dialog->paint(c); }
     m_dirty = false;
 }
 
 void NativeUi::drawControlBar(Canvas& c) {
     const Rect bar = controlBar();
     c.fillGradient(bar, rgba(50, 55, 66), rgba(36, 39, 47));
-    c.hline(0, m_w - 1, bar.bottom() - 1, kLine);
+    c.hline(0, m_winW - 1, bar.bottom() - 1, kLine);
     // application mark
     c.fillRoundRect({14, 13, 28, 28}, 8, kAccent);
     c.text(28, 20, "M", rgba(12, 40, 36), Font::Bold13, Align::Center);
@@ -106,7 +108,7 @@ void NativeUi::drawControlBar(Canvas& c) {
     // transport cluster, centred
     const bool playing = m_s.isPlaying(), rec = m_s.isRecording();
     const int cy = bar.h / 2;
-    int x = m_w / 2 - 290;
+    int x = m_winW / 2 - 290;
     const Rect rew{x, cy - 15, 34, 30};
     button(c, rew, "", false, kAccent, Hit::Rewind);
     c.fillRect({rew.x + 11, rew.y + 9, 2, 12}, kText);
@@ -159,7 +161,7 @@ void NativeUi::drawControlBar(Canvas& c) {
     m_s.masterPeaks(l, r);
     m_meterL = std::max(l, m_meterL * 0.86f);
     m_meterR = std::max(r, m_meterR * 0.86f);
-    const Rect mm{m_w - 170, 14, 150, 10};
+    const Rect mm{m_winW - 170, 14, 150, 10};
     c.text(mm.x, 32, "OUT", kDim, Font::Regular11);
     for (int k = 0; k < 2; ++k) {
         const Rect lane{mm.x + 28, 15 + k * 12, 122, 8};
@@ -175,7 +177,7 @@ void NativeUi::drawControlBar(Canvas& c) {
 void NativeUi::drawToolbar(Canvas& c) {
     const Rect bar = toolbar();
     c.fillRect(bar, kPanel);
-    c.hline(0, m_w - 1, bar.bottom() - 1, kLine);
+    c.hline(0, m_winW - 1, bar.bottom() - 1, kLine);
     int x = 10;
     const struct { const char* label; Hit kind; int w; } menus[] = {{"File", Hit::MenuFile, 44}, {"Edit", Hit::MenuEdit, 44}, {"Track", Hit::MenuTrack, 50}, {"Functions", Hit::MenuFunctions, 74}, {"View", Hit::MenuView, 44}};
     for (const auto& m : menus) {
@@ -193,9 +195,9 @@ void NativeUi::drawToolbar(Canvas& c) {
     const Rect snap{x, bar.y + 5, 104, 22};
     button(c, snap, std::string("Snap  ") + (m_snapOn ? kSnapNames[m_snapIdx] : "Off"), m_snapOn, rgba(52, 96, 124), Hit::Snap, 0, 0, Font::Regular11);
     // right side: zoom and mixer
-    button(c, {m_w - 122, bar.y + 5, 26, 22}, "-", false, kAccent, Hit::ZoomOut, 0, 0, Font::Bold13);
-    button(c, {m_w - 92, bar.y + 5, 26, 22}, "+", false, kAccent, Hit::ZoomIn, 0, 0, Font::Bold13);
-    button(c, {m_w - 62, bar.y + 5, 52, 22}, "Mixer", m_mixer, kAccent, Hit::MixerToggle, 0, 0, Font::Regular11);
+    button(c, {m_winW - 122, bar.y + 5, 26, 22}, "-", false, kAccent, Hit::ZoomOut, 0, 0, Font::Bold13);
+    button(c, {m_winW - 92, bar.y + 5, 26, 22}, "+", false, kAccent, Hit::ZoomIn, 0, 0, Font::Bold13);
+    button(c, {m_winW - 62, bar.y + 5, 52, 22}, "Mixer", m_mixer, kAccent, Hit::MixerToggle, 0, 0, Font::Regular11);
 }
 
 void NativeUi::drawArrange(Canvas& c) {
@@ -255,11 +257,11 @@ void NativeUi::drawArrange(Canvas& c) {
     // ---- tracks ----
     c.pushClip(lanes);
     for (int i = 0; i < int(m_tracks.size()); ++i) {
-        const int y = laneY + i * kTrackH - int(m_scrollY);
-        if (y + kTrackH < laneY || y > area.bottom()) continue;
-        const Rect lane{kHeaderW, y, lanes.w, kTrackH};
+        const int y = laneY + i * m_trackH - int(m_scrollY);
+        if (y + m_trackH < laneY || y > area.bottom()) continue;
+        const Rect lane{kHeaderW, y, lanes.w, m_trackH};
         c.fillRect(lane, i % 2 ? kLaneB : kLaneA);
-        c.hline(kHeaderW, m_w - 1, y + kTrackH - 1, withAlpha(kLine, 200));
+        c.hline(kHeaderW, m_w - 1, y + m_trackH - 1, withAlpha(kLine, 200));
         addHit(lane.intersect(lanes), Hit::Lane, i);
     }
     // bar lines on top of the lane backgrounds
@@ -271,13 +273,13 @@ void NativeUi::drawArrange(Canvas& c) {
     }
     for (int i = 0; i < int(m_tracks.size()); ++i) {
         const core::Track& t = m_tracks[size_t(i)];
-        const int y = laneY + i * kTrackH - int(m_scrollY);
-        if (y + kTrackH < laneY || y > area.bottom()) continue;
+        const int y = laneY + i * m_trackH - int(m_scrollY);
+        if (y + m_trackH < laneY || y > area.bottom()) continue;
         for (int ri = 0; ri < int(t.regions.size()); ++ri) {
             const core::Region& rg = t.regions[size_t(ri)];
             const double x0 = beatToX(rg.start), x1 = beatToX(rg.start + m_s.regionBeats(rg));
             if (x1 < kHeaderW || x0 > m_w) continue;
-            const Rect r{int(std::lround(x0)), y + 4, std::max(6, int(std::lround(x1 - x0))), kTrackH - 8};
+            const Rect r{int(std::lround(x0)), y + 4, std::max(6, int(std::lround(x1 - x0))), m_trackH - 8};
             drawRegion(c, t, i, ri, r, trackColor(t));
             addHit(r.intersect(lanes), Hit::Region, i, ri);
             addHit({r.right() - 6, r.y, 6, r.h}, Hit::RegionEdge, i, ri);
@@ -290,23 +292,25 @@ void NativeUi::drawArrange(Canvas& c) {
     c.fillRect(heads, kPanel);
     for (int i = 0; i < int(m_tracks.size()); ++i) {
         const core::Track& t = m_tracks[size_t(i)];
-        const int y = laneY + i * kTrackH - int(m_scrollY);
-        if (y + kTrackH < laneY || y > area.bottom()) continue;
-        const Rect h{0, y, kHeaderW, kTrackH};
+        const int y = laneY + i * m_trackH - int(m_scrollY);
+        if (y + m_trackH < laneY || y > area.bottom()) continue;
+        const Rect h{0, y, kHeaderW, m_trackH};
         const Rgba col = trackColor(t);
         const bool sel = i == m_selTrack;
         c.fillRect(h, sel ? kPanel3 : (i % 2 ? kPanel : rgba(35, 38, 46)));
-        c.fillRect({0, y, 5, kTrackH - 1}, col);
-        c.hline(0, kHeaderW - 1, y + kTrackH - 1, kLine);
+        c.fillRect({0, y, 5, m_trackH - 1}, col);
+        c.hline(0, kHeaderW - 1, y + m_trackH - 1, kLine);
         addHit(h, Hit::TrackHeader, i);
-        c.textIn({16, y + 7, 112, 16}, t.name, kText, Font::Bold11);
-        c.textIn({16, y + 23, 112, 14}, typeName(t.type), kDim, Font::Regular11);
-        const int bx = kHeaderW - 3 * 27 - 6;
-        button(c, {bx, y + 7, 24, 20}, "M", t.mute, kAmber, Hit::TrackMute, i);
-        button(c, {bx + 27, y + 7, 24, 20}, "S", t.solo, rgba(250, 214, 60), Hit::TrackSolo, i);
-        button(c, {bx + 54, y + 7, 24, 20}, "R", t.armed, kRec, Hit::TrackArm, i);
+        const bool compact = m_trackH < 46;
+        c.textIn({16, compact ? y + (m_trackH - 16) / 2 : y + 7, 112, 16}, t.name, kText, Font::Bold11);
+        if (!compact) c.textIn({16, y + 23, 112, 14}, typeName(t.type), kDim, Font::Regular11);
+        const int bx = kHeaderW - 3 * 27 - 6, by = compact ? y + (m_trackH - 20) / 2 : y + 7;
+        button(c, {bx, by, 24, 20}, "M", t.mute, kAmber, Hit::TrackMute, i);
+        button(c, {bx + 27, by, 24, 20}, "S", t.solo, rgba(250, 214, 60), Hit::TrackSolo, i);
+        button(c, {bx + 54, by, 24, 20}, "R", t.armed, kRec, Hit::TrackArm, i);
         // volume slider
-        const Rect groove{16, y + 42, kHeaderW - 36, 6};
+        const Rect groove{16, y + (m_trackH >= 80 ? 56 : 42), kHeaderW - 36, 6};
+        if (!compact) {
         c.fillRoundRect(groove, 3, rgba(14, 15, 18));
         const int fill = int(groove.w * std::clamp(t.volume / 1.5f, 0.f, 1.f));
         c.pushClip(groove);
@@ -314,6 +318,13 @@ void NativeUi::drawArrange(Canvas& c) {
         c.popClip();
         c.fillCircle(groove.x + fill, groove.y + 3, 5.5, rgba(236, 240, 247));
         addHit({groove.x - 6, groove.y - 6, groove.w + 12, groove.h + 12}, Hit::TrackVol, i);
+        }
+        if (m_trackH >= 80) {   // tall tracks also show the pan
+            c.text(16, y + 70, "Pan", kDim, Font::Regular11);
+            const Rect pg{54, y + 74, kHeaderW - 74, 5};
+            c.fillRoundRect(pg, 2, rgba(14, 15, 18));
+            c.fillCircle(pg.x + pg.w * (t.pan + 1.0) / 2.0, pg.y + 2.5, 4.5, rgba(236, 240, 247));
+        }
     }
     if (m_tracks.empty()) c.textIn({0, laneY + 20, kHeaderW, 20}, "No tracks - use  + Add Track", kDim, Font::Regular11, Align::Center);
     c.popClip();
@@ -458,11 +469,54 @@ void NativeUi::drawMixer(Canvas& c) {
 }
 
 void NativeUi::drawStatus(Canvas& c) {
-    const Rect r{0, m_h - kStatusH, m_w, kStatusH};
+    const Rect r{0, m_h - kStatusH, m_winW, kStatusH};
     c.fillRect(r, rgba(18, 19, 23));
-    c.hline(0, m_w - 1, r.y, kLine);
-    c.textIn({12, r.y, m_w / 2, r.h}, m_message.empty() ? "Ready" : m_message, m_message.empty() ? kDim : kText, Font::Regular11);
-    c.textIn({m_w / 2, r.y, m_w / 2 - 12, r.h}, m_device, kDim, Font::Regular11, Align::Right);
+    c.hline(0, m_winW - 1, r.y, kLine);
+    std::string hint;
+    if (m_drag == Drag::None && !m_dialog)
+        for (auto it = m_hits.rbegin(); it != m_hits.rend(); ++it)
+            if (it->r.contains(m_hoverX, m_hoverY)) { hint = hintFor(it->kind); if (!hint.empty()) break; }
+    const bool showHint = !hint.empty();
+    c.textIn({12, r.y, m_winW / 2, r.h}, showHint ? hint : (m_message.empty() ? "Ready" : m_message), showHint ? rgba(150, 214, 206) : (m_message.empty() ? kDim : kText), Font::Regular11);
+    c.textIn({m_winW / 2, r.y, m_winW / 2 - 12, r.h}, m_device, kDim, Font::Regular11, Align::Right);
+}
+
+std::string NativeUi::hintFor(Hit k) const {
+    switch (k) {
+    case Hit::Rewind: return "Go to the start (Enter)";
+    case Hit::Stop: return "Stop";
+    case Hit::Play: return "Play / pause (Space)";
+    case Hit::Record: return "Record into the armed tracks (R)";
+    case Hit::Cycle: return "Cycle on / off (C). Shift-drag the ruler to set the cycle range";
+    case Hit::Metronome: return "Metronome (K)";
+    case Hit::CountIn: return "Count-in before recording";
+    case Hit::AddTrack: return "Add an audio, instrument, drum machine or Drummer track";
+    case Hit::Snap: return "Grid for moving and drawing: click to change the value";
+    case Hit::ZoomIn: case Hit::ZoomOut: return "Zoom (Ctrl + mouse wheel)";
+    case Hit::MixerToggle: return "Show or hide the bottom panel (X)";
+    case Hit::Ruler: return "Click to move the playhead. Shift-drag sets the cycle range";
+    case Hit::Region: return "Drag to move, drag the right edge to resize, double-click to edit, right-click for functions";
+    case Hit::RegionEdge: return "Drag to resize the region";
+    case Hit::Marker: return "Click to jump to the marker, drag to move it, right-click for more";
+    case Hit::TrackHeader: return "Click to select the track, right-click for track functions";
+    case Hit::TrackMute: return "Mute";
+    case Hit::TrackSolo: return "Solo";
+    case Hit::TrackArm: return "Arm for recording";
+    case Hit::TrackVol: return "Volume - double-click to reset";
+    case Hit::Fader: case Hit::MasterFader: return "Volume - double-click to reset to -1.9 dB";
+    case Hit::Pan: return "Pan - drag up or down, double-click to centre";
+    case Hit::Knob: return "Drag up or down to change - hold Shift for fine control - double-click to reset";
+    case Hit::Slider: return "Drag to change";
+    case Hit::Tab: return "Switch the bottom panel";
+    case Hit::BrowserItem: return "Double-click to add, or drag onto a track (loops and instruments also onto an empty part of the arrangement)";
+    case Hit::BrowserSearch: return "Click and type to filter the browser";
+    case Hit::PianoGrid: return "Click to add a note, drag to move or resize, right-click to delete";
+    case Hit::PianoKeys: return "Click a key to hear the note";
+    case Hit::PianoVel: return "Drag to change a note's velocity";
+    case Hit::StepCell: return "Click to toggle a step, drag to paint";
+    case Hit::AutoLane: return "Click to add a point, drag to move it, right-click to delete it";
+    default: return {};
+    }
 }
 
 void NativeUi::drawMenu(Canvas& c) {

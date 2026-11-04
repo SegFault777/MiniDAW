@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 # MiniDAW build script (Windows, MSVC + Qt 6). Run it from Git Bash or MSYS2.
 #
-#   ./build.sh [build|deploy|installer|all|clean]
+#   ./build.sh [native-release|native|native-deploy|installer|qt|build|deploy|all|clean]
 #
-#   build      moc + compile + link  -> build/MiniDAW.exe        (default)
-#   deploy     windeployqt           -> dist/MiniDAW/ and MiniDAW-windows-x64-portable.zip
-#   installer  Inno Setup            -> installer-out/MiniDAW-<version>-setup.exe
-#   all        build + deploy + installer
-#   clean      remove build/, dist/ and installer-out/
+#   native-release  native + native-deploy + installer          (what CI runs; needs only MSVC and Inno Setup)
+#   native          compile + link the Qt-free version           -> build/MiniDAWNative.exe
+#   native-deploy   portable folder and zip of the native version -> dist-native/MiniDAW, MiniDAW-windows-x64-portable.zip
+#   installer       Inno Setup (native version)                  -> installer-out/MiniDAW-<version>-setup.exe
+#   build           moc + compile + link the old Qt version      -> build/MiniDAW.exe
+#   deploy          windeployqt                                  -> dist/MiniDAW and MiniDAW-Qt-windows-x64-portable.zip
+#   qt              build + deploy;   qt-installer: Inno Setup for the Qt version
+#   all             qt + native-release;   clean: remove build outputs
 #
-# Requirements:
+# Requirements (the Qt target also needs Qt, the native targets do not):
 #   * The MSVC x64 environment must be active (cl.exe on PATH). In CI this is done by
 #     ilammy/msvc-dev-cmd; locally start Git Bash from the "x64 Native Tools Command Prompt".
 #   * QT_DIR (or QT_ROOT_DIR) must point to the Qt kit, e.g. C:/Qt/6.8.3/msvc2022_64
@@ -18,7 +21,7 @@
 #   * VST3_SDK_DIR points to a checkout of https://github.com/steinbergmedia/vst3sdk (with submodules).
 #     When it is set and builds cleanly, MiniDAW is built with VST3 hosting. Otherwise the build
 #     continues without it.
-#   * MINIDAW_VERSION overrides the version string (default 0.10_1).
+#   * MINIDAW_VERSION overrides the version string (default 0.11).
 set -euo pipefail
 
 # Git Bash would otherwise rewrite arguments such as /nologo into file paths.
@@ -28,7 +31,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC="$ROOT/src"
 BUILD="$ROOT/build"
 DIST="$ROOT/dist/MiniDAW"
-VERSION="${MINIDAW_VERSION:-0.10_1}"
+DIST_NATIVE="$ROOT/dist-native/MiniDAW"
+VERSION="${MINIDAW_VERSION:-0.11}"
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 4)}"
 TARGET="${1:-build}"
 
@@ -42,7 +46,7 @@ qt_root() {
 }
 
 do_clean() {
-    rm -rf "$BUILD" "$ROOT/dist" "$ROOT/installer-out" "$ROOT"/MiniDAW-windows-x64-portable.zip
+    rm -rf "$BUILD" "$ROOT/dist" "$ROOT/dist-native" "$ROOT/installer-out" "$ROOT"/MiniDAW-*portable.zip
 }
 
 # Compiles the given sources in parallel into $BUILD/<dir>/ and appends the object paths to OBJS.
@@ -167,11 +171,12 @@ do_build() {
 }
 
 # Builds build/MiniDAWNative.exe: the Qt-free user interface (src/ui + src/native), no Qt libraries needed.
+# VST3 hosting is added when VST3_SDK_DIR points to the Steinberg SDK; if that fails the build continues without it.
 do_native() {
     command -v cl >/dev/null 2>&1 || die "cl.exe not found: activate the MSVC x64 environment first"
     local SRC_W; SRC_W="$(cygpath -m "$SRC")"
     mkdir -p "$BUILD"
-    rm -rf "$BUILD/native"
+    rm -rf "$BUILD/native" "$BUILD/native-vst3sdk"
     local NATIVE=(cl -nologo -std:c++20 -O2 -EHsc -MT -utf-8 -permissive- -Zc:__cplusplus -W3 -DNDEBUG -DUNICODE -D_UNICODE -DWIN32 -D_CRT_SECURE_NO_WARNINGS -DNOMINMAX
         "-DMINIDAW_VERSION=\"$VERSION\"" -I"$SRC_W")
     local sources=("$SRC"/native/*.cpp "$SRC"/ui/*.cpp "$SRC"/dsp/*.cpp "$SRC"/core/*.cpp "$SRC"/platform/*.cpp)
@@ -179,18 +184,63 @@ do_native() {
     if [ -f "$ROOT/resources/app.rc" ]; then
         (cd "$ROOT/resources" && rc -nologo -fo "$(cygpath -m "$BUILD")/native_app.res" app.rc) && res=("$(cygpath -m "$BUILD")/native_app.res")
     fi
+    local LIBS=(winmm.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib shell32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib)
+
+    native_link() {
+        echo "== native link"
+        cl -nologo "${OBJS[@]}" "${res[@]}" -Fe"$(cygpath -m "$BUILD")/MiniDAWNative.exe" -link -SUBSYSTEM:WINDOWS -ENTRY:mainCRTStartup "${LIBS[@]}"
+    }
+
+    # ---- optional VST3: the SDK sources (static CRT like the rest), then the native sources with -DMINIDAW_VST3 ----
+    local vst3_ok=0 vst3_objs=() SDK=""
+    if [ -n "${VST3_SDK_DIR:-}" ] && [ -d "$VST3_SDK_DIR/public.sdk" ]; then
+        echo "== native VST3 SDK"
+        SDK="$(cygpath -m "$VST3_SDK_DIR")"
+        local sdk_sources=() d g
+        for d in base/source base/thread/source pluginterfaces/base public.sdk/source/vst/hosting; do
+            for g in "$VST3_SDK_DIR/$d"/*.cpp; do
+                [ -f "$g" ] || continue
+                case "$g" in *_linux*|*_mac*|*test*) continue ;; esac
+                sdk_sources+=("$g")
+            done
+        done
+        for g in public.sdk/source/vst/vstinitiids.cpp public.sdk/source/vst/utility/stringconvert.cpp public.sdk/source/common/memorystream.cpp; do
+            [ -f "$VST3_SDK_DIR/$g" ] && sdk_sources+=("$VST3_SDK_DIR/$g")
+        done
+        local SDKCXX=(cl -nologo -std:c++17 -O2 -EHsc -MT -utf-8 -W1 -DRELEASE=1 -DUNICODE -D_UNICODE -DWIN32 -D_WINDOWS -DNOMINMAX -I"$SDK")
+        OBJS=()
+        if compile_all native-vst3sdk "${SDKCXX[@]}" -- "${sdk_sources[@]}"; then
+            vst3_objs=("${OBJS[@]}")
+            vst3_ok=1
+        else
+            warn "VST3 support could not be built for the native version and is disabled."
+        fi
+    fi
+
     echo "== native compile ($JOBS jobs)"
-    OBJS=()
-    compile_all native "${NATIVE[@]}" -- "${sources[@]}" || die "native compilation failed"
-    echo "== native link"
-    cl -nologo "${OBJS[@]}" "${res[@]}" -Fe"$(cygpath -m "$BUILD")/MiniDAWNative.exe" -link -SUBSYSTEM:WINDOWS -ENTRY:mainCRTStartup \
-        winmm.lib ole32.lib mfplat.lib mfreadwrite.lib mfuuid.lib shell32.lib user32.lib gdi32.lib comdlg32.lib advapi32.lib || die "native linking failed"
+    local ok=0
+    if [ "$vst3_ok" -eq 1 ]; then
+        OBJS=("${vst3_objs[@]}")
+        if compile_all native "${NATIVE[@]}" -DMINIDAW_VST3 -DRELEASE=1 -I"$SDK" -- "${sources[@]}" && native_link; then
+            ok=1
+            echo "VST3 hosting: enabled"
+        else
+            warn "building the native version with VST3 failed; retrying without it"
+        fi
+    fi
+    if [ "$ok" -eq 0 ]; then
+        OBJS=()
+        rm -rf "$BUILD/native"
+        compile_all native "${NATIVE[@]}" -- "${sources[@]}" || die "native compilation failed"
+        native_link || die "native linking failed"
+        echo "VST3 hosting: disabled"
+    fi
     echo "built $BUILD/MiniDAWNative.exe"
 }
 
 # Builds the example plug-ins of plugin-sdk/examples into dist/MiniDAW/plugins (failures are not fatal).
 build_example_plugins() {
-    local out="$DIST/plugins" tmp="$BUILD/plugins" f name
+    local out="${1:-$DIST}/plugins" tmp="$BUILD/plugins" f name
     mkdir -p "$out" "$tmp"
     for f in "$ROOT"/plugin-sdk/examples/*.cpp; do
         name="$(basename "${f%.cpp}")"
@@ -208,7 +258,6 @@ do_deploy() {
     rm -rf "$ROOT/dist"
     mkdir -p "$DIST"
     cp "$BUILD/MiniDAW.exe" "$DIST/"
-    [ -f "$BUILD/MiniDAWNative.exe" ] && cp "$BUILD/MiniDAWNative.exe" "$DIST/"   # experimental Qt-free UI (v0.9)
     windeployqt --release --no-translations --no-system-d3d-compiler "$(cygpath -m "$DIST/MiniDAW.exe")"
     cp -r "$ROOT/translations" "$DIST/translations"   # language files (plain text, one per language)
     cp -r "$ROOT/loops" "$DIST/loops"                 # sample loops for the Loop Browser
@@ -216,28 +265,60 @@ do_deploy() {
     build_example_plugins
     cp "$ROOT/LICENSE" "$ROOT/README.md" "$DIST/"
     powershell.exe -NoProfile -Command \
-        "Compress-Archive -Path '$(cygpath -w "$DIST")' -DestinationPath '$(cygpath -w "$ROOT/MiniDAW-windows-x64-portable.zip")' -Force"
-    echo "deployed to dist/MiniDAW and MiniDAW-windows-x64-portable.zip"
+        "Compress-Archive -Path '$(cygpath -w "$DIST")' -DestinationPath '$(cygpath -w "$ROOT/MiniDAW-Qt-windows-x64-portable.zip")' -Force"
+    echo "deployed to dist/MiniDAW and MiniDAW-Qt-windows-x64-portable.zip"
 }
 
-do_installer() {
-    [ -d "$DIST" ] || die "deploy first: ./build.sh deploy"
+# The native version is the one that gets installed: portable folder + zip, then the Inno Setup installer.
+do_native_deploy() {
+    [ -f "$BUILD/MiniDAWNative.exe" ] || die "build first: ./build.sh native"
+    rm -rf "$ROOT/dist-native"
+    mkdir -p "$DIST_NATIVE/docs"
+    cp "$BUILD/MiniDAWNative.exe" "$DIST_NATIVE/MiniDAW.exe"
+    cp -r "$ROOT/translations" "$DIST_NATIVE/translations"
+    cp -r "$ROOT/loops" "$DIST_NATIVE/loops"
+    cp -r "$ROOT/plugin-sdk" "$DIST_NATIVE/plugin-sdk"
+    [ -d "$ROOT/docs/user" ] && cp -r "$ROOT/docs/user" "$DIST_NATIVE/docs/user"
+    build_example_plugins "$DIST_NATIVE"
+    cp "$ROOT/LICENSE" "$ROOT/README.md" "$DIST_NATIVE/"
+    powershell.exe -NoProfile -Command \
+        "Compress-Archive -Path '$(cygpath -w "$DIST_NATIVE")' -DestinationPath '$(cygpath -w "$ROOT/MiniDAW-windows-x64-portable.zip")' -Force"
+    echo "deployed to dist-native/MiniDAW and MiniDAW-windows-x64-portable.zip"
+}
+
+find_iscc() {
     local iscc="${ISCC:-}"
     if [ -z "$iscc" ]; then
         iscc="$(command -v ISCC.exe 2>/dev/null || true)"
         [ -n "$iscc" ] || iscc="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
     fi
     [ -f "$iscc" ] || die "Inno Setup 6 not found (install it or set ISCC=/path/to/ISCC.exe)"
-    "$iscc" "/DMyAppVersion=$VERSION" "$(cygpath -w "$ROOT/installer/MiniDAW.iss")"
+    echo "$iscc"
+}
+
+do_installer() {
+    [ -d "$DIST_NATIVE" ] || die "deploy first: ./build.sh native-deploy"
+    "$(find_iscc)" "/DMyAppVersion=$VERSION" "$(cygpath -w "$ROOT/installer/MiniDAW.iss")"
     echo "installer written to installer-out/"
+}
+
+# The old Qt version is only shipped as a portable zip; this builds an installer for it if somebody still wants one.
+do_qt_installer() {
+    [ -d "$DIST" ] || die "deploy first: ./build.sh deploy"
+    "$(find_iscc)" "/DMyAppVersion=$VERSION" "$(cygpath -w "$ROOT/installer/MiniDAW-Qt.iss")"
+    echo "Qt installer written to installer-out/"
 }
 
 case "$TARGET" in
     build) do_build ;;
     deploy) do_deploy ;;
-    installer) do_installer ;;
     native) do_native ;;
-    all) do_build; (do_native) || warn "the experimental native UI could not be built (the Qt version is unaffected)"; do_deploy; do_installer ;;
+    native-deploy) do_native_deploy ;;
+    installer) do_installer ;;
+    qt-installer) do_qt_installer ;;
+    native-release) do_native; do_native_deploy; do_installer ;;
+    qt) do_build; do_deploy ;;
+    all) do_build; do_deploy; do_native; do_native_deploy; do_installer ;;
     clean) do_clean ;;
-    *) die "unknown target '$TARGET' (build | native | deploy | installer | all | clean)" ;;
+    *) die "unknown target '$TARGET' (native-release | native | native-deploy | installer | qt | build | deploy | qt-installer | all | clean)" ;;
 esac

@@ -20,6 +20,7 @@
 #include <fstream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -30,10 +31,12 @@
 #include "../core/I18n.h"
 #include "../platform/Decode.h"
 #include "../platform/Midi.h"
+#include "../platform/PluginHost.h"
 #include "../ui/Ui.h"
+#include "Vst3Native.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.10_1"
+#define MINIDAW_VERSION "0.11"
 #endif
 
 namespace {
@@ -129,7 +132,15 @@ private:
 };
 
 // ---- the application ----
+// ---- plug-in catalog: MiniDAW plug-ins (plugin-sdk) and VST3, scanned on a worker thread ----
+struct Catalog {
+    std::mutex mutex;
+    std::vector<vst3n::PluginInfo> vst3;
+    std::atomic<bool> scanning{false};
+};
+
 struct App {
+    Catalog catalog;
     core::Session session;
     std::unique_ptr<ui::NativeUi> ui;
     ui::Canvas canvas;
@@ -309,6 +320,7 @@ LRESULT CALLBACK wndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
         InvalidateRect(h, nullptr, FALSE);
         return 0;
     }
+    case WM_APP + 2: a->ui->message("Plug-in scan finished."); InvalidateRect(h, nullptr, FALSE); return 0;
     case WM_DESTROY: PostQuitMessage(0); return 0;
     default: break;
     }
@@ -360,6 +372,46 @@ void openMidi(App& a) {
             });
             return;
         }
+}
+
+std::vector<std::string> splitFolders(const std::string& text) {
+    std::vector<std::string> v;
+    size_t start = 0;
+    while (start <= text.size()) {
+        size_t end = text.find(';', start);
+        if (end == std::string::npos) end = text.size();
+        std::string part = text.substr(start, end - start);
+        while (!part.empty() && part.front() == ' ') part.erase(part.begin());
+        while (!part.empty() && part.back() == ' ') part.pop_back();
+        if (!part.empty()) v.push_back(part);
+        start = end + 1;
+    }
+    return v;
+}
+
+void rescanPlugins(App& a) {
+    if (a.catalog.scanning.exchange(true)) return;
+    std::vector<std::string> nativeFolders = {a.exeDir + "\\plugins", a.dataDir + "\\plugins"};
+    std::vector<std::string> vstFolders = a.settings.count("vst3Folders") ? splitFolders(a.settings["vst3Folders"]) : std::vector<std::string>();
+    if (vstFolders.empty()) vstFolders = vst3n::defaultFolders();
+    platform::scanNativePlugins(nativeFolders);   // quick, and projects may need these right away
+    std::thread([&a, vstFolders] {
+        auto found = vst3n::scan(vstFolders);
+        {
+            std::lock_guard<std::mutex> lock(a.catalog.mutex);
+            a.catalog.vst3 = std::move(found);
+        }
+        a.catalog.scanning = false;
+        if (a.hwnd) PostMessageW(a.hwnd, WM_APP + 2, 0, 0);
+    }).detach();
+}
+
+std::vector<ui::PluginEntry> pluginEntries(App& a) {
+    std::vector<ui::PluginEntry> v;
+    for (const auto& p : platform::nativePlugins()) v.push_back({p.id, p.name, p.vendor, false});
+    std::lock_guard<std::mutex> lock(a.catalog.mutex);
+    for (const auto& p : a.catalog.vst3) v.push_back({p.id, p.name, p.vendor, p.instrument});
+    return v;
 }
 
 void applySettings(App& a, bool first) {
@@ -433,6 +485,18 @@ int main() {
         if (!app.in && app.ui) app.ui->message("Could not open the microphone: " + e);
     };
     hooks.stopInput = [&app] { app.in.reset(); };
+    hooks.makeEffect = [&app](const std::string& id) -> std::shared_ptr<dsp::Effect> {
+        if (id.rfind("vst3:", 0) == 0) { std::string e; auto fx = vst3n::createEffect(id, &e); if (!fx && app.ui) app.ui->message("Could not load the plug-in: " + e); return fx; }
+        return platform::createNativePlugin(id);
+    };
+    hooks.makeInstrument = [&app](const std::string& id) -> std::shared_ptr<dsp::Instrument> {
+        std::string e;
+        auto inst = vst3n::createInstrument(id, &e);
+        if (!inst && app.ui) app.ui->message("Could not load the plug-in: " + e);
+        return inst;
+    };
+    hooks.saveState = [](dsp::ParamSet& p) { return vst3n::saveState(p); };
+    hooks.loadState = [](dsp::ParamSet& p, const std::string& s) { vst3n::loadState(p, s); };
     app.session.setHooks(std::move(hooks));
 
     ui::Host host;
@@ -447,6 +511,9 @@ int main() {
         return v;
     };
     host.midiDevices = [] { return platform::midiInputs(); };
+    host.plugins = [&app] { return pluginEntries(app); };
+    host.rescanPlugins = [&app] { rescanPlugins(app); };
+    host.openPluginEditor = [&app](const std::shared_ptr<dsp::ParamSet>& p) { return vst3n::openEditor(p, app.hwnd); };
     host.languages = [&app] {
         std::vector<std::pair<std::string, std::string>> v;
         for (const auto& l : core::findLanguages(app.exeDir + "\\translations")) v.emplace_back(l.code, l.name);
@@ -484,7 +551,14 @@ int main() {
         if (app.session.loadProject(app.session.autosavePath(), &e)) { app.session.markRecovered(); app.ui->message("Restored the autosaved project."); }
     }
     { std::ofstream(lock) << "running"; }
+    rescanPlugins(app);
     applySettings(app, true);
+    {   // "MiniDAW.exe project.mdaw" (file association, drag a file onto the program)
+        int argc = 0;
+        wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+        if (argv && argc >= 2) app.ui->openFile(narrow(argv[1]));
+        if (argv) LocalFree(argv);
+    }
     SetTimer(app.hwnd, 1, 33, nullptr);
 
     MSG msg;

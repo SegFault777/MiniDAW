@@ -56,8 +56,8 @@ void NativeUi::addRecent(const std::string& path) {
 
 void NativeUi::openProject(const std::string& p) {
     std::string err;
-    if (m_s.loadProject(p, &err)) { message("Opened " + p); addRecent(p); m_selTrack = m_selRegion = -1; }
-    else message("Could not open the project: " + err);
+    if (m_s.loadProject(p, &err)) { message(msg("Opened %1", p)); addRecent(p); m_selTrack = m_selRegion = -1; }
+    else message(msg("Could not open the project: %1", err));
     if (m_host.setTitle) m_host.setTitle("MiniDAW - " + p);
 }
 
@@ -77,7 +77,7 @@ void NativeUi::openMenu(const std::vector<MenuItem>& items, int x, int y) {
     for (const auto& it : m_menu) w = std::max(w, probe.textWidth(it.label) + probe.textWidth(it.shortcut) + 60);
     int h = 12;
     for (const auto& it : m_menu) h += it.separator ? 9 : 22;
-    m_menuRect = {std::min(x, m_w - w - 4), std::min(y, m_h - h - 4), w, h};
+    m_menuRect = {std::min(x, m_winW - w - 4), std::min(y, m_h - h - 4), w, h};
     m_menuHover = -1;
     m_dirty = true;
 }
@@ -150,8 +150,10 @@ std::vector<MenuItem> NativeUi::viewMenu() {
     return {item(m_mixer ? "Hide Bottom Panel" : "Show Bottom Panel", "X", [this] { m_mixer = !m_mixer; m_dirty = true; }),
             item("Mixer", "", [this] { m_mixer = true; m_tab = Tab::Mixer; m_dirty = true; }), item("Piano Roll", "P", [this] { m_mixer = true; m_tab = Tab::PianoRoll; m_dirty = true; }),
             item("Step Sequencer", "", [this] { m_mixer = true; m_tab = Tab::Steps; m_dirty = true; }), item("Drummer Editor", "", [this] { m_mixer = true; m_tab = Tab::Drummer; m_dirty = true; }),
-            item("Loop Browser", "L", [this] { m_mixer = true; m_tab = Tab::Loops; m_dirty = true; }),
-            item(m_inspector ? "Hide Inspector" : "Show Inspector", "I", [this] { m_inspector = !m_inspector; m_dirty = true; }), sep(),
+            item("Devices", "", [this] { showTab(TabSmart); }),
+            item(m_browser ? "Hide Browser" : "Show Browser", "L", [this] { m_browser = !m_browser; relayout(); }),
+            item("Track Height: Compact", "", [this] { m_trackH = 34; m_dirty = true; }), item("Track Height: Normal", "", [this] { m_trackH = 60; m_dirty = true; }), item("Track Height: Tall", "", [this] { m_trackH = 96; m_dirty = true; }),
+            item("Inspector", "I", [this] { showTab(TabInspector); }), sep(),
             item("Zoom In", "+", [this] { m_ppb = std::min(400.0, m_ppb * 1.25); m_dirty = true; }), item("Zoom Out", "-", [this] { m_ppb = std::max(6.0, m_ppb / 1.25); m_dirty = true; }), sep(),
             item("Tempo...", "", [this] { dlgTempo(); }), item("Time Signature...", "", [this] { dlgTimeSignature(); }), item("Tap Tempo", "T", [this] { tapTempo(); }),
             item("Add Marker", "M", [this] { m_s.addMarker(m_s.positionBeats()); m_dirty = true; }), item("Next Marker", "]", [this] { gotoMarker(1); }), item("Previous Marker", "[", [this] { gotoMarker(-1); }), sep(),
@@ -218,16 +220,16 @@ void NativeUi::doFile(const std::string& what) {
     } else if (what == "save" || what == "saveas") {
         std::string p = what == "save" ? m_s.projectPath() : std::string();
         if (p.empty()) p = ask("Save Project", kProject, true);
-        if (!p.empty()) { if (p.find('.') == std::string::npos) p += ".mdaw"; if (m_s.saveProject(p, &err)) { message("Saved " + p); addRecent(p); } else message("Could not save: " + err); }
+        if (!p.empty()) { if (p.find('.') == std::string::npos) p += ".mdaw"; if (m_s.saveProject(p, &err)) { message(msg("Saved %1", p)); addRecent(p); } else message(msg("Could not save: %1", err)); }
     } else if (what == "import") {
         const std::string p = ask("Import Audio", "Audio files|*.wav;*.mp3;*.m4a;*.aac;*.flac;*.wma", false);
-        if (!p.empty()) { m_s.importAudio(p, m_selTrack, m_s.positionBeats()); message("Importing " + p); }
+        if (!p.empty()) { m_s.importAudio(p, m_selTrack, m_s.positionBeats()); message(msg("Importing %1", p)); }
     } else if (what == "importmidi") {
         const std::string p = ask("Import MIDI File", "MIDI files|*.mid;*.midi", false);
-        if (!p.empty()) { if (m_s.importMidiFile(p, &err)) message("Imported " + p); else message("Could not import: " + err); }
+        if (!p.empty()) { if (m_s.importMidiFile(p, &err)) message(msg("Imported %1", p)); else message(msg("Could not import: %1", err)); }
     } else if (what == "exportmidi") {
         std::string p = ask("Export MIDI File", "MIDI files|*.mid", true);
-        if (!p.empty()) { if (p.find('.') == std::string::npos) p += ".mid"; if (m_s.exportMidiFile(p, &err)) message("Exported " + p); else message("Could not export: " + err); }
+        if (!p.empty()) { if (p.find('.') == std::string::npos) p += ".mid"; if (m_s.exportMidiFile(p, &err)) message(msg("Exported %1", p)); else message(msg("Could not export: %1", err)); }
     }
     if (m_host.setTitle) m_host.setTitle(m_s.projectPath().empty() ? "MiniDAW" : "MiniDAW - " + m_s.projectPath());
     m_dirty = true;
@@ -267,6 +269,7 @@ void NativeUi::mouseDown(int x, int y, int button, int mods) {
     for (auto it = m_hits.rbegin(); it != m_hits.rend(); ++it) if (it->r.contains(x, y)) { hit = &*it; break; }
     if (!hit) return;
     const int a = hit->a, b = hit->b;
+    m_searchFocus = hit->kind == Hit::BrowserSearch;
     if (hit->kind == Hit::PianoGrid || hit->kind == Hit::PianoKeys || hit->kind == Hit::PianoVel || hit->kind == Hit::AutoLane) { paneMouseDown(x, y, button, mods); m_dirty = true; return; }
     const Rect hr = hit->r;
     const bool right = button == 1;
@@ -286,10 +289,21 @@ void NativeUi::mouseDown(int x, int y, int button, int mods) {
         m_drag = Drag::Steps;
         break;
     }
-    case Hit::LoopItem:
-        m_loopSel = a;
-        m_s.audition(m_loops[size_t(a)].path);
+    case Hit::Knob: m_drag = Drag::Knob; m_dragY = y; m_dragValue = float(m_knobs[size_t(a)].t01); m_dragFn = m_knobs[size_t(a)].set; break;
+    case Hit::BrowserSearch: break;
+    case Hit::BrowserSection: m_sectionClosed[a] = !m_sectionClosed[a]; break;
+    case Hit::BrowserItem: {
+        const auto items = browserItems();
+        if (a >= 0 && a < int(items.size())) {
+            const BrowserItem& it = items[size_t(a)];
+            m_browserSel = a;
+            m_payPending = true; m_payActive = false; m_payX = x; m_payY = y;
+            m_payKind = it.kind; m_payId = it.id; m_payName = it.name; m_payPath = it.path;
+            if (it.kind == 0) m_s.audition(it.path);
+            m_drag = Drag::Browser;
+        }
         break;
+    }
     case Hit::Marker:
         if (right) {
             const int mi = a;
@@ -363,7 +377,6 @@ void NativeUi::mouseDown(int x, int y, int button, int mods) {
 }
 
 void NativeUi::mouseMove(int x, int y, int mods) {
-    (void)mods;
     m_hoverX = x; m_hoverY = y;
     m_dirty = true;
     if (m_dialog && !m_dialog->finished()) { m_dialog->mouseMove(x, y); return; }
@@ -382,8 +395,12 @@ void NativeUi::mouseMove(int x, int y, int mods) {
     switch (m_drag) {
     case Drag::Seek: m_s.seekBeats(std::max(0.0, xToBeat(x))); break;
     case Drag::Slider: if (m_dragFn) m_dragFn(std::clamp(double(x - (m_dragRect.x + 4)) / std::max(1, m_dragRect.w - 8), 0.0, 1.0)); break;
-    case Drag::Note: case Drag::NoteResize: case Drag::Velocity: paneMouseMove(x, y); break;
+    case Drag::Note: case Drag::NoteResize: case Drag::Velocity: case Drag::Marquee: paneMouseMove(x, y); break;
     case Drag::AutoPoint: autoMouseMove(x, y); break;
+    case Drag::Knob: if (m_dragFn) m_dragFn(std::clamp(double(m_dragValue) + double(m_dragY - y) * ((mods & ModShift) ? 0.0012 : 0.006), 0.0, 1.0)); break;
+    case Drag::Browser:
+        if (m_payPending && !m_payActive && (std::abs(x - m_payX) > 5 || std::abs(y - m_payY) > 5)) { m_payActive = true; m_s.stopAudition(); }
+        break;
     case Drag::Steps: {
         if (!m_stepGrid.contains(x, y) || m_selTrack < 0) break;
         const double cw = double(m_stepGrid.w) / kSteps, ch = double(m_stepGrid.h) / kDrumRows;
@@ -419,6 +436,8 @@ void NativeUi::mouseUp(int x, int y, int button, int mods) {
     (void)button; (void)mods;
     if (m_dialog && !m_dialog->finished()) { m_dialog->mouseUp(x, y); return; }
     paneMouseUp();
+    if (m_payActive) dropPayload(x, y);
+    m_payActive = m_payPending = false;
     m_drag = Drag::None;
     m_dirty = true;
 }
@@ -432,6 +451,7 @@ void NativeUi::doubleClick(int x, int y) {
     case Hit::TrackVol: case Hit::Fader: if (hit->a >= 0 && hit->a < int(m_tracks.size())) m_s.setVolume(hit->a, 0.8f); break;
     case Hit::MasterFader: m_s.setMasterVolume(0.8f); break;
     case Hit::Pan: m_s.setPan(hit->a, 0.f); break;
+    case Hit::Knob: if (m_knobs[size_t(hit->a)].reset) m_knobs[size_t(hit->a)].reset(); break;
     case Hit::Region: {
         const auto& rg = m_tracks[size_t(hit->a)].regions[size_t(hit->b)];
         m_mixer = true; m_tabExtra = 0;
@@ -440,11 +460,15 @@ void NativeUi::doubleClick(int x, int y) {
         m_prKey = -1;
         break;
     }
-    case Hit::LoopItem: {
-        const int track = m_selTrack >= 0 && m_selTrack < int(m_tracks.size()) && m_tracks[size_t(m_selTrack)].type == core::TrackType::Audio ? m_selTrack : -1;
+    case Hit::BrowserItem: {
+        const auto items = browserItems();
+        if (hit->a < 0 || hit->a >= int(items.size())) break;
+        const BrowserItem& it = items[size_t(hit->a)];
         m_s.stopAudition();
-        m_s.importAudio(m_loops[size_t(hit->a)].path, track, m_s.positionBeats());
-        message("Added " + m_loops[size_t(hit->a)].name);
+        const bool trackOk = m_selTrack >= 0 && m_selTrack < int(m_tracks.size());
+        if (it.kind == 0) { m_s.importAudio(it.path, trackOk && m_tracks[size_t(m_selTrack)].type == core::TrackType::Audio ? m_selTrack : -1, m_s.positionBeats()); message(msg("Added %1", it.name)); }
+        else if (it.kind == 1) { if (trackOk && m_tracks[size_t(m_selTrack)].instrument) { m_s.setInstrument(m_selTrack, it.id); message(msg("Instrument: %1", it.name)); } else message("Select a Software Instrument track first."); }
+        else { if (trackOk) { m_s.addInsert(m_selTrack, it.id); message(msg("%1 added as an insert.", it.name)); } else message("Select a track first."); }
         break;
     }
     case Hit::TrackHeader: {
@@ -468,6 +492,12 @@ void NativeUi::doubleClick(int x, int y) {
 
 void NativeUi::mouseWheel(int x, int y, double dx, double dy, int mods) {
     if (m_dialog && !m_dialog->finished()) return;
+    if (m_browser && x >= m_w) {
+        const double maxScroll = std::max(0.0, double(m_browserContentH - m_browserViewH));
+        m_browserScroll = std::clamp(m_browserScroll - dy * 48, 0.0, maxScroll);
+        m_dirty = true;
+        return;
+    }
     if (paneWheel(x, y, dx, dy, mods)) { m_dirty = true; return; }
     const Rect area = arrangeArea();
     if (mods & ModCtrl) {
@@ -477,7 +507,7 @@ void NativeUi::mouseWheel(int x, int y, double dx, double dy, int mods) {
     } else if ((mods & ModShift) || std::fabs(dx) > 0) {
         m_scrollX = std::max(0.0, m_scrollX - (std::fabs(dx) > 0 ? dx : dy) * 60);
     } else if (area.contains(x, y)) {
-        const double maxY = std::max(0.0, double(m_tracks.size()) * kTrackH - (area.h - kRulerH));
+        const double maxY = std::max(0.0, double(m_tracks.size()) * m_trackH - (area.h - kRulerH));
         m_scrollY = std::clamp(m_scrollY - dy * 40, 0.0, maxY);
     }
     m_dirty = true;
@@ -487,10 +517,16 @@ bool NativeUi::key(int k, int mods) {
     const bool ctrl = mods & ModCtrl, shift = mods & ModShift;
     m_dirty = true;
     if (m_dialog && !m_dialog->finished()) return m_dialog->key(k, mods);
+    if (m_searchFocus) {
+        if (k == KeyBackspace) { if (!m_search.empty()) { do m_search.pop_back(); while (!m_search.empty() && ((unsigned char)m_search.back() & 0xC0) == 0x80); } m_browserScroll = 0; }
+        else if (k == KeyEscape) { m_search.clear(); m_searchFocus = false; }
+        else if (k == KeyEnter) m_searchFocus = false;
+        if (!ctrl) return true;   // typed letters go to the search field, not to the shortcuts
+    }
     if (paneKey(k, mods)) return true;
     if (m_typing && !ctrl) {
         static const char kKeys[] = "AWSEDFTGYHUJKOLP";   // C C# D D# E F F# G G# A A# B C C# D D#
-        if (k == 'Z' || k == 'X') { m_typingOct = std::clamp(m_typingOct + (k == 'X' ? 1 : -1), 0, 8); message("Octave " + std::to_string(m_typingOct - 1)); return true; }
+        if (k == 'Z' || k == 'X') { m_typingOct = std::clamp(m_typingOct + (k == 'X' ? 1 : -1), 0, 8); message(msg("Octave %1", std::to_string(m_typingOct - 1))); return true; }
         const char* p = k < 128 ? std::strchr(kKeys, k) : nullptr;
         if (p && *p && m_selTrack >= 0 && m_selTrack < int(m_tracks.size()) && m_tracks[size_t(m_selTrack)].instrument) {
             const int pitch = std::clamp((m_typingOct + 1) * 12 + int(p - kKeys), 0, 127);
@@ -528,8 +564,8 @@ bool NativeUi::key(int k, int mods) {
     case 'K': m_s.setMetronome(!m_s.metronome()); return true;
     case 'X': m_mixer = !m_mixer; return true;
     case 'P': m_mixer = true; m_tab = Tab::PianoRoll; return true;
-    case 'L': m_mixer = true; m_tab = Tab::Loops; return true;
-    case 'I': m_inspector = !m_inspector; return true;
+    case 'L': m_browser = !m_browser; relayout(); return true;
+    case 'I': showTab(TabInspector); return true;
     case 'T': tapTempo(); return true;
     case 'M': m_s.addMarker(m_s.positionBeats()); return true;
     case ']': gotoMarker(1); return true;

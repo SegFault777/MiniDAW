@@ -424,3 +424,79 @@ Drum machine patterns are not part of the native UI yet.	ドラムマシンの�
 Too quiet or too short to measure.	音が小さすぎるか短すぎて測定できません。
 Qt-free native version. GPL-3.0-or-later. Fonts: Liberation Sans (SIL OFL).	Qt不使用のネイティブ版。GPL-3.0-or-later。フォント: Liberation Sans (SIL OFL)。
 MiniDAW - a lightweight Logic Pro-inspired digital audio workstation.	MiniDAW - Logic Proに着想を得た軽量なデジタルオーディオワークステーション。
+Browser	ブラウザ
+Nothing matches.	一致する項目がありません。
+Instruments	インストゥルメント
+Effects	エフェクト
+built in	内蔵
+Devices	デバイス
+Editor	エディタ
+Add an effect	エフェクトを追加
+This device has no parameters here.	このデバイスにはここで操作できるパラメータがありません。
+Select a track to see its devices.	デバイスを表示するにはトラックを選択してください。
+MiniDAW plug-ins	MiniDAWプラグイン
+VST3 plug-ins	VST3プラグイン
+VST3 folders (separate with ;)	VST3フォルダ (;で区切る)
+Rescan plug-ins	プラグインを再スキャン
+Scanning plug-ins in the background...	バックグラウンドでプラグインをスキャン中...
+Plug-in scan finished.	プラグインのスキャンが完了しました。
+This plug-in has no editor window.	このプラグインにはエディタウィンドウがありません。
+Show Browser	ブラウザを表示
+Hide Browser	ブラウザを隠す
+Track Height: Compact	トラックの高さ: コンパクト
+Track Height: Normal	トラックの高さ: 標準
+Track Height: Tall	トラックの高さ: 大
+Select a Software Instrument track first.	先にソフトウェア音源トラックを選択してください。
+Select a track first.	先にトラックを選択してください。
+Drop an effect on a track.	エフェクトをトラックにドロップしてください。
+Drop an instrument on a Software Instrument track, or on an empty part of the arrangement.	インストゥルメントはソフトウェア音源トラックか、アレンジの空きスペースにドロップしてください。
+No tempo found - use Detect Tempo and choose 'Follow project tempo'.	テンポが見つかりません。テンポを検出して「プロジェクトテンポに追従」を選んでください。
+No tracks - use  + Add Track	トラックがありません。+ トラックを追加を使ってください
+Added %1	%1 を追加しました
+Instrument: %1	インストゥルメント: %1
+Opened %1	%1 を開きました
+Could not open the project: %1	プロジェクトを開けません: %1
+Importing %1	%1 を読み込み中
+Imported %1	%1 を読み込みました
+Exported %1	%1 を書き出しました
+Could not import: %1	読み込めません: %1
+Could not export: %1	書き出せません: %1
+Could not save: %1	保存できません: %1
+Bounced to %1	%1 にバウンスしました
+Could not bounce: %1	バウンスできません: %1
+New track with %1	%1 を使った新規トラック
+Octave %1	オクターブ %1
+%1 added as an insert.	%1 をインサートとして追加しました。
+%1 region after Strip Silence.	無音削除後のリージョン: %1
+%1 regions after Strip Silence.	無音削除後のリージョン: %1
+Go to the start (Enter)	先頭へ移動 (Enter)
+Play / pause (Space)	再生 / 一時停止 (Space)
+Record into the armed tracks (R)	録音待機中のトラックに録音 (R)
+Cycle on / off (C). Shift-drag the ruler to set the cycle range	サイクルのオン/オフ (C)。ルーラーをShiftドラッグで範囲を設定
+Metronome (K)	メトロノーム (K)
+Count-in before recording	録音前のカウントイン
+Add an audio, instrument, drum machine or Drummer track	オーディオ、音源、ドラムマシン、ドラマートラックを追加
+Grid for moving and drawing: click to change the value	移動と描画のグリッド: クリックで値を変更
+Zoom (Ctrl + mouse wheel)	ズーム (Ctrl + マウスホイール)
+Show or hide the bottom panel (X)	下部パネルの表示/非表示 (X)
+Click to move the playhead. Shift-drag sets the cycle range	クリックで再生ヘッドを移動。Shiftドラッグでサイクル範囲
+Drag to move, drag the right edge to resize, double-click to edit, right-click for functions	ドラッグで移動、右端をドラッグでサイズ変更、ダブルクリックで編集、右クリックで機能
+Drag to resize the region	ドラッグでリージョンのサイズを変更
+Click to jump to the marker, drag to move it, right-click for more	クリックでマーカーへ移動、ドラッグで移動、右クリックでその他
+Click to select the track, right-click for track functions	クリックでトラックを選択、右クリックでトラック機能
+Arm for recording	録音待機
+Volume - double-click to reset	ボリューム - ダブルクリックでリセット
+Volume - double-click to reset to -1.9 dB	ボリューム - ダブルクリックで -1.9 dB にリセット
+Pan - drag up or down, double-click to centre	パン - 上下にドラッグ、ダブルクリックでセンター
+Drag up or down to change - hold Shift for fine control - double-click to reset	上下にドラッグで変更 - Shiftで微調整 - ダブルクリックでリセット
+Drag to change	ドラッグで変更
+Switch the bottom panel	下部パネルを切り替え
+Double-click to add, or drag onto a track (loops and instruments also onto an empty part of the arrangement)	ダブルクリックで追加、またはトラックにドラッグ (ループと音源はアレンジの空きにも可)
+Click and type to filter the browser	クリックして入力するとブラウザを絞り込み
+Click to add a note, drag to move or resize, right-click to delete	クリックでノート追加、ドラッグで移動/サイズ変更、右クリックで削除
+Click a key to hear the note	鍵盤をクリックして音を確認
+Drag to change a note's velocity	ドラッグでノートのベロシティを変更
+Click to toggle a step, drag to paint	クリックでステップを切り替え、ドラッグでペイント
+Click to add a point, drag to move it, right-click to delete it	クリックでポイント追加、ドラッグで移動、右クリックで削除
+Click to add a point, drag to move it, right-click to delete it.	クリックでポイント追加、ドラッグで移動、右クリックで削除します。
+%1 notes copied.	%1 個のノートをコピーしました。

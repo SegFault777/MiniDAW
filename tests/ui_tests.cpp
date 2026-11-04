@@ -51,7 +51,9 @@ static void buildDemo(Session& s) {
 int main(int argc, char** argv) {
     Session s;
     buildDemo(s);
-    ui::NativeUi u(s);
+    ui::Host host;
+    host.loopFolder = "../loops";
+    ui::NativeUi u(s, host);
     u.resize(1280, 780);
     ui::Canvas c(1280, 780);
     u.paint(c);
@@ -133,6 +135,28 @@ int main(int argc, char** argv) {
         CHECK(s.snapshot()[2].regions[0].notes.back().pitch == pitch0 + 2);
         u.key(ui::KeyDelete, 0); CHECK(s.snapshot()[2].regions[0].notes.size() == n0);
 
+        // multi-selection: select all, copy + paste, delete the selection, undo
+        u.paint(c);
+        const size_t nAll = s.snapshot()[2].regions[0].notes.size();
+        u.key('A', ui::ModCtrl); u.paint(c);
+        CHECK(u.pianoSelectionSize() == int(nAll));
+        u.key('C', ui::ModCtrl);
+        u.key('V', ui::ModCtrl); u.paint(c);
+        CHECK(s.snapshot()[2].regions[0].notes.size() == nAll * 2);
+        CHECK(u.pianoSelectionSize() == int(nAll));            // the pasted notes are selected
+        s.undo(); u.paint(c);
+        u.key('A', ui::ModCtrl); u.key(ui::KeyDelete, 0); u.paint(c);
+        CHECK(s.snapshot()[2].regions[0].notes.empty());
+        s.undo(); u.paint(c);
+        CHECK(s.snapshot()[2].regions[0].notes.size() == nAll);
+        // marquee with Shift selects the notes it touches; dragging one of them moves the whole selection
+        {
+            const ui::Rect gg = u.pianoGridRect();
+            u.mouseDown(gg.x + 2, gg.y + 2, 0, ui::ModShift); u.mouseMove(gg.x + gg.w - 3, gg.y + gg.h - 3, 0); u.mouseUp(gg.x + gg.w - 3, gg.y + gg.h - 3, 0, 0); u.paint(c);
+            CHECK(u.pianoSelectionSize() > 0 && u.pianoSelectionSize() <= int(nAll));   // only the notes inside the visible pitch range
+            c.savePpm("/tmp/minidaw_ui_multi.ppm");
+        }
+        u.key(ui::KeyEscape, 0);
         // transpose dialog: type a value, confirm
         u.key(ui::KeyEscape, 0);
         const int firstPitch = s.snapshot()[2].regions[0].notes[0].pitch;
@@ -207,7 +231,59 @@ int main(int argc, char** argv) {
     clickAt(236 + 40, laneY0 + 30);
     u.paint(c); c.savePpm("/tmp/minidaw_ui_inspector.ppm");
     u.showTab(ui::NativeUi::TabSmart); clickAt(60, laneY0 + 2 * 60 + 20); u.paint(c); c.savePpm("/tmp/minidaw_ui_smart.ppm");
-    u.showTab(ui::NativeUi::TabLoops); u.paint(c);
+    // ================= v0.11: browser, devices, track height, hints =================
+    {
+        u.paint(c);
+        CHECK(u.viewWidth() == 1280 - 250);
+        const int all = u.browserItemCount();
+        CHECK(all > 5);
+        c.savePpm("/tmp/minidaw_ui_browser.ppm");
+        // search: click the field, type, the list shrinks; Escape clears it
+        const ui::Rect sf = u.browserSearchRect();
+        clickAt(sf.x + 40, sf.y + 12);
+        u.text("chor");
+        u.paint(c);
+        CHECK(u.browserItemCount() >= 1 && u.browserItemCount() < all);
+        const int effects = u.browserItemCount();
+        // drag the first match (an effect) onto the second track's header: it becomes an insert there
+        const ui::Rect row = u.browserRowRect(0);
+        CHECK(row.w > 100);
+        const size_t ins0 = s.snapshot()[1].inserts.size();
+        u.mouseDown(row.x + 40, row.y + 8, 0, 0);
+        u.mouseMove(row.x + 30, row.y + 30, 0);
+        u.mouseMove(100, laneY0 + 60 + 20, 0);
+        u.paint(c); c.savePpm("/tmp/minidaw_ui_drag.ppm");
+        u.mouseUp(100, laneY0 + 60 + 20, 0, 0);
+        CHECK(s.snapshot()[1].inserts.size() == ins0 + 1);
+        (void)effects;
+        clickAt(sf.x + 40, sf.y + 12);   // focus the search field again, Escape clears it
+        u.key(ui::KeyEscape, 0); u.paint(c);
+        CHECK(u.browserItemCount() == all);
+        // a click without dragging must not add anything
+        const size_t ins1 = s.snapshot()[1].inserts.size();
+        const ui::Rect row2 = u.browserRowRect(3);
+        clickAt(row2.x + 40, row2.y + 8);
+        CHECK(s.snapshot()[1].inserts.size() == ins1);
+        s.stopAudition();
+        // devices tab: knobs change parameters by dragging
+        clickAt(60, laneY0 + 20);   // first track: it has Chorus and Filter inserts
+        u.showTab(ui::NativeUi::TabSmart); u.paint(c);
+        c.savePpm("/tmp/minidaw_ui_devices.ppm");
+        auto& fx = *s.snapshot()[0].inserts[0];
+        const float before = fx.params[0]->get();
+        u.mouseDown(46, 516, 0, 0); u.mouseMove(46, 486, 0); u.mouseUp(46, 486, 0, 0);
+        CHECK(s.snapshot()[0].inserts[0]->params[0]->get() != before);
+        u.mouseDown(46, 516, 0, 0); u.mouseUp(46, 516, 0, 0); u.doubleClick(46, 516);
+        CHECK(std::fabs(s.snapshot()[0].inserts[0]->params[0]->get() - fx.params[0]->def) < 1e-4);
+        // track heights
+        u.setTrackHeight(34); u.paint(c); c.savePpm("/tmp/minidaw_ui_compact.ppm");
+        u.setTrackHeight(96); u.paint(c);
+        u.setTrackHeight(60);
+        // the browser can be hidden
+        u.key('L', 0); u.paint(c);
+        CHECK(u.viewWidth() == 1280);
+        u.key('L', 0); u.paint(c);
+    }
     clickAt(236 + 40, laneY0 + 3 * 60 + 30);   // drummer region
     u.showTab(ui::NativeUi::TabDrummer); u.paint(c); c.savePpm("/tmp/minidaw_ui_drummer.ppm");
     u.key(',', ui::ModCtrl); CHECK(u.dialogOpen()); u.paint(c); c.savePpm("/tmp/minidaw_ui_prefs.ppm"); u.key(ui::KeyEscape, 0); CHECK(!u.dialogOpen());

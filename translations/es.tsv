@@ -424,3 +424,79 @@ Drum machine patterns are not part of the native UI yet.	Los patrones de caja de
 Too quiet or too short to measure.	Demasiado silencioso o corto para medir.
 Qt-free native version. GPL-3.0-or-later. Fonts: Liberation Sans (SIL OFL).	Versión nativa sin Qt. GPL-3.0-or-later. Fuente: Liberation Sans (SIL OFL).
 MiniDAW - a lightweight Logic Pro-inspired digital audio workstation.	MiniDAW - una estación de audio digital ligera inspirada en Logic Pro.
+Browser	Explorador
+Nothing matches.	No hay coincidencias.
+Instruments	Instrumentos
+Effects	Efectos
+built in	incluido
+Devices	Dispositivos
+Editor	Editor
+Add an effect	Añadir un efecto
+This device has no parameters here.	Este dispositivo no tiene parámetros aquí.
+Select a track to see its devices.	Selecciona una pista para ver sus dispositivos.
+MiniDAW plug-ins	Plug-ins de MiniDAW
+VST3 plug-ins	Plug-ins VST3
+VST3 folders (separate with ;)	Carpetas VST3 (separadas por ;)
+Rescan plug-ins	Volver a buscar plug-ins
+Scanning plug-ins in the background...	Buscando plug-ins en segundo plano...
+Plug-in scan finished.	Búsqueda de plug-ins terminada.
+This plug-in has no editor window.	Este plug-in no tiene ventana de edición.
+Show Browser	Mostrar explorador
+Hide Browser	Ocultar explorador
+Track Height: Compact	Altura de pista: compacta
+Track Height: Normal	Altura de pista: normal
+Track Height: Tall	Altura de pista: alta
+Select a Software Instrument track first.	Selecciona primero una pista de instrumento.
+Select a track first.	Selecciona primero una pista.
+Drop an effect on a track.	Suelta el efecto sobre una pista.
+Drop an instrument on a Software Instrument track, or on an empty part of the arrangement.	Suelta el instrumento sobre una pista de instrumento o en un espacio vacío del arreglo.
+No tempo found - use Detect Tempo and choose 'Follow project tempo'.	No se encontró tempo: usa Detectar tempo y elige 'Seguir el tempo del proyecto'.
+No tracks - use  + Add Track	No hay pistas: usa + Añadir pista
+Added %1	Añadido: %1
+Instrument: %1	Instrumento: %1
+Opened %1	Abierto: %1
+Could not open the project: %1	No se pudo abrir el proyecto: %1
+Importing %1	Importando %1
+Imported %1	Importado: %1
+Exported %1	Exportado: %1
+Could not import: %1	No se pudo importar: %1
+Could not export: %1	No se pudo exportar: %1
+Could not save: %1	No se pudo guardar: %1
+Bounced to %1	Exportado a %1
+Could not bounce: %1	No se pudo exportar: %1
+New track with %1	Pista nueva con %1
+Octave %1	Octava %1
+%1 added as an insert.	%1 añadido como inserción.
+%1 region after Strip Silence.	%1 región tras eliminar silencios.
+%1 regions after Strip Silence.	%1 regiones tras eliminar silencios.
+Go to the start (Enter)	Ir al inicio (Intro)
+Play / pause (Space)	Reproducir / pausar (Espacio)
+Record into the armed tracks (R)	Grabar en las pistas armadas (R)
+Cycle on / off (C). Shift-drag the ruler to set the cycle range	Ciclo sí/no (C). Arrastra la regla con Mayús para fijar el rango
+Metronome (K)	Metrónomo (K)
+Count-in before recording	Cuenta previa a la grabación
+Add an audio, instrument, drum machine or Drummer track	Añade una pista de audio, instrumento, caja de ritmos o baterista
+Grid for moving and drawing: click to change the value	Cuadrícula para mover y dibujar: haz clic para cambiarla
+Zoom (Ctrl + mouse wheel)	Zoom (Ctrl + rueda del ratón)
+Show or hide the bottom panel (X)	Mostrar u ocultar el panel inferior (X)
+Click to move the playhead. Shift-drag sets the cycle range	Haz clic para mover el cabezal. Mayús + arrastrar fija el ciclo
+Drag to move, drag the right edge to resize, double-click to edit, right-click for functions	Arrastra para mover, el borde derecho para cambiar el tamaño, doble clic para editar, clic derecho para funciones
+Drag to resize the region	Arrastra para cambiar el tamaño de la región
+Click to jump to the marker, drag to move it, right-click for more	Clic para ir al marcador, arrastra para moverlo, clic derecho para más
+Click to select the track, right-click for track functions	Clic para seleccionar la pista, clic derecho para sus funciones
+Arm for recording	Armar para grabar
+Volume - double-click to reset	Volumen - doble clic para restablecer
+Volume - double-click to reset to -1.9 dB	Volumen - doble clic para volver a -1.9 dB
+Pan - drag up or down, double-click to centre	Panorama - arrastra arriba o abajo, doble clic para centrar
+Drag up or down to change - hold Shift for fine control - double-click to reset	Arrastra arriba o abajo - Mayús para ajuste fino - doble clic para restablecer
+Drag to change	Arrastra para cambiar
+Switch the bottom panel	Cambiar el panel inferior
+Double-click to add, or drag onto a track (loops and instruments also onto an empty part of the arrangement)	Doble clic para añadir o arrastra a una pista (loops e instrumentos también a un espacio vacío)
+Click and type to filter the browser	Haz clic y escribe para filtrar el explorador
+Click to add a note, drag to move or resize, right-click to delete	Clic para añadir una nota, arrastra para mover o cambiar tamaño, clic derecho para borrar
+Click a key to hear the note	Haz clic en una tecla para oírla
+Drag to change a note's velocity	Arrastra para cambiar la velocidad de la nota
+Click to toggle a step, drag to paint	Clic para activar un paso, arrastra para pintar
+Click to add a point, drag to move it, right-click to delete it	Clic para añadir un punto, arrastra para moverlo, clic derecho para borrarlo
+Click to add a point, drag to move it, right-click to delete it.	Clic para añadir un punto, arrastra para moverlo, clic derecho para borrarlo.
+%1 notes copied.	%1 notas copiadas.

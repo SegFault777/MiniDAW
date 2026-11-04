@@ -21,7 +21,7 @@ bool isDark(Rgba c) { return ((c >> 16 & 255) * 299 + (c >> 8 & 255) * 587 + (c 
 std::string num(const char* fmt, double v) { char b[64]; std::snprintf(b, sizeof b, fmt, v); return b; }
 std::string noteName(int p) { static const char* n[] = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}; return std::string(n[p % 12]) + std::to_string(p / 12 - 2); }
 bool blackKey(int p) { const int k = p % 12; return k == 1 || k == 3 || k == 6 || k == 8 || k == 10; }
-const char* const kTabNames[] = {"Mixer", "Inspector", "Smart Controls", "Piano Roll", "Step Sequencer", "Drummer", "Automation", "Loops"};
+const char* const kTabNames[] = {"Mixer", "Inspector", "Devices", "Piano Roll", "Step Sequencer", "Drummer", "Automation"};
 }  // namespace
 
 // Tab ids in the order of kTabNames; Tab::Mixer = 0 ... (Inspector and Smart Controls are stored beyond the enum below)
@@ -60,9 +60,9 @@ void NativeUi::drawBottom(Canvas& c) {
     c.fillRect({area.x, area.y, area.w, 30}, rgba(27, 29, 35));
     c.hline(0, m_w - 1, area.y, kLine);
     int x = 8;
-    const int ids[] = {0, kTabInspector, kTabSmart, int(Tab::PianoRoll), int(Tab::Steps), int(Tab::Drummer), int(Tab::Automation), int(Tab::Loops)};
+    const int ids[] = {0, kTabInspector, kTabSmart, int(Tab::PianoRoll), int(Tab::Steps), int(Tab::Drummer), int(Tab::Automation)};
     const int cur = m_tabExtra ? m_tabExtra : int(m_tab);
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 7; ++i) {
         const int id = ids[i];
         const int w = c.textWidth(kTabNames[i], Font::Bold11) + 24;
         const Rect r{x, area.y + 4, w, 22};
@@ -83,7 +83,6 @@ void NativeUi::drawBottom(Canvas& c) {
     case int(Tab::Steps): drawSteps(c, content); break;
     case int(Tab::Drummer): drawDrummer(c, content); break;
     case int(Tab::Automation): drawAutomation(c, content); break;
-    case int(Tab::Loops): drawLoops(c, content); break;
     default: drawMixer(c); break;
     }
     c.popClip();
@@ -105,7 +104,7 @@ void NativeUi::drawInspector(Canvas& c, const Rect& r) {
     m_actionFns.push_back([this] { m_selRegion = -1; dlgRename(); });
     y += 32;
     static const core::Color palette[] = {{70, 130, 240}, {40, 200, 170}, {95, 190, 100}, {235, 200, 70}, {240, 150, 50}, {235, 90, 90}, {225, 80, 170}, {165, 90, 225}};
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 7; ++i) {
         const Rect sw{x + i * 31, y, 25, 18};
         c.fillRoundRect(sw, 5, rgba(palette[i].r, palette[i].g, palette[i].b));
         if (palette[i].r == t.color.r && palette[i].g == t.color.g && palette[i].b == t.color.b) c.strokeRoundRect(sw.inset(-2), 6, rgba(240, 244, 250));
@@ -127,8 +126,21 @@ void NativeUi::drawInspector(Canvas& c, const Rect& r) {
     y += 20;
     if (t.instrument) {
         const int n = t.instrument->presetCount();
-        c.textIn({x, y, cw, 20}, t.instrumentId == "drumkit" ? "Drum Kit" : t.instrumentId == "synth" ? "Synth" : t.instrumentId, kText, Font::Regular11);
-        y += 22;
+        std::string label = t.instrumentId == "drumkit" ? "Drum Kit" : t.instrumentId == "synth" ? "Synth" : t.instrumentId;
+        if (t.instrumentId.rfind("vst3:", 0) == 0 && m_host.plugins)
+            for (const PluginEntry& p : m_host.plugins()) if (p.id == t.instrumentId) label = p.name;
+        const bool vstInst = t.instrumentId.rfind("vst3:", 0) == 0 && m_host.openPluginEditor;
+        uiAction(c, {x, y, vstInst ? cw - 64 : cw, 22}, label + "  v", [this, ti, x, y] {
+            std::vector<MenuItem> items = {{"Synth", "", true, false, [this, ti] { m_s.setInstrument(ti, "synth"); }}, {"Drum Kit", "", true, false, [this, ti] { m_s.setInstrument(ti, "drumkit"); }}};
+            bool any = false;
+            if (m_host.plugins) for (const PluginEntry& p : m_host.plugins()) if (p.instrument) {
+                if (!any) { MenuItem sepItem; sepItem.separator = true; items.push_back(sepItem); any = true; }
+                items.push_back({p.name + (p.vendor.empty() ? "" : "  (" + p.vendor + ")"), "", true, false, [this, ti, id = p.id] { m_s.setInstrument(ti, id); }});
+            }
+            openMenu(items, x, y + 24);
+        });
+        if (vstInst) uiAction(c, {x + cw - 60, y, 60, 22}, "Editor", [this, inst = t.instrument] { if (!m_host.openPluginEditor(inst)) message("This plug-in has no editor window."); });
+        y += 26;
         if (n > 0) {
             uiAction(c, {x, y, 26, 22}, "<", [this, ti, n] { setPresetDelta(ti, -1, n); });
             c.textIn({x + 30, y, cw - 60, 22}, "Preset  -  use the arrows", kDim, Font::Regular11, Align::Center);
@@ -149,6 +161,8 @@ void NativeUi::drawInspector(Canvas& c, const Rect& r) {
             addHit(slot, Hit::Action, int(m_actionFns.size()) - 1);
             uiAction(c, {slot.right() + 4, slot.y, 22, 20}, "B", [this, ti, k, on = !fx->bypass.load()] { m_s.setInsertBypass(ti, k, on); }, fx->bypass.load(), kAmber);
             uiAction(c, {slot.right() + 28, slot.y, 22, 20}, "x", [this, ti, k] { m_s.removeInsert(ti, k); });
+            if (std::string(fx->id()).rfind("vst3:", 0) == 0 && m_host.openPluginEditor)
+                uiAction(c, {slot.x + slot.w - 24, slot.y, 22, 20}, "E", [this, fx] { if (!m_host.openPluginEditor(fx)) message("This plug-in has no editor window."); });
         } else if (k == int(t.inserts.size())) {
             c.textIn(slot, "+ Add effect", kDim, Font::Regular11, Align::Center);
             m_actionFns.push_back([this, ti, slot] {
@@ -157,6 +171,19 @@ void NativeUi::drawInspector(Canvas& c, const Rect& r) {
                     std::string label = id;
                     if (auto fx = dsp::createEffect(id)) label = fx->displayName();
                     items.push_back({label, "", true, false, [this, ti, id] { m_s.addInsert(ti, id); }});
+                }
+                if (m_host.plugins) {
+                    bool nat = false, vst = false;
+                    for (const PluginEntry& p : m_host.plugins()) {
+                        if (p.instrument) continue;
+                        const bool isVst = p.id.rfind("vst3:", 0) == 0;
+                        if (isVst ? !vst : !nat) {
+                            MenuItem sepItem; sepItem.separator = true; items.push_back(sepItem);
+                            items.push_back({isVst ? "VST3 plug-ins" : "MiniDAW plug-ins", "", false, false, nullptr});
+                            (isVst ? vst : nat) = true;
+                        }
+                        items.push_back({p.name + (p.vendor.empty() ? "" : "  (" + p.vendor + ")"), "", true, false, [this, ti, id = p.id] { m_s.addInsert(ti, id); }});
+                    }
                 }
                 openMenu(items, slot.x, slot.bottom());
             });
@@ -215,42 +242,105 @@ void NativeUi::setPresetDelta(int ti, int d, int n) {
     if (inst) message(std::string("Preset: ") + inst->presetName(m_presetIdx[ti]));
 }
 
-// ---------------------------------------------------------------- smart controls (instrument and insert parameters)
+// ---------------------------------------------------------------- devices (instrument and inserts as a chain of cards with knobs)
+void NativeUi::uiKnob(Canvas& c, double cx, double cy, double radius, const std::string& label, double t01, const std::string& valueText, std::function<void(double)> set, std::function<void()> reset, Rgba color) {
+    t01 = std::clamp(t01, 0.0, 1.0);
+    const double a0 = 2.356, sweep = 4.712;   // 135 degrees to 405 degrees, clockwise on screen
+    c.fillCircle(cx, cy, radius, rgba(20, 22, 27));
+    c.arc(cx, cy, radius - 3, a0, a0 + sweep, 3.0, rgba(58, 64, 78));
+    if (t01 > 0.003) c.arc(cx, cy, radius - 3, a0, a0 + sweep * t01, 3.0, color);
+    const double ang = a0 + sweep * t01;
+    c.line(cx + std::cos(ang) * (radius * 0.30), cy + std::sin(ang) * (radius * 0.30), cx + std::cos(ang) * (radius - 6), cy + std::sin(ang) * (radius - 6), rgba(236, 240, 247));
+    c.textIn({int(cx) - 36, int(cy + radius + 4), 72, 14}, label, kDim, Font::Regular11, Align::Center);
+    c.textIn({int(cx) - 36, int(cy + radius + 18), 72, 14}, valueText, kText, Font::Regular11, Align::Center);
+    m_knobs.push_back({t01, std::move(set), std::move(reset)});
+    addHit({int(cx - radius - 4), int(cy - radius - 4), int(radius * 2 + 8), int(radius * 2 + 8)}, Hit::Knob, int(m_knobs.size()) - 1);
+}
+
 void NativeUi::drawSmartControls(Canvas& c, const Rect& r) {
-    if (m_selTrack < 0 || m_selTrack >= int(m_tracks.size())) { c.textIn(r, "Select a track to edit its instrument and effects.", kDim, Font::Regular11, Align::Center); return; }
-    const core::Track& t = m_tracks[size_t(m_selTrack)];
+    if (m_selTrack < 0 || m_selTrack >= int(m_tracks.size())) { c.textIn(r, "Select a track to see its devices.", kDim, Font::Regular11, Align::Center); return; }
+    const int ti = m_selTrack;
+    const core::Track& t = m_tracks[size_t(ti)];
     const Rgba col = trackColor(t);
-    struct Source { std::string title; dsp::ParamSet* set; };
-    std::vector<Source> sources;
-    if (t.instrument) sources.push_back({t.instrumentId == "drumkit" ? "Drum Kit" : "Synth", t.instrument.get()});
-    for (const auto& fx : t.inserts) if (fx) sources.push_back({fx->displayName(), fx.get()});
-    if (sources.empty()) { c.textIn(r, "This track has no instrument or effects. Add an effect in the Inspector.", kDim, Font::Regular11, Align::Center); return; }
-    int pick = 0;
-    if (m_insertSel >= 0) pick = std::clamp(m_insertSel + (t.instrument ? 1 : 0), 0, int(sources.size()) - 1);
-    // source selector
-    int x = r.x + 14;
-    for (int i = 0; i < int(sources.size()); ++i) {
-        const int w = c.textWidth(sources[size_t(i)].title, Font::Bold11) + 22;
-        uiAction(c, {x, r.y + 10, w, 22}, sources[size_t(i)].title, [this, i, hasInst = bool(t.instrument)] { m_insertSel = i - (hasInst ? 1 : 0); }, i == pick, col);
-        x += w + 6;
+    struct Device { std::string title; std::shared_ptr<dsp::ParamSet> set; int slot; bool bypassed; std::string id; };
+    std::vector<Device> devices;
+    if (t.instrument) devices.push_back({t.instrumentId == "drumkit" ? "Drum Kit" : t.instrumentId == "synth" ? "Synth" : t.instrumentId, t.instrument, -1, false, t.instrumentId});
+    for (int k = 0; k < int(t.inserts.size()); ++k) if (t.inserts[size_t(k)]) devices.push_back({t.inserts[size_t(k)]->displayName(), t.inserts[size_t(k)], k, t.inserts[size_t(k)]->bypass.load(), t.inserts[size_t(k)]->id()});
+    const int cardW = 268, gap = 12, cardY = r.y + 10, cardH = r.h - 20;
+    const int total = int(devices.size() + 1) * (cardW + gap) + 8;
+    m_devScroll = std::clamp(m_devScroll, 0.0, std::max(0.0, double(total - r.w)));
+    int x = r.x + 10 - int(m_devScroll);
+    int deviceIdx = 0;
+    for (const Device& d : devices) {
+        const Rect card{x, cardY, cardW, cardH};
+        x += cardW + gap;
+        ++deviceIdx;
+        if (card.right() < r.x || card.x > r.right()) continue;
+        c.fillRoundRect(card, 10, d.bypassed ? rgba(36, 38, 45) : kPanel2);
+        c.strokeRoundRect(card, 10, withAlpha(kLine, 200));
+        c.pushClip(card);
+        c.fillRect({card.x, card.y, card.w, 26}, d.bypassed ? rgba(52, 55, 64) : mix(rgba(41, 45, 54), col, 0.55));
+        c.popClip();
+        std::string title = d.title;
+        if (d.id.rfind("vst3:", 0) == 0 && m_host.plugins) for (const PluginEntry& p : m_host.plugins()) if (p.id == d.id) title = p.name;
+        c.textIn({card.x + 12, card.y, card.w - 110, 26}, title, d.bypassed ? kDim : rgba(244, 246, 250), Font::Bold11);
+        int bx = card.right() - 8;
+        if (d.slot >= 0) {
+            bx -= 22; uiAction(c, {bx, card.y + 3, 22, 20}, "x", [this, ti, slot = d.slot] { m_s.removeInsert(ti, slot); });
+            bx -= 26; uiAction(c, {bx, card.y + 3, 22, 20}, "B", [this, ti, slot = d.slot, on = !d.bypassed] { m_s.setInsertBypass(ti, slot, on); }, d.bypassed, kAmber);
+        }
+        if (d.id.rfind("vst3:", 0) == 0 && m_host.openPluginEditor) { bx -= 26; uiAction(c, {bx, card.y + 3, 22, 20}, "E", [this, set = d.set] { if (!m_host.openPluginEditor(set)) message("This plug-in has no editor window."); }); }
+        // knobs: 4 per row, 2 rows per page
+        const int perPage = 8;
+        const int pageCount = std::max(1, (int(d.set->params.size()) + perPage - 1) / perPage);
+        int& page = m_devPage[d.id + "#" + std::to_string(d.slot)];
+        page = std::clamp(page, 0, pageCount - 1);
+        const int first = page * perPage;
+        for (int i = 0; i < perPage && first + i < int(d.set->params.size()); ++i) {
+            dsp::Param* prm = d.set->params[size_t(first + i)].get();
+            const float v = prm->get();
+            const double t01 = prm->log && prm->min > 0 ? std::log(double(v) / prm->min) / std::log(double(prm->max) / prm->min) : double(v - prm->min) / double(prm->max - prm->min);
+            const std::string text = prm->stepped && !prm->choices.empty() ? prm->choices[size_t(std::clamp(int(v), 0, int(prm->choices.size()) - 1))] : num(std::fabs(v) >= 100 ? "%.0f" : "%.2f", v) + (prm->unit.empty() ? "" : " " + prm->unit);
+            const double cx = card.x + 36 + (i % 4) * 66, cy = card.y + 62 + (i / 4) * 92;
+            uiKnob(c, cx, cy, 20, prm->name, t01, text, [prm](double t) {
+                const double val = prm->log && prm->min > 0 ? prm->min * std::pow(double(prm->max) / prm->min, t) : prm->min + t * (prm->max - prm->min);
+                prm->set(float(val));
+            }, [prm] { prm->set(prm->def); }, d.bypassed ? kDim : col);
+        }
+        if (pageCount > 1) {
+            uiAction(c, {card.x + 10, card.bottom() - 28, 24, 20}, "<", [this, key = d.id + "#" + std::to_string(d.slot), pageCount] { m_devPage[key] = (m_devPage[key] + pageCount - 1) % pageCount; });
+            c.textIn({card.x + 36, card.bottom() - 28, card.w - 72, 20}, "Page " + std::to_string(page + 1) + " of " + std::to_string(pageCount), kDim, Font::Regular11, Align::Center);
+            uiAction(c, {card.right() - 34, card.bottom() - 28, 24, 20}, ">", [this, key = d.id + "#" + std::to_string(d.slot), pageCount] { m_devPage[key] = (m_devPage[key] + 1) % pageCount; });
+        } else if (d.set->params.empty()) c.textIn(card.inset(10), "This device has no parameters here.", kDim, Font::Regular11, Align::Center);
     }
-    dsp::ParamSet* set = sources[size_t(pick)].set;
-    const int cols = 4, cw = (r.w - 28 - (cols - 1) * 16) / cols;
-    int idx = 0;
-    for (auto& p : set->params) {
-        const int row = idx / cols, colI = idx % cols;
-        const Rect cell{r.x + 14 + colI * (cw + 16), r.y + 48 + row * 44, cw, 36};
-        if (cell.bottom() > r.bottom()) break;
-        dsp::Param* prm = p.get();
-        const float v = prm->get();
-        std::string text = prm->stepped && !prm->choices.empty() ? prm->choices[size_t(std::clamp(int(v), 0, int(prm->choices.size()) - 1))] : num(std::fabs(v) >= 100 ? "%.0f" : "%.2f", v) + (prm->unit.empty() ? "" : " " + prm->unit);
-        double t01 = prm->log && prm->min > 0 ? std::log(double(v) / prm->min) / std::log(double(prm->max) / prm->min) : double(v - prm->min) / double(prm->max - prm->min);
-        uiSlider(c, cell, prm->name, t01, text, [prm](double t01v) {
-            const double val = prm->log && prm->min > 0 ? prm->min * std::pow(double(prm->max) / prm->min, t01v) : prm->min + t01v * (prm->max - prm->min);
-            prm->set(float(val));
-        }, col);
-        ++idx;
+    // the "add" card at the end of the chain
+    const Rect add{x, cardY, cardW, cardH};
+    if (add.right() >= r.x && add.x <= r.right()) {
+        c.strokeRoundRect(add, 10, rgba(70, 76, 90));
+        c.textIn({add.x, add.y + add.h / 2 - 24, add.w, 22}, "+", kDim, Font::Bold13, Align::Center);
+        c.textIn({add.x, add.y + add.h / 2 - 4, add.w, 20}, "Add an effect", kDim, Font::Regular11, Align::Center);
+        m_actionFns.push_back([this, ti, add] { addEffectMenu(ti, add.x, add.y + 40); });
+        addHit(add, Hit::Action, int(m_actionFns.size()) - 1);
     }
+}
+
+void NativeUi::addEffectMenu(int ti, int x, int y) {
+    std::vector<MenuItem> items;
+    for (const auto& e : m_effectNames.empty() ? (browserItems(), m_effectNames) : m_effectNames) items.push_back({e.second, "", true, false, [this, ti, id = e.first] { m_s.addInsert(ti, id); }});
+    if (m_host.plugins) {
+        bool nat = false, vst = false;
+        for (const PluginEntry& p : m_host.plugins()) {
+            if (p.instrument) continue;
+            const bool isVst = p.id.rfind("vst3:", 0) == 0;
+            if (isVst ? !vst : !nat) {
+                MenuItem sepItem; sepItem.separator = true; items.push_back(sepItem);
+                items.push_back({isVst ? "VST3 plug-ins" : "MiniDAW plug-ins", "", false, false, nullptr});
+                (isVst ? vst : nat) = true;
+            }
+            items.push_back({p.name + (p.vendor.empty() ? "" : "  (" + p.vendor + ")"), "", true, false, [this, ti, id = p.id] { m_s.addInsert(ti, id); }});
+        }
+    }
+    openMenu(items, x, y);
 }
 
 // ---------------------------------------------------------------- step sequencer
@@ -317,7 +407,7 @@ void NativeUi::drawDrummer(Canvas& c, const Rect& r) {
     uiAction(c, {x + 114, y, 26, 24}, "+", [apply, p]() mutable { p.bars = std::min(32, p.bars + 1); apply(p); });
 }
 
-// ---------------------------------------------------------------- loop browser
+// ---------------------------------------------------------------- loop scan (used by the browser)
 void NativeUi::reloadLoops() {
     namespace fs = std::filesystem;
     m_loops.clear();
@@ -343,31 +433,6 @@ void NativeUi::reloadLoops() {
     }
 }
 
-void NativeUi::drawLoops(Canvas& c, const Rect& r) {
-    if (!m_loopsLoaded) reloadLoops();
-    c.textIn({r.x + 16, r.y + 8, r.w - 300, 22}, m_loops.empty() ? "No audio files found in " + m_host.loopFolder : std::to_string(m_loops.size()) + " loops - click to audition, double-click to add at the playhead.", kDim, Font::Regular11);
-    uiAction(c, {r.right() - 270, r.y + 8, 120, 22}, "Choose folder...", [this] {
-        if (!m_host.fileDialog) return;
-        const std::string f = m_host.fileDialog("Choose a file in the loops folder", "Audio files|*.wav;*.mp3;*.flac;*.ogg;*.m4a", false);
-        if (f.empty()) return;
-        m_host.loopFolder = std::filesystem::path(f).parent_path().string();
-        reloadLoops();
-    });
-    uiAction(c, {r.right() - 140, r.y + 8, 120, 22}, "Stop preview", [this] { m_s.stopAudition(); });
-    const int rowH = 24, top = r.y + 38, visible = (r.h - 40) / rowH;
-    c.fillRect({r.x + 10, top - 2, r.w - 20, r.h - 38}, rgba(24, 26, 31));
-    m_loopScroll = std::clamp(m_loopScroll, 0.0, std::max(0.0, double(int(m_loops.size()) - visible)));
-    for (int i = 0; i < visible; ++i) {
-        const int idx = int(m_loopScroll) + i;
-        if (idx >= int(m_loops.size())) break;
-        const Rect row{r.x + 12, top + i * rowH, r.w - 24, rowH - 2};
-        c.fillRoundRect(row, 5, idx == m_loopSel ? rgba(52, 110, 150) : (i % 2 ? rgba(30, 33, 40) : rgba(27, 29, 35)));
-        c.textIn({row.x + 12, row.y, row.w - 160, row.h}, m_loops[size_t(idx)].name, kText, Font::Regular11);
-        if (m_loops[size_t(idx)].bpm > 0) c.textIn({row.right() - 140, row.y, 128, row.h}, num("%.0f BPM", m_loops[size_t(idx)].bpm), kAmber, Font::Regular11, Align::Right);
-        addHit(row, Hit::LoopItem, idx);
-    }
-}
-
 // ---------------------------------------------------------------- piano roll
 bool NativeUi::pianoRegion(int& t, int& r) const {
     if (!hasRegion() || !m_tracks[size_t(m_selTrack)].regions[size_t(m_selRegion)].midi) return false;
@@ -384,6 +449,7 @@ void NativeUi::pianoSelectionChanged() {
     m_prTop = std::min(127, hi + 8);
     m_prScroll = 0;
     m_prSel = -1;
+    m_prSelected.clear();
     const double len = std::max(1.0, m_s.regionBeats(rg));
     m_prPpb = std::clamp(double(m_w - 56 - 30) / len, 20.0, 240.0);
 }
@@ -434,12 +500,13 @@ void NativeUi::drawPianoRoll(Canvas& c, const Rect& r) {
         const Rect nr{xOf(n.start), yOf(n.pitch) + 1, std::max(3, int(n.length * m_prPpb) - 1), m_prRowH - 2};
         const Rgba nc = mix(lighten(col, 0.1), rgba(255, 255, 255), n.velocity / 127.0 * 0.45);
         c.fillRoundRect(nr, 3, rg.mute ? rgba(110, 116, 128) : nc);
-        if (int(i) == m_prSel) c.strokeRoundRect(nr, 3, rgba(245, 248, 252));
+        if (m_prSelected.count(int(i))) c.strokeRoundRect(nr, 3, rgba(245, 248, 252));
         else c.strokeRoundRect(nr, 3, withAlpha(rgba(0, 0, 0), 120));
     }
     const double px = xOf(m_s.positionBeats() - regionStart);
     if (px >= m_prGrid.x && px < m_prGrid.right()) c.vline(int(px), m_prGrid.y, m_prGrid.bottom() - 1, withAlpha(kAccent, 235));
     c.popClip();
+    if (m_prMarqueeOn) { c.fillRect(m_prMarquee, withAlpha(kAccent, 40)); c.strokeRect(m_prMarquee, kAccent); }
     addHit(m_prGrid, Hit::PianoGrid);
     // keyboard
     c.pushClip(m_prKeys);
@@ -461,7 +528,7 @@ void NativeUi::drawPianoRoll(Canvas& c, const Rect& r) {
     for (size_t i = 0; i < rg.notes.size(); ++i) {
         const auto& n = rg.notes[i];
         const int h = int((velH - 8) * n.velocity / 127.0);
-        c.fillRect({xOf(n.start), m_prVel.bottom() - 4 - h, 5, h}, int(i) == m_prSel ? rgba(245, 248, 252) : col);
+        c.fillRect({xOf(n.start), m_prVel.bottom() - 4 - h, 5, h}, m_prSelected.count(int(i)) ? rgba(245, 248, 252) : col);
     }
     c.popClip();
     addHit(m_prVel, Hit::PianoVel);
@@ -469,7 +536,6 @@ void NativeUi::drawPianoRoll(Canvas& c, const Rect& r) {
 
 // ---------------------------------------------------------------- pane input
 bool NativeUi::paneMouseDown(int x, int y, int button, int mods) {
-    (void)mods;
     int t, ri;
     const int cur = m_tabExtra ? m_tabExtra : int(m_tab);
     if (cur == int(Tab::Automation)) return autoMouseDown(x, y, button);
@@ -485,7 +551,7 @@ bool NativeUi::paneMouseDown(int x, int y, int button, int mods) {
     if (m_prVel.contains(x, y)) {
         int best = -1, bestD = 9;
         for (size_t i = 0; i < rg.notes.size(); ++i) { const int d = std::abs(xOf(rg.notes[i].start) + 2 - x); if (d < bestD) { bestD = d; best = int(i); } }
-        if (best >= 0) { m_prSel = best; m_prVelNote = best; m_drag = Drag::Velocity; m_prChecked = false; mouseMove(x, y, 0); }
+        if (best >= 0) { if (!m_prSelected.count(best)) { m_prSelected = {best}; } m_prSel = best; m_prVelNote = best; m_drag = Drag::Velocity; m_prChecked = false; mouseMove(x, y, 0); }
         return true;
     }
     if (!m_prGrid.contains(x, y)) return false;
@@ -499,12 +565,20 @@ bool NativeUi::paneMouseDown(int x, int y, int button, int mods) {
     }
     m_prChecked = false;
     if (button == 1) {
-        if (hit >= 0) { m_s.checkpoint(); auto notes = rg.notes; notes.erase(notes.begin() + hit); m_s.setRegionNotes(t, ri, notes); m_prSel = -1; }
+        if (hit >= 0) { m_s.checkpoint(); auto notes = rg.notes; notes.erase(notes.begin() + hit); m_s.setRegionNotes(t, ri, notes); m_prSel = -1; m_prSelected.clear(); }
         return true;
     }
     if (hit >= 0) {
         const auto& n = rg.notes[size_t(hit)];
+        if (mods & ModShift) {   // Shift-click toggles a note in the selection
+            if (!m_prSelected.erase(hit)) m_prSelected.insert(hit);
+            m_prSel = hit;
+            return true;
+        }
+        if (!m_prSelected.count(hit)) m_prSelected = {hit};
         m_prSel = hit;
+        m_prOrig = rg.notes;
+        m_prAnchorBeat = beat;
         const Rect nr{xOf(n.start), yOf(n.pitch), std::max(3, int(n.length * m_prPpb)), m_prRowH};
         m_prDragOff = beat - n.start;
         m_prDragPitch = pitch - n.pitch;
@@ -513,8 +587,14 @@ bool NativeUi::paneMouseDown(int x, int y, int button, int mods) {
         auditionNote(t, n.pitch);
         return true;
     }
+    if (mods & ModShift) {   // Shift-drag on empty space: rubber band selection
+        m_prMarqueeOn = true; m_prMarquee = {x, y, 1, 1}; m_dragX = x; m_dragY = y; m_drag = Drag::Marquee;
+        m_prSelected.clear(); m_prSel = -1;
+        return true;
+    }
     // empty space: add a note and keep dragging to set its length
     if (pitch < 0 || pitch > 127) return true;
+    m_prSelected.clear();
     const double st = snapStep() > 0 ? snapStep() : 0.25;
     const double start = std::max(0.0, std::floor(beat / st) * st);
     m_s.checkpoint();
@@ -523,6 +603,8 @@ bool NativeUi::paneMouseDown(int x, int y, int button, int mods) {
     notes.push_back({pitch, start, st, int(last("prVel", 100))});
     m_s.setRegionNotes(t, ri, notes);
     m_prSel = int(notes.size()) - 1;
+    m_prSelected = {m_prSel};
+    m_prOrig = notes;
     m_prMinLen = st;
     m_drag = Drag::NoteResize;
     auditionNote(t, pitch);
@@ -531,28 +613,54 @@ bool NativeUi::paneMouseDown(int x, int y, int button, int mods) {
 
 void NativeUi::paneMouseMove(int x, int y) {
     int t, ri;
-    if (!pianoRegion(t, ri) || m_prSel < 0 || m_prSel >= int(m_tracks[size_t(t)].regions[size_t(ri)].notes.size())) return;
+    if (!pianoRegion(t, ri)) return;
+    if (m_drag == Drag::Marquee) {
+        m_prMarquee = {std::min(x, m_dragX), std::min(y, m_dragY), std::abs(x - m_dragX), std::abs(y - m_dragY)};
+        return;
+    }
+    if (m_prSel < 0 || m_prSel >= int(m_tracks[size_t(t)].regions[size_t(ri)].notes.size())) return;
     auto notes = m_tracks[size_t(t)].regions[size_t(ri)].notes;
-    core::Note& n = notes[size_t(m_prSel)];
+    if (m_prOrig.size() != notes.size()) m_prOrig = notes;
     const double len = m_s.regionBeats(m_tracks[size_t(t)].regions[size_t(ri)]);
     const double beat = double(x - m_prGrid.x + m_prScroll) / m_prPpb;
     const double st = snapStep() > 0 ? snapStep() : 0.0;
     auto snap = [&](double b) { return st > 0 ? std::round(b / st) * st : b; };
     if (!m_prChecked) { m_s.checkpoint(); m_prChecked = true; }
+    const core::Note& primary = m_prOrig[size_t(m_prSel)];
     if (m_drag == Drag::Note) {
-        n.start = std::clamp(snap(beat - m_prDragOff), 0.0, std::max(0.0, len - 0.01));
-        const int pitch = std::clamp(m_prTop - (y - m_prGrid.y) / m_prRowH - m_prDragPitch, 0, 127);
-        if (pitch != n.pitch) { n.pitch = pitch; auditionNote(t, pitch); }
+        const double dBeat = snap(beat - m_prDragOff) - primary.start;
+        const int dPitch = std::clamp(m_prTop - (y - m_prGrid.y) / m_prRowH - m_prDragPitch, 0, 127) - primary.pitch;
+        double lo = 0, hiEnd = len;
+        int pLo = 127, pHi = 0;
+        for (int i : m_prSelected) { if (i < int(m_prOrig.size())) { lo = std::max(lo, -m_prOrig[size_t(i)].start); hiEnd = std::min(hiEnd, len - m_prOrig[size_t(i)].start - 0.01); pLo = std::min(pLo, m_prOrig[size_t(i)].pitch); pHi = std::max(pHi, m_prOrig[size_t(i)].pitch); } }
+        const double d = std::clamp(dBeat, lo, std::max(lo, hiEnd));
+        const int dp = std::clamp(dPitch, -pLo, 127 - pHi);
+        for (int i : m_prSelected) if (i < int(notes.size())) { notes[size_t(i)].start = m_prOrig[size_t(i)].start + d; notes[size_t(i)].pitch = m_prOrig[size_t(i)].pitch + dp; }
+        if (notes[size_t(m_prSel)].pitch != m_prOrig[size_t(m_prSel)].pitch + dp || true) { if (notes[size_t(m_prSel)].pitch != m_auditionPitch) auditionNote(t, notes[size_t(m_prSel)].pitch); }
     } else if (m_drag == Drag::NoteResize) {
-        n.length = std::clamp(snap(beat - n.start + (st > 0 ? st * 0.5 : 0.0)), m_prMinLen, std::max(m_prMinLen, len - n.start));
+        const double newLen = std::clamp(snap(beat - primary.start + (st > 0 ? st * 0.5 : 0.0)), m_prMinLen, std::max(m_prMinLen, len - primary.start));
+        const double dLen = newLen - primary.length;
+        for (int i : m_prSelected) if (i < int(notes.size())) notes[size_t(i)].length = std::clamp(m_prOrig[size_t(i)].length + dLen, m_prMinLen, std::max(m_prMinLen, len - m_prOrig[size_t(i)].start));
     } else if (m_drag == Drag::Velocity) {
-        n.velocity = std::clamp(int(std::lround((m_prVel.bottom() - 4 - y) * 127.0 / (m_prVel.h - 8))), 1, 127);
-        m_last["prVel"] = n.velocity;
+        const int v = std::clamp(int(std::lround((m_prVel.bottom() - 4 - y) * 127.0 / (m_prVel.h - 8))), 1, 127);
+        const int dv = v - notes[size_t(m_prSel)].velocity;
+        for (int i : m_prSelected) if (i < int(notes.size())) notes[size_t(i)].velocity = std::clamp(notes[size_t(i)].velocity + dv, 1, 127);
+        m_last["prVel"] = v;
     } else return;
     m_s.setRegionNotes(t, ri, notes);
 }
 
 void NativeUi::paneMouseUp() {
+    int t, ri;
+    if (m_prMarqueeOn && pianoRegion(t, ri)) {
+        const auto& notes = m_tracks[size_t(t)].regions[size_t(ri)].notes;
+        for (int i = 0; i < int(notes.size()); ++i) {
+            const Rect nr{m_prGrid.x + int(std::lround(notes[size_t(i)].start * m_prPpb - m_prScroll)), m_prGrid.y + (m_prTop - notes[size_t(i)].pitch) * m_prRowH, std::max(3, int(notes[size_t(i)].length * m_prPpb)), m_prRowH};
+            if (!nr.intersect(m_prMarquee).empty()) m_prSelected.insert(i);
+        }
+        if (!m_prSelected.empty()) m_prSel = *m_prSelected.begin();
+    }
+    m_prMarqueeOn = false;
     if (m_auditionPitch >= 0) { m_s.noteOff(m_auditionTrack, m_auditionPitch); m_auditionPitch = -1; }
 }
 
@@ -560,23 +668,67 @@ bool NativeUi::paneWheel(int x, int y, double dx, double dy, int mods) {
     const int cur = m_tabExtra ? m_tabExtra : int(m_tab);
     const Rect pane = paneContent();
     if (!pane.contains(x, y)) return false;
+    if (cur == kTabSmart) { m_devScroll = std::max(0.0, m_devScroll - (std::fabs(dx) > 0 ? dx : dy) * 70); return true; }
     if (cur == int(Tab::PianoRoll) && !m_prGrid.empty()) {
         if (mods & ModCtrl) { const double before = (x - m_prGrid.x + m_prScroll) / m_prPpb; m_prPpb = std::clamp(m_prPpb * (dy > 0 ? 1.15 : 1 / 1.15), 10.0, 600.0); m_prScroll = std::max(0.0, before * m_prPpb - (x - m_prGrid.x)); }
         else if ((mods & ModShift) || std::fabs(dx) > 0) m_prScroll = std::max(0.0, m_prScroll - (std::fabs(dx) > 0 ? dx : dy) * 60);
         else m_prTop = std::clamp(m_prTop + (dy > 0 ? 3 : -3), m_prGrid.h / m_prRowH, 127);
         return true;
     }
-    if (cur == int(Tab::Loops)) { m_loopScroll -= dy * 2; return true; }
     return false;
 }
 
+void NativeUi::pianoSelectAll() {
+    int t, ri;
+    m_prSelected.clear();
+    if (!pianoRegion(t, ri)) return;
+    for (int i = 0; i < int(m_tracks[size_t(t)].regions[size_t(ri)].notes.size()); ++i) m_prSelected.insert(i);
+    if (!m_prSelected.empty()) m_prSel = *m_prSelected.begin();
+    m_dirty = true;
+}
+
 bool NativeUi::paneKey(int k, int mods) {
-    (void)mods;
+    const bool ctrl = mods & ModCtrl;
     const int cur = m_tabExtra ? m_tabExtra : int(m_tab);
     int t, ri;
-    if (cur == int(Tab::PianoRoll) && pianoRegion(t, ri) && m_prSel >= 0 && (k == KeyDelete || k == KeyBackspace)) {
-        auto notes = m_tracks[size_t(t)].regions[size_t(ri)].notes;
-        if (m_prSel < int(notes.size())) { m_s.checkpoint(); notes.erase(notes.begin() + m_prSel); m_s.setRegionNotes(t, ri, notes); m_prSel = -1; return true; }
+    if (cur != int(Tab::PianoRoll) || !pianoRegion(t, ri)) return false;
+    auto notes = m_tracks[size_t(t)].regions[size_t(ri)].notes;
+    if (ctrl && k == 'A') { pianoSelectAll(); return true; }
+    if (!m_prSelected.empty() && (k == KeyDelete || k == KeyBackspace || (ctrl && k == 'X'))) {
+        if (k == 'X') { m_noteClip.clear(); for (int i : m_prSelected) if (i < int(notes.size())) m_noteClip.push_back(notes[size_t(i)]); }
+        std::vector<core::Note> kept;
+        for (int i = 0; i < int(notes.size()); ++i) if (!m_prSelected.count(i)) kept.push_back(notes[size_t(i)]);
+        m_s.checkpoint(); m_s.setRegionNotes(t, ri, kept);
+        m_prSelected.clear(); m_prSel = -1;
+        return true;
+    }
+    if (ctrl && k == 'C' && !m_prSelected.empty()) {
+        m_noteClip.clear();
+        for (int i : m_prSelected) if (i < int(notes.size())) m_noteClip.push_back(notes[size_t(i)]);
+        message(msg("%1 notes copied.", std::to_string(m_noteClip.size())));
+        return true;
+    }
+    if (ctrl && k == 'V' && !m_noteClip.empty()) {   // pastes at the playhead
+        double first = m_noteClip[0].start;
+        for (const auto& n : m_noteClip) first = std::min(first, n.start);
+        const double at = std::max(0.0, m_s.positionBeats() - m_tracks[size_t(t)].regions[size_t(ri)].start);
+        m_s.checkpoint();
+        m_prSelected.clear();
+        for (auto n : m_noteClip) { n.start = n.start - first + at; notes.push_back(n); m_prSelected.insert(int(notes.size()) - 1); }
+        m_prSel = *m_prSelected.begin();
+        m_s.setRegionNotes(t, ri, notes);
+        return true;
+    }
+    if (ctrl && k == 'D' && !m_prSelected.empty()) {   // duplicates the selection right after itself
+        double lo = 1e9, hi = 0;
+        for (int i : m_prSelected) if (i < int(notes.size())) { lo = std::min(lo, notes[size_t(i)].start); hi = std::max(hi, notes[size_t(i)].start + notes[size_t(i)].length); }
+        std::vector<int> sel(m_prSelected.begin(), m_prSelected.end());
+        m_s.checkpoint();
+        m_prSelected.clear();
+        for (int i : sel) if (i < int(notes.size())) { core::Note n = notes[size_t(i)]; n.start += hi - lo; notes.push_back(n); m_prSelected.insert(int(notes.size()) - 1); }
+        m_prSel = m_prSelected.empty() ? -1 : *m_prSelected.begin();
+        m_s.setRegionNotes(t, ri, notes);
+        return true;
     }
     return false;
 }
