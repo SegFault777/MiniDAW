@@ -1,17 +1,29 @@
 # MiniDAW
 
 A lightweight, fast digital audio workstation for Windows, written without any UI framework (its own
-software-rendered UI toolkit on Win32) and inspired by the workflow of Logic Pro. Documentation:
+software-rendered and Vulkan UI toolkits) and inspired by the workflow of Logic Pro, with the best ideas of
+Ableton Live, FL Studio, Cubase and Pro Tools. Documentation:
 [docs/](docs/README.md) (user manual, developer guide, project documents). It stays approachable for beginners and still offers what a producer expects:
 a multitrack arrangement, MIDI editing, a built-in synthesizer and **Drummer**, a **Loop Browser**,
 channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and time-signature tracks**,
 **time stretching**, automation, recording and bouncing.
 
 > MiniDAW is an independent open-source project. It is not affiliated with, endorsed by or
-> sponsored by Apple Inc. "Logic Pro" is a trademark of Apple Inc.
-> VST is a trademark of Steinberg Media Technologies GmbH.
+> sponsored by Apple Inc., Ableton AG, Image-Line, Avid or Steinberg. "Logic Pro" is a trademark of Apple Inc.,
+> "Ableton Live" of Ableton AG, "FL Studio" of Image-Line, "Pro Tools" of Avid Technology and "Cubase" and "VST" of
+> Steinberg Media Technologies GmbH.
 
-**Version 0.11** · License: GPL-3.0-or-later
+**Version 0.12** · License: GPL-3.0-or-later
+
+## Editions
+
+| Executable | What it is |
+|---|---|
+| `MiniDAW.exe` | **Native** - software-rendered, no Qt; installer and portable zip |
+| `MiniDAWVulkan.exe` | **Vulkan** - installer and portable zip; a new interface drawn by the GPU: workspaces (`F5` / `F6` / `F7`), command palette (`Ctrl+K`), Logic / Ableton-style piano roll. Portable zip. See [docs/user/vulkan-interface.md](docs/user/vulkan-interface.md). *Its Windows / GPU parts are still being verified.* |
+| `MiniDAWQt.exe` | The old **Qt** version, kept as a portable zip for comparison |
+
+All three open the same `.mdaw` projects. Native and Vulkan run **portable** when a file named `MiniDAW.portable` lies next to the executable: settings, autosave and plug-ins are then kept in `data\` beside it (the portable zips already contain the marker).
 
 ## Features
 
@@ -25,6 +37,18 @@ channel strips with insert effects and sends, **VST3 plug-ins**, **tempo and tim
 - **Duplicate Track** (`Ctrl+Shift+D`) copies a track with its regions, instrument and effects.
 - **Cycle** range (right-drag on the ruler), metronome (accents follow the time signature) and an
   optional one-bar **count-in**. **Volume automation** per track. Undo / redo for edits and tempo changes.
+
+### What is new in v0.12
+- **Vulkan interface** (`MiniDAWVulkan.exe`), written from scratch: one window with inspector, mixer, editors and a
+  command palette; piano roll in the style of Logic Pro and Ableton Live (stamps, riffs, ghost notes, fold, scale
+  highlight, velocity colours); step sequencer you paint; **Snapshots** tab; workspaces.
+- **Ten functions from five DAWs**: Adapt Project Tempo to Region and Groove Template (Logic Pro), Capture MIDI and
+  Stretch / Strum / Double Pattern (Ableton Live), Chord Stamps and Riff Machine (FL Studio), Logical Editor and Mix
+  Snapshots (Cubase), Tab to Transient, Beat Detective and Ripple Delete (Pro Tools).
+- **Native parity with Qt**: aux A / B editing, Test Tone, folder picker, Recover Project, Clear Recent, Preview on Click,
+  save confirmation, MIDI open error message.
+- **Portable mode** (`MiniDAW.portable`) and the new executable names (Native = `MiniDAW.exe`, Qt = `MiniDAWQt.exe`).
+- **All documents are in English** (`docs/`).
 
 ### What is new in v0.11
 - **The native version is now the product**: `MiniDAW-<version>-setup.exe` installs it (and upgrades an old Qt
@@ -194,7 +218,7 @@ Instruments); their own windows open from the *E* button of a device card. See
 
 ## Building from source
 
-MiniDAW is built by a single shell script, `build.sh` (no CMake required). The native version needs **no Qt**.
+MiniDAW is built by a single shell script, `build.sh` (no CMake required). The Native and Vulkan versions need **no Qt**.
 
 Requirements: Windows 10/11, Visual Studio 2022 or newer (MSVC x64 tools), Git Bash (or MSYS2), and optionally
 [Inno Setup 6](https://jrsoftware.org/isinfo.php) for the installer. The old Qt version additionally needs Qt 6.5+.
@@ -202,16 +226,18 @@ Requirements: Windows 10/11, Visual Studio 2022 or newer (MSVC x64 tools), Git B
 ```bash
 # In Git Bash started from the "x64 Native Tools Command Prompt" (so that cl.exe is on PATH):
 export VST3_SDK_DIR=C:/dev/vst3sdk     # optional: git clone --recurse-submodules https://github.com/steinbergmedia/vst3sdk
+./build.sh all              # Qt + Native + Vulkan (SKIP_VULKAN=1 leaves out Vulkan)
 ./build.sh native-release   # build + portable folder / ZIP + installer -> installer-out/MiniDAW-<version>-setup.exe
-./build.sh native           # only build/MiniDAWNative.exe
-./build.sh qt               # the old Qt version as a portable ZIP (needs QT_DIR)
+./build.sh native           # only build/MiniDAW.exe
+./build.sh vulkan-release   # build/MiniDAWVulkan.exe + portable ZIP + installer (needs the Vulkan headers, glslc and Inno Setup, see docs/dev/building.md)
+./build.sh qt               # the old Qt version as build/MiniDAWQt.exe and a portable ZIP (needs QT_DIR)
 ./build.sh clean
 ```
 
 The tests need only `g++`: `bash tests/run.sh` (also on Linux). Without `VST3_SDK_DIR` (or if the SDK fails to
 build) MiniDAW is built without VST3 hosting. Set `MINIDAW_VERSION` to override the version string. The GitHub
 Actions workflow in `.github/workflows/build.yml` runs the tests, builds the installer and attaches it and the portable
-ZIP to a release when a tag such as `v0.11` is pushed. Details: [docs/dev/building.md](docs/dev/building.md).
+ZIP to a release when a tag such as `v0.12` is pushed. Details: [docs/dev/building.md](docs/dev/building.md).
 
 ## Architecture
 
@@ -220,7 +246,8 @@ ZIP to a release when a tag such as `v0.11` is pushed. Details: [docs/dev/buildi
 | `src/dsp/` | Qt-free DSP: parameters, effects, synth, drum kit, Drummer generator, tempo map, WSOLA stretcher, MIDI files, tempo detection, loudness |
 | `src/core/` | Qt-free engine: `Session`, project files, MIDI operations, translations |
 | `src/platform/` | WASAPI audio, winmm MIDI, Media Foundation decoding, MiniDAW plug-in host |
-| `src/ui/` | Qt-free software-rendered UI toolkit and the whole user interface |
+| `src/ui/` | Qt-free software-rendered UI toolkit and the Native user interface |
+| `src/vulkan/` | The Vulkan user interface: draw list, text atlas, immediate-mode GUI, the studio screens, GPU backend and shaders |
 | `src/native/` | The Windows shell (`Win32App.cpp`) and the VST3 host (`Vst3Native.cpp`) |
 | `src/*.cpp`, `src/Engine.*`, `src/vst3/` | The old Qt user interface (kept as a portable build only) |
 | `translations/`, `loops/`, `plugin-sdk/` | Language files, sample loops, plug-in SDK shipped next to the executable |
@@ -250,5 +277,5 @@ comments in English. `bash tests/run.sh` runs the DSP unit tests (no Qt required
 MiniDAW is free software: you can redistribute it and/or modify it under the terms of the
 GNU General Public License as published by the Free Software Foundation, either version 3 of the
 License, or (at your option) any later version. See [LICENSE](LICENSE) for the full text.
-MiniDAW links against Qt, which is available under the LGPL v3 / GPL. The sample loops in `loops/`
+The old Qt version links against Qt, which is available under the LGPL v3 / GPL; the Native and Vulkan versions do not use Qt. The sample loops in `loops/`
 were synthesized for this project and are released under the same license.

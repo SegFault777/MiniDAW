@@ -78,6 +78,48 @@ std::vector<std::uint8_t> wavHeader(WavFormat f, int sampleRate, std::uint64_t f
     return h;
 }
 
+namespace {
+void be16(std::vector<std::uint8_t>& h, unsigned v) { h.push_back(std::uint8_t(v >> 8)); h.push_back(std::uint8_t(v)); }
+void be32(std::vector<std::uint8_t>& h, std::uint32_t v) { for (int i = 3; i >= 0; --i) h.push_back(std::uint8_t(v >> (8 * i))); }
+// IEEE 754 80-bit extended precision of a positive integer sample rate
+void ext80(std::vector<std::uint8_t>& h, double rate) {
+    int e = 0;
+    double m = rate;
+    while (m >= 2.0) { m /= 2.0; ++e; }
+    const std::uint64_t mant = std::uint64_t(m * 9223372036854775808.0);   // m * 2^63
+    be16(h, unsigned(16383 + e));
+    be32(h, std::uint32_t(mant >> 32));
+    be32(h, std::uint32_t(mant));
+}
+}  // namespace
+
+std::vector<std::uint8_t> aiffHeader(WavFormat f, int sampleRate, std::uint64_t frames) {
+    const int bps = f == WavFormat::Pcm24 ? 3 : 2;
+    const std::uint64_t dataBytes64 = frames * 2 * std::uint64_t(bps);
+    const std::uint32_t dataBytes = dataBytes64 > 0xFFFFFFD0ull ? 0xFFFFFFD0u : std::uint32_t(dataBytes64);
+    std::vector<std::uint8_t> h;
+    putTag(h, "FORM");
+    be32(h, 4 + (8 + 18) + (8 + 8 + dataBytes));
+    putTag(h, "AIFF");
+    putTag(h, "COMM");
+    be32(h, 18);
+    be16(h, 2);
+    be32(h, std::uint32_t(frames));
+    be16(h, unsigned(bps * 8));
+    ext80(h, sampleRate);
+    putTag(h, "SSND");
+    be32(h, 8 + dataBytes);
+    be32(h, 0);   // offset
+    be32(h, 0);   // block size
+    return h;
+}
+
+void swapSampleBytes(std::vector<std::uint8_t>& bytes, int bytesPerSample) {
+    if (bytesPerSample < 2) return;
+    for (std::size_t i = 0; i + std::size_t(bytesPerSample) <= bytes.size(); i += std::size_t(bytesPerSample))
+        std::reverse(bytes.begin() + std::ptrdiff_t(i), bytes.begin() + std::ptrdiff_t(i) + bytesPerSample);
+}
+
 void encodeSamples(const float* in, std::size_t frames, WavFormat f, float gain, bool dither, std::uint32_t& seed,
                    std::vector<std::uint8_t>& out) {
     const std::size_t n = frames * 2;

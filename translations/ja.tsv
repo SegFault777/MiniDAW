@@ -13,6 +13,8 @@ Save	保存
 Save As…	名前を付けて保存…
 Import Audio…	オーディオを読み込む…
 Import MIDI File…	MIDIファイルを読み込む…
+Import Logic Pro Project Folder…	Logic Pro プロジェクトフォルダを読み込む…
+Choose a Logic Pro project (.logicx folder)	Logic Pro プロジェクト（.logicx フォルダ）を選択
 Export MIDI File…	MIDIファイルを書き出す…
 Bounce to WAV…	WAVにバウンス…
 Preferences…	環境設定…
@@ -167,7 +169,6 @@ Normalize	ノーマライズ
 Automation	オートメーション
 Automation Parameter	オートメーション パラメータ
 Volume	ボリューム
-Pan	パン
 Send A	センドA
 Send B	センドB
 Marker %1	マーカー %1
@@ -500,3 +501,355 @@ Click to toggle a step, drag to paint	クリックでステップを切り替え
 Click to add a point, drag to move it, right-click to delete it	クリックでポイント追加、ドラッグで移動、右クリックで削除
 Click to add a point, drag to move it, right-click to delete it.	クリックでポイント追加、ドラッグで移動、右クリックで削除します。
 %1 notes copied.	%1 個のノートをコピーしました。
+# v0.12 Vulkan interface
+   from	開始
+   to	終了
++ Add Effect	+ エフェクトを追加
++ Add Track	+ トラックを追加
++ FX	+ FX
++ Insert	+ インサート
++ Save Snapshot	+ スナップショットを保存
++ Track	+ トラック
+%1 note changed.	%1個のノートを変更しました。
+%1 notes changed.	%1個のノートを変更しました。
+Action	アクション
+Adapt Tempo...	テンポを合わせる...
+Add condition 2	条件2を追加
+Also snap note lengths	ノートの長さもスナップ
+Apply	適用
+Apply Groove...	グルーヴを適用...
+Apply to the notes that do NOT match	一致しないノートに適用
+Arm Record	録音待機
+Audio Region	オーディオリージョン
+Auto	自動
+Auto: %1	自動: %1
+Auto: Bar	自動: 小節
+Aux A: Reverb	Aux A: リバーブ
+Aux A: Reverb...	Aux A: リバーブ...
+Aux B: Echo	Aux B: エコー
+Aux B: Echo...	Aux B: エコー...
+BROWSER	ブラウザ
+Bar	小節
+Beat Detective...	ビートディテクティブ...
+Beat unit	拍の単位
+Bounce / Export Audio...	バウンス / オーディオを書き出し...
+Capture MIDI	MIDIキャプチャ
+Clear Lane	レーンをクリア
+Click to add a point - drag to move - right-click to delete - the line is followed during playback	クリックでポイント追加 - ドラッグで移動 - 右クリックで削除 - 再生中はラインに従います
+Colour: Velocity	色: ベロシティ
+Command Palette	コマンドパレット
+Command Palette...	コマンドパレット...
+Condition 1	条件1
+Condition 2	条件2
+Cycle Track Height	トラックの高さを切り替え
+Damping	ダンピング
+Density	密度
+Discard Changes	変更を破棄
+Drum Machine - click the steps, drag to paint	ドラムマシン - ステップをクリック、ドラッグでペイント
+Eraser	消しゴム
+Eraser Tool	消しゴムツール
+Esc or F1 closes - Ctrl+K searches every command	Esc または F1 で閉じる - Ctrl+K で全コマンドを検索
+Feedback	フィードバック
+Filter: every condition must match. Action: applied to the notes that match.	フィルター: すべての条件に一致する必要があります。アクション: 一致したノートに適用されます。
+Fold	フォールド
+Fold Notes	ノートをフォールド
+Follow Playhead	再生ヘッドに追従
+Functions v	機能 v
+Ghost	ゴースト
+Go to End	終わりへ移動
+Go to Start	先頭へ移動
+Grid: %1	グリッド: %1
+Help	ヘルプ
+Highlight	ハイライト
+Keyboard Shortcuts	キーボードショートカット
+Keyboard Shortcuts...	キーボードショートカット...
+Keyboard shortcuts	キーボードショートカット
+Largest leap	最大の跳躍
+Lock	ロック
+Logical Editor	ロジカルエディター
+Logical Editor...	ロジカルエディター...
+Lowest octave	最低オクターブ
+MIDI Region	MIDIリージョン
+Make Groove	グルーヴを作成
+Marker added.	マーカーを追加しました。
+Maximize Bottom Panel	下部パネルを最大化
+Mix	ミックス
+MixConsole Snapshots	MixConsoleスナップショット
+Musical typing on: A W S E D F T G Y H U J K play notes, Z / X change the octave.	ミュージカルタイピング オン: A W S E D F T G Y H U J K で演奏、Z / X でオクターブ変更。
+Mute Region	リージョンをミュート
+Mute Tool	ミュートツール
+Mute Track	トラックをミュート
+Next Grid Size	次のグリッドサイズ
+No next marker.	次のマーカーはありません。
+Not following the playhead.	再生ヘッドに追従していません。
+Note length	ノートの長さ
+Nothing to bounce.	バウンスするものがありません。
+Nudge Region Left	リージョンを左へナッジ
+Nudge Region Right	リージョンを右へナッジ
+OK	OK
+Parameter	パラメーター
+Pattern doubled to %1 beats.	パターンを%1拍に倍にしました。
+Pencil	鉛筆
+Pencil Tool	鉛筆ツール
+Pitch	ピッチ
+Playhead Back One Bar	再生ヘッドを1小節戻す
+Playhead Forward One Bar	再生ヘッドを1小節進める
+Pointer	ポインター
+Pointer Tool	ポインターツール
+Preview	プレビュー
+Put the playhead inside a region to split it.	分割するにはリージョン内に再生ヘッドを置いてください。
+Recall	呼び出し
+Recall Previous Snapshot	前のスナップショットを呼び出し
+Recalled %1	%1 を呼び出しました
+Recalled mixer snapshot %1	ミキサースナップショット%1を呼び出しました
+Rename Region...	リージョン名を変更...
+Riff Machine	リフマシン
+Riff Machine...	リフマシン...
+Riff written (seed %1).	リフを書き込みました(シード %1)。
+Riff...	リフ...
+Ripple Delete Region	リップル削除
+Ripple delete: the following regions moved %1 beats earlier.	リップル削除: 後続のリージョンが%1拍前に移動しました。
+Roll New Riff	新しいリフを生成
+Save Mixer Snapshot	ミキサースナップショットを保存
+Saved mixer snapshot %1 (Alt+%2 recalls it)	ミキサースナップショット%1を保存しました(Alt+%2で呼び出し)
+Scissors	ハサミ
+Scissors Tool	ハサミツール
+Search commands	コマンドを検索
+Search loops, instruments, effects	ループ、楽器、エフェクトを検索
+Seed (new number = new riff)	シード(数字が変わると新しいリフ)
+Select Next Track	次のトラックを選択
+Select Previous Track	前のトラックを選択
+Select a Drum Machine track to program its steps.	ステップを打ち込むにはドラムマシントラックを選択してください。
+Select a MIDI region to edit its notes - or double-click an instrument lane to create one.	ノートを編集するにはMIDIリージョンを選択 - または楽器レーンをダブルクリックして作成します。
+Select a region to see its properties.	プロパティを表示するにはリージョンを選択してください。
+Select an audio region (or put the playhead inside one) to tab to its transients.	トランジェントへ移動するにはオーディオリージョンを選択(または再生ヘッドを内に置く)してください。
+Settings are kept in %LOCALAPPDATA%\MiniDAW.	設定は %LOCALAPPDATA%\MiniDAW に保存されます。
+Show / Hide Bottom Panel	下部パネルの表示 / 非表示
+Show / Hide Browser	ブラウザの表示 / 非表示
+Show / Hide Inspector	インスペクターの表示 / 非表示
+Show Automation	オートメーションを表示
+Show Devices	デバイスを表示
+Show Editor	エディターを表示
+Show Mixer	ミキサーを表示
+Show Snapshots	スナップショットを表示
+Show Step Sequencer	ステップシーケンサーを表示
+Size	サイズ
+Snap	スナップ
+Snap off.	スナップ オフ。
+Snap on: %1	スナップ オン: %1
+Snapshots	スナップショット
+Solo Track	トラックをソロ
+Sound	サウンド
+Space: play  -  R: record  -  1-5: tools  -  Tab: next transient  -  Ctrl+K: search every command  -  F1: shortcuts	Space: 再生  -  R: 録音  -  1-5: ツール  -  Tab: 次のトランジェント  -  Ctrl+K: 全コマンド検索  -  F1: ショートカット
+Stamp	スタンプ
+Steps	ステップ
+Stop and Return to Start	停止して先頭へ戻る
+Store levels, pans, sends, mutes and solos under a name and bring them back with one click or Alt+1 ... 9.	レベル、パン、センド、ミュート、ソロを名前を付けて保存し、クリック1回またはAlt+1 ... 9で呼び出せます。
+Tab to Next Transient	次のトランジェントへ
+Tab to Previous Transient	前のトランジェントへ
+Tap	タップ
+Time	時間
+Transport	トランスポート
+Typing Octave Down	タイピングのオクターブを下げる
+Typing Octave Up	タイピングのオクターブを上げる
+Use + Add Effect in the Devices panel or drag an effect from the browser.	デバイスパネルの + エフェクトを追加 を使うか、ブラウザからエフェクトをドラッグしてください。
+Value	値
+Velocity from	ベロシティ(開始)
+Velocity to	ベロシティ(終了)
+Vulkan user interface. GPL-3.0-or-later.	Vulkanユーザーインターフェース。GPL-3.0-or-later。
+Width	幅
+Workspace: Arrange	ワークスペース: アレンジ
+Workspace: Edit	ワークスペース: 編集
+Workspace: Edit - the editor gets most of the window	ワークスペース: 編集 - エディターがウィンドウの大部分を占めます
+Workspace: Mix	ワークスペース: ミックス
+Workspace: Mix - the mixer gets most of the window	ワークスペース: ミックス - ミキサーがウィンドウの大部分を占めます
+Write Riff	リフを書き込む
+Writes a new melody in the scale into this region (replaces its notes).	このリージョンにスケールに沿った新しいメロディを書き込みます(既存のノートは置き換えられます)。
+Zoom to Fit Project	プロジェクト全体にズーム
+Zoom to Selected Region	選択リージョンにズーム
+Zoomed to fit the project.	プロジェクト全体にズームしました。
+%1 regions selected.	%1個のリージョンを選択しました。
+Select All Regions	すべてのリージョンを選択
+Nothing fits the tracks at this place.	この位置のトラックには合うものがありません。
+Tempo (BPM)	テンポ (BPM)
+Click to add a tempo change - drag to move - double-click a point to ramp to the next - right-click to delete	クリックでテンポ変化を追加 - ドラッグで移動 - ポイントをダブルクリックで次のポイントまでランプ - 右クリックで削除
+Select a Drummer region to shape its groove - or double-click a Drummer track's lane to create one.	グルーヴを作るにはDrummerリージョンを選択 - またはDrummerトラックのレーンをダブルクリックして作成します。
+Seed	シード
+Add fills at the end	最後にフィルを追加
+Roll New Variation	新しいバリエーションを生成
+This region has no notes yet.	このリージョンにはまだノートがありません。
+Show Drummer	Drummerを表示
+Side Stick	サイドスティック
+Tom	タム
+Closed Hat	クローズドハット
+Pedal Hat	ペダルハット
+Open Hat	オープンハット
+Crash	クラッシュ
+Ride	ライド
+Ride Bell	ライドベル
+Tambourine	タンバリン
+Cowbell	カウベル
+Percussion	パーカッション
+Tempo and time signature	テンポと拍子
+Adopt if the project is empty	プロジェクトが空なら取り込む
+Use the file's	ファイルのものを使う
+Keep the project's	プロジェクトのものを保持
+One track for every MIDI channel	MIDIチャンネルごとに1トラック
+The notes start at bar 1. Markers of the file are added.	ノートは1小節目から始まります。ファイルのマーカーも追加されます。
+Import	読み込む
+Icon style	アイコンスタイル
+Classic	クラシック
+Material Symbols needs its font files in the fonts folder.	Material Symbolsはfontsフォルダにフォントファイルが必要です。
+Without them the classic icons are used.	ない場合はクラシックアイコンを使います。
+MIDI Ch	MIDIチャンネル
+MIDI Channel...	MIDIチャンネル...
+MIDI Channel	MIDIチャンネル
+Channel	チャンネル
+The channel of this track in an exported MIDI file.	書き出したMIDIファイルでこのトラックが使うチャンネルです。
+Opened a project saved by a newer MiniDAW: some settings may be missing.	新しいバージョンのMiniDAWで保存されたプロジェクトを開きました。一部の設定が失われている可能性があります。
+Preferences and handy extras	環境設定と便利な機能
+Preferences (Ctrl+,) chooses the audio output and input, the buffer size, the language, the interface scale and the icon style. A smaller buffer lowers the delay, a larger one is safer on a slow computer.	環境設定（Ctrl+,）では、オーディオの出力と入力、バッファサイズ、言語、画面の拡大率、アイコンのスタイルを選びます。バッファが小さいほど遅延が減り、大きいほど動作の遅いコンピュータでも安全です。
+For another program you can choose the MIDI channel of an instrument track: select the track and use MIDI Ch in the inspector. Auto numbers the channels for you, and the drums always use channel 10.	他のプログラムで使うために、インストゥルメントトラックのMIDIチャンネルを選べます。トラックを選び、インスペクターのMIDIチャンネルを使います。自動ではチャンネルが自動で割り当てられ、ドラムは常に10チャンネルです。
+The layout of the window is remembered for the next start. Ctrl+K finds any command by name, also the ones that have no menu entry.	ウィンドウのレイアウトは次回の起動でも保たれます。Ctrl+Kを押すと、メニューにないコマンドも名前で探せます。
+Looking for audio devices... open Preferences again in a moment.	オーディオデバイスを検索しています... しばらくしてから環境設定をもう一度開いてください。
+Drag the round handles to set the fades. Double-click a handle to remove its fade. Click the waveform to move the playhead. Ctrl + wheel zooms, the wheel scrolls.	丸いハンドルをドラッグしてフェードを調整します。ハンドルをダブルクリックするとそのフェードが解除されます。波形をクリックすると再生位置が移動します。 Ctrl+ホイールで拡大縮小、ホイールでスクロールします。
+Zoom in (Ctrl + wheel)	拡大 (Ctrl+ホイール)
+Zoom out (Ctrl + wheel)	縮小 (Ctrl+ホイール)
+Trim Start to Playhead	開始を再生位置でカット
+Trim End to Playhead	終了を再生位置でカット
+Trim Start	開始をカット
+Trim End	終了をカット
+Cut the start of the region at the playhead	リージョンの開始を再生位置でカットします
+Cut the end of the region at the playhead	リージョンの終了を再生位置でカットします
+Stretched or transposed audio cannot be trimmed here.	伸縮またはトランスポーズしたオーディオはここではカットできません。
+Put the playhead inside the audio region first.	先に再生位置をオーディオリージョンの中に置いてください。
+# Tutorial
+Mixer groups	ミキサーグループ
+Bringing files in	ファイルを取り込む
+Exporting for other DAWs	他のDAW向けに書き出す
+Tracks in the same mixer group move together: faders, pans, sends, mute and solo. A drum kit recorded on six tracks is the classic example.	同じミキサーグループのトラックは、フェーダー、パン、センド、ミュート、ソロが一緒に動きます。6トラックに録音したドラムセットが代表例です。
+In the mixer, click the small circle at the top of a channel strip and choose a group from A to H, or right-click a track in the arrangement and use Mixer Group. Every group has its own colour.	ミキサーでチャンネルストリップ上部の小さな丸をクリックしてAからHのグループを選ぶか、アレンジでトラックを右クリックして「ミキサーグループ」を選びます。グループごとに色が違います。
+Hold Alt while you change a control to change only that track. Ctrl+K and typing group b also puts the selected track in group B.	Altを押しながら操作すると、そのトラックだけが変わります。Ctrl+Kを押して group b と入力しても、選択中のトラックがグループBになります。
+Drag an audio or MIDI file onto the window, or use File > Open. MiniDAW reads WAV, AIFF, MP3, M4A and FLAC audio and Standard MIDI Files.	オーディオまたはMIDIファイルをウィンドウにドラッグするか、ファイル > 開くを使います。MiniDAWはWAV、AIFF、MP3、M4A、FLACのオーディオと標準MIDIファイルを読み込めます。
+File > Import MIDI File asks what to do with the tempo map of the file, and whether a track that uses several channels becomes one track per channel.	ファイル > MIDIファイルを読み込むでは、ファイルのテンポマップの扱いと、複数チャンネルを使うトラックをチャンネルごとのトラックに分けるかを選べます。
+A Logic Pro project is a folder ending in .logicx: File > Import Logic Pro Project Folder brings in its tempo, markers, track names, audio regions and MIDI regions. Plug-ins, automation and the mixer are not read.	Logic Proのプロジェクトは .logicx で終わるフォルダです。ファイル > Logic Proプロジェクトフォルダを読み込むで、テンポ、マーカー、トラック名、オーディオリージョン、MIDIリージョンを取り込めます。プラグイン、オートメーション、ミキサーは読み込まれません。
+Bounce / Export Audio (Ctrl+B) writes WAV, AIFF or MP3 from 44.1 to 96 kHz. MP3 files get title, artist and album tags.	バウンス / オーディオ書き出し（Ctrl+B）は44.1～96 kHzのWAV、AIFF、MP3を書き出します。MP3にはタイトル、アーティスト、アルバムのタグが付きます。
+Tick One file for every track to export stems. All files start at the same point and have the same length, so they line up at bar 1 in Logic Pro, Ableton Live or Cubase.	「トラックごとに1ファイル」にチェックするとステムを書き出します。すべてのファイルの開始位置と長さが同じなので、Logic Pro、Ableton Live、Cubaseで1小節目に合わせて置けます。
+Switch off Stems: keep master volume and limiter when the other program should do its own master processing. File > Export MIDI File also writes your tempo map, time signatures and markers.	相手のソフトでマスター処理を行いたいときは「ステム: マスターボリュームとリミッターを含める」をオフにします。ファイル > MIDIファイルを書き出すは、テンポマップ、拍子、マーカーも書き出します。
+This tutorial has 19 short pages. Use the Next and Back buttons or the Left and Right arrow keys. Esc closes it, and you can open it again any time from Help > Tutorial.	このチュートリアルは19ページの短い構成です。次へ／戻るボタン、または左右の矢印キーを使います。Escで閉じ、ヘルプ > チュートリアルからいつでも開き直せます。
+Welcome to MiniDAW	MiniDAWへようこそ
+MiniDAW is a light, fast music studio: record, sequence, edit and mix in one window.	MiniDAWは軽くて高速な音楽スタジオです。1つのウィンドウで録音、シーケンス、編集、ミックスができます。
+You do not need to remember anything: Ctrl+K opens a palette that finds every command by name.	覚える必要はありません。Ctrl+Kを押すと、名前ですべてのコマンドを探せるパレットが開きます。
+The window at a glance	ウィンドウの全体像
+The menu bar and the transport (play, record, tempo, position) are at the top.	一番上にメニューバーとトランスポート(再生、録音、テンポ、位置)があります。
+The big area in the middle is the arrangement: track headers on the left, the timeline with its regions on the right.	中央の大きな領域がアレンジです。左にトラックヘッダー、右にリージョンのあるタイムラインがあります。
+The browser (loops, instruments, effects) and the inspector sit at the sides, and the bottom panel switches between Mixer, Editor, Steps, Devices, Snapshots, Automation and Drummer.	ブラウザ(ループ、楽器、エフェクト)とインスペクターは両側にあり、下のパネルはミキサー、エディター、ステップ、デバイス、スナップショット、オートメーション、Drummerを切り替えます。
+Playing and moving around	再生と移動
+Space starts and stops playback. Click the ruler to move the playhead.	Spaceで再生の開始と停止ができます。ルーラーをクリックすると再生ヘッドが移動します。
+Scroll with the mouse wheel to move through the song and hold Ctrl while scrolling to zoom. The Zoom to Fit Project command shows the whole song.	マウスホイールで曲の中を移動し、Ctrlを押しながらホイールでズームします。「プロジェクト全体にズーム」コマンドで曲全体が表示されます。
+Turn Follow Playhead on to keep the playhead in view while the song plays.	「再生ヘッドに追従」をオンにすると、再生中も再生ヘッドが常に画面内に表示されます。
+Adding tracks	トラックの追加
+Use the Track menu or the + Add Track button to add a track. There are four kinds: Audio (recordings and loops), Instrument (MIDI with a synth), Drums (a step-sequenced drum machine) and Drummer (a drummer that plays for you).	トラックメニューか「+ トラック」ボタンでトラックを追加します。オーディオ(録音とループ)、インストゥルメント(シンセで鳴らすMIDI)、ドラム(ステップ式ドラムマシン)、Drummer(自動で叩くドラマー)の4種類があります。
+Click a track header to select it. Right-click it for more choices: rename, colour, duplicate or delete.	トラックヘッダーをクリックして選択します。右クリックで名前の変更、色、複製、削除などができます。
+Getting sound quickly: the browser	すばやく音を出す: ブラウザ
+The browser on the right lists loops, instruments and effects. Type in the search box to filter them.	右側のブラウザにはループ、楽器、エフェクトが並びます。検索ボックスに入力して絞り込めます。
+Drag a loop onto the arrangement to place it, drag an instrument onto a track to change its sound, or drag an effect onto a track to add it to its chain.	ループをアレンジにドラッグすると配置され、楽器をトラックにドラッグすると音色が変わり、エフェクトをトラックにドラッグするとエフェクトチェーンに追加されます。
+Clicking an item previews it, so you can listen before you drag.	項目をクリックするとプレビューできるので、ドラッグする前に試聴できます。
+The Drummer: instant drums	Drummer: すぐに使えるドラム
+Add a Drummer track and double-click its lane to create a region. A drummer starts playing at once.	Drummerトラックを追加し、そのレーンをダブルクリックしてリージョンを作成します。ドラマーはすぐに演奏を始めます。
+Open the Drummer tab (Ctrl+7) to choose a style and change the Complexity, Loudness, Swing and Fills. Roll New Variation gives you a new pattern with the same settings.	Drummerタブ(Ctrl+7)でスタイルを選び、複雑さ、ラウドネス、スウィング、フィルを変えてみましょう。「新しいバリエーションを生成」は同じ設定で新しいパターンを作ります。
+Every change can be undone with Ctrl+Z.	すべての変更はCtrl+Zで元に戻せます。
+Recording	録音
+Select a track and arm it for recording, then press R. Audio tracks record from your audio input, instrument tracks record what you play on a MIDI keyboard.	トラックを選んで録音待機にしてからRを押します。オーディオトラックはオーディオ入力から、インストゥルメントトラックはMIDIキーボードの演奏を録音します。
+No MIDI keyboard? Musical typing turns the computer keys A W S E D F T G Y H U J K into piano keys, and Z and X change the octave.	MIDIキーボードがない? ミュージカルタイピングを使うと、キーボードのA W S E D F T G Y H U J Kがピアノの鍵盤になり、Z/Xでオクターブを変えられます。
+The metronome and the count-in are in the transport bar. Capture MIDI saves what you played even when you forgot to press record.	メトロノームとカウントインはトランスポートバーにあります。MIDIキャプチャは、録音ボタンを押し忘れても演奏内容を保存します。
+Editing regions: the five tools	リージョンの編集: 5つのツール
+Press 1 for the Pointer (select and move), 2 for the Pencil (draw), 3 for the Scissors (cut), 4 for the Eraser and 5 to Mute.	1はポインター(選択と移動)、2は鉛筆(描画)、3はハサミ(カット)、4は消しゴム、5はミュートです。
+With the Pointer, drag a region to move it, drag its right edge to change its length and hold Alt while dragging to copy it.	ポインターでリージョンをドラッグすると移動、右端をドラッグすると長さの変更、Altを押しながらドラッグするとコピーになります。
+Snap keeps everything on the grid. Press G to turn it on or off.	スナップはすべてをグリッドに合わせます。Gで オン/オフを切り替えます。
+Working with several regions	複数のリージョンを扱う
+Shift-click or Ctrl-click adds regions to the selection. Drag on an empty part of a lane to draw a rubber band, or press Ctrl+A to select everything.	Shift+クリックまたはCtrl+クリックでリージョンを選択に追加します。レーンの空いた場所をドラッグするとラバーバンドで選択でき、Ctrl+Aですべてを選択します。
+Drag any selected region to move the whole group, even onto other tracks. Alt-drag duplicates the group.	選択したリージョンの1つをドラッグするとグループ全体が動き、他のトラックにも移動できます。Alt+ドラッグでグループを複製します。
+Cut, copy, paste, delete, mute and ripple delete all work on the whole selection, and each one is a single undo step.	カット、コピー、ペースト、削除、ミュート、リップル削除はすべて選択全体に適用され、それぞれ1回で元に戻せます。
+The piano roll	ピアノロール
+Select a MIDI region and press E to open the Editor tab. Draw notes with the Pencil, move them by dragging, and resize them at their edges.	MIDIリージョンを選択してEを押し、エディタータブを開きます。鉛筆でノートを描き、ドラッグで移動し、端で長さを調整します。
+The velocity of each note is shown by its colour. Fold hides the keys you do not use, Highlight marks the notes of a scale, and ghost notes show the other regions of the track.	ノートのベロシティは色で表示されます。フォールドは使っていない鍵を隠し、ハイライトはスケールの音を示し、ゴーストノートは同じトラックの他のリージョンを表示します。
+Stamps place chords, and the Riff Machine writes a new melody in a scale. Q quantizes the selected notes.	スタンプはコードを配置し、リフマシンはスケールに沿った新しいメロディを書き込みます。Qは選択したノートをクォンタイズします。
+The step sequencer	ステップシーケンサー
+A Drums track has a step grid instead of a piano roll. Click a step to switch it on, or drag across many steps to paint them.	ドラムトラックにはピアノロールの代わりにステップグリッドがあります。ステップをクリックしてオンにするか、複数のステップをドラッグしてペイントします。
+Each row is one drum sound. Drag in the velocity strip to make single hits louder or softer.	各行が1つのドラムサウンドです。ベロシティのバーをドラッグして、個々のヒットを大きくしたり小さくしたりします。
+Open it with Ctrl+3.	Ctrl+3で開きます。
+The mixer and effects	ミキサーとエフェクト
+The Mixer (Ctrl+1) has one strip per track: a fader for the volume, a pan control, mute and solo, two sends (reverb and echo) and a level meter. Narrow makes the strips thinner to fit more of them.	ミキサー(Ctrl+1)にはトラックごとに1つのストリップがあります。ボリュームフェーダー、パン、ミュートとソロ、2つのセンド(リバーブとエコー)、レベルメーターがあり、「狭く」で より多くのストリップが画面に収まります。
+The Devices tab (Ctrl+4) shows the effect chain of the selected track as cards with knobs. Use + Add Effect to insert an effect, and drag a card to change the order.	デバイスタブ(Ctrl+4)には、選択したトラックのエフェクトチェーンがノブ付きのカードで表示されます。「+ エフェクトを追加」でエフェクトを挿入し、カードをドラッグして順番を変えます。
+Automation and tempo	オートメーションとテンポ
+The Automation tab (Ctrl+6) draws a curve for the volume, pan or a send of the selected track. Click to add a point, drag to move it and right-click to delete it.	オートメーションタブ(Ctrl+6)では、選択したトラックのボリューム、パン、センドのカーブを描きます。クリックでポイント追加、ドラッグで移動、右クリックで削除です。
+Choose Tempo (BPM) to draw tempo changes for the whole song. Double-click a point to let the tempo glide to the next one.	「テンポ (BPM)」を選ぶと、曲全体のテンポ変化を描けます。ポイントをダブルクリックすると、次のポイントまでテンポが滑らかに変化します。
+The curve is followed during playback.	カーブは再生中にそのまま反映されます。
+Snapshots and workspaces	スナップショットとワークスペース
+A mixer snapshot remembers all levels, pans, sends, mutes and solos. Save one with Ctrl+Shift+Enter and bring it back with one click or Alt+1 to Alt+9. Open the tab with Ctrl+5.	ミキサースナップショットは、すべてのレベル、パン、センド、ミュート、ソロを記憶します。Ctrl+Shift+Enterで保存し、クリック1回またはAlt+1〜Alt+9で呼び出せます。タブはCtrl+5で開きます。
+Workspaces change the whole layout with one key: F5 is for arranging, F6 for mixing and F7 for editing.	ワークスペースはキー1つでレイアウト全体を切り替えます。F5はアレンジ、F6はミキシング、F7は編集用です。
+Saving, exporting and what next	保存、書き出し、そしてこれから
+Save your project with Ctrl+S. MiniDAW also keeps an automatic backup and offers to recover it if the program closes unexpectedly. Undo (Ctrl+Z) and Redo (Ctrl+Shift+Z) go back as far as you need.	Ctrl+Sでプロジェクトを保存します。MiniDAWは自動バックアップも保持し、プログラムが予期せず終了した場合は復元を提案します。元に戻す(Ctrl+Z)とやり直し(Ctrl+Shift+Z)は必要なだけさかのぼれます。
+Use Bounce / Export Audio to render the song to a WAV file.	「バウンス / オーディオを書き出し」で曲をWAVファイルにレンダリングします。
+Remember the two helpers: Ctrl+K finds any command by name, and F1 shows every keyboard shortcut. Hover over a control and the status bar at the bottom explains it.	2つの助っ人を覚えておきましょう。Ctrl+Kは名前で任意のコマンドを探し、F1はすべてのキーボードショートカットを表示します。コントロールにマウスを重ねると、下のステータスバーが説明します。
+Start with a Drummer, add a few loops from the browser, record an idea, and enjoy making music.	Drummerから始めて、ブラウザからループをいくつか加え、アイデアを録音して、音楽作りを楽しみましょう。
+Tutorial	チュートリアル
+Tutorial...	チュートリアル...
+Close the tutorial (Esc)	チュートリアルを閉じる (Esc)
+Back	戻る
+Next	次へ
+Done	完了
+Try it	試してみる
+No Group	グループなし
+Mixer Group	ミキサーグループ
+Group A	グループ A
+Group B	グループ B
+Group C	グループ C
+Group D	グループ D
+Group E	グループ E
+Group F	グループ F
+Group G	グループ G
+Group H	グループ H
+Track %1 is in this group now.	トラック%1をこのグループに入れました。
+Mixer group: tracks in the same group move their faders, pans, sends, mute and solo together (hold Alt to change only one)	ミキサーグループ: 同じグループのトラックはフェーダー、パン、センド、ミュート、ソロが一緒に動きます(Altを押すと1つだけ変わります)
+Settings are kept in %1.	設定は %1 に保存されます。
+Portable mode: settings are kept in %1.	ポータブルモード: 設定は %1 に保存されます。
+# Export and file types
+WAV 16-bit	WAV 16ビット
+WAV 24-bit	WAV 24ビット
+WAV 32-bit float	WAV 32ビット浮動小数点
+AIFF 16-bit	AIFF 16ビット
+AIFF 24-bit	AIFF 24ビット
+MP3	MP3
+Sample rate	サンプルレート
+MP3 bit rate	MP3ビットレート
+Title (MP3)	タイトル (MP3)
+Artist (MP3)	アーティスト (MP3)
+Album (MP3)	アルバム (MP3)
+One file for every track (stems, all the same length)	トラックごとに1ファイル(ステム、長さはすべて同じ)
+Stems: keep master volume and limiter	ステム: マスターボリュームとリミッターを含める
+Stems: keep reverb and echo sends	ステム: リバーブとエコーのセンドを含める
+One file for every track (stems)	トラックごとに1ファイル(ステム)
+Stems start at the same point and have the same length.	ステムは同じ位置から始まり、長さも同じです。
+Drop them into Logic Pro, Ableton Live or Cubase at bar 1.	Logic Pro、Ableton Live、Cubaseの1小節目にドラッグしてください。
+Exported %1 files.	%1個のファイルを書き出しました。
+Export every track to a folder	すべてのトラックをフォルダーに書き出し
+128 kbps	128 kbps
+160 kbps	160 kbps
+192 kbps	192 kbps
+224 kbps	224 kbps
+256 kbps	256 kbps
+320 kbps	320 kbps
+44.1 kHz	44.1 kHz
+48 kHz	48 kHz
+88.2 kHz	88.2 kHz
+96 kHz	96 kHz
+This file type is not supported (%1). Supported: %2	このファイル形式には対応していません (%1)。対応形式: %2
+no extension	拡張子なし
+MP3 export is not available on this system.	このコンピューターではMP3の書き出しを利用できません。
+MP3 files can be 44.1 or 48 kHz.	MP3ファイルは44.1kHzまたは48kHzです。
+The MP3 encoder failed.	MP3エンコーダーが失敗しました。
+This sample rate is not supported.	このサンプルレートには対応していません。
+AIFF files are 16-bit or 24-bit.	AIFFファイルは16ビットまたは24ビットです。
+The project is too long to export in this format (90 minutes at most).	プロジェクトが長すぎるため、この形式では書き出せません(最大90分)。

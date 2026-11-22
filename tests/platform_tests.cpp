@@ -6,11 +6,14 @@
 #include <cstdio>
 #include <thread>
 #include "../src/core/Files.h"
+#include "../src/core/FileTypes.h"
+#include "aiff_util.h"
 #include "../src/core/I18n.h"
 #include "../src/core/Session.h"
 #include "../src/platform/Audio.h"
 #include "../src/platform/Decode.h"
 #include "../src/platform/Midi.h"
+#include "../src/platform/Mp3Encode.h"
 #include "../src/platform/PluginHost.h"
 int fails = 0;
 #define CHECK(c) do { if (!(c)) { std::printf("FAIL line %d: %s\n", __LINE__, #c); ++fails; } } while (0)
@@ -96,6 +99,23 @@ static void testDecode() {
     const std::string odd = wavFile("b.dat", 3000);                     // a WAV with another extension is still read
     CHECK(platform::decodeFile(odd, pcm, &err) && pcm.size() == 6000);
     CHECK(!platform::decodeFile("/tmp/minidaw_platform_missing.wav", pcm, &err) && !err.empty());
+    // the MP3 encoder is the operating system\'s: on this platform it says so clearly instead of failing silently
+    {
+        std::vector<float> st(2000, 0.f);
+        std::string merr;
+        const bool ok = platform::encodeMp3(st, 44100, 192, "/tmp/minidaw_platform_enc.mp3", &merr);
+        CHECK(ok == platform::mp3EncoderAvailable());
+        CHECK(ok || !merr.empty());
+        CHECK(!platform::encodeMp3(st, 22050, 192, "/tmp/minidaw_platform_enc2.mp3", &merr));   // MP3 export is 44.1 / 48 kHz only
+    }
+    // AIFF is read by the core on every platform, by extension; the list of decodable extensions includes it
+    {
+        const std::string aif = writeTestAiff("/tmp/minidaw_platform_test.aiff", false, false, 44100, 700);
+        CHECK(platform::decodeFile(aif, pcm, &err) && pcm.size() == 1400 && std::fabs(pcm[100] - 0.25f) < 1e-4f);
+        bool listed = false;
+        for (const auto& e : platform::decodableExtensions()) if (e == ".aiff") listed = true;
+        CHECK(listed);
+    }
     writeFile("/tmp/minidaw_platform_c.mp3", "not really an mp3");
     CHECK(!platform::decodeFile("/tmp/minidaw_platform_c.mp3", pcm, &err));
     const auto ext = platform::decodableExtensions(); CHECK(!ext.empty() && ext[0] == ".wav");

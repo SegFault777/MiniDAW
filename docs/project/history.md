@@ -1,16 +1,19 @@
-# 이력 (요약)
+# History (summary)
 
-| 버전 | 한 일 |
+| Version | What was done |
 | --- | --- |
-| v0.4_1 ~ v0.5_1 | 리전 복사/붙이기, 트랙 복제, 오디오 입력과 녹음 지연 보정, 바운스 대화상자, 빌드 오류 수정 |
-| v0.6 | 팬/센드 오토메이션, 자동 저장과 복구, 마커, 트랙 이동/색, 코러스·필터, 최근 프로젝트, 탭 템포, 플러그인 SDK |
-| v0.7 | **Qt 없는 코어 분리** (`Session`, `Json`, `Files`, `AudioIO`, `MidiOps`), Logic 스타일 기능 6개 |
-| v0.8 / 0.8_1 | **Qt 없는 플랫폼 계층**(WASAPI, winmm, Media Foundation), 편집 기능 7개(레가토, 트랜스포즈, 크레셴도, 반복, 합치기, 템포 감지, 패턴→MIDI), 빌드 오류 수정 |
-| v0.9 | **Qt 없는 UI 툴킷**과 네이티브 앱의 첫 화면(컨트롤 바, 편곡, 믹서, 메뉴), 편집 기능 8개 |
-| v0.10 / 0.10_1 | 네이티브에 대화상자, 인스펙터, 피아노 롤, 스텝 시퀀서, 드러머, 오토메이션·템포 레인, 루프 브라우저, 환경설정, 번역 추가. `windows.h`의 `min`/`max` 매크로 오류 수정 |
-| **v0.11** | **네이티브가 제품이 됨**: 설치 프로그램, MiniDAW 플러그인과 VST3를 Qt 없이 호스팅, Logic/Ableton 비교에 따른 UI 재설계(브라우저 + 드래그앤드롭, 디바이스 체인 노브, 트랙 높이, 도움말 바), 피아노 롤 다중 선택, 문서 정리 |
+| v0.4_1 to v0.5_1 | Region copy / paste, track duplication, audio input and recording latency compensation, bounce dialog, build fixes |
+| v0.6 | Pan / send automation, autosave and recovery, markers, track move / colour, chorus and filter, recent projects, tap tempo, plug-in SDK |
+| v0.7 | **The Qt-free core was split off** (`Session`, `Json`, `Files`, `AudioIO`, `MidiOps`), six Logic-style functions |
+| v0.8 / 0.8_1 | **The Qt-free platform layer** (WASAPI, winmm, Media Foundation), seven edit functions (legato, transpose, crescendo, repeat, join, tempo detection, pattern to MIDI), build fixes |
+| v0.9 | **The Qt-free UI toolkit** and the first screen of the Native app (control bar, arrangement, mixer, menus), eight edit functions |
+| v0.10 / 0.10_1 | Dialogs, inspector, piano roll, step sequencer, Drummer, automation and tempo lane, loop browser, preferences and translations added to Native. Fix of the `min` / `max` macros of `windows.h` |
+| v0.11 | **Native became the product:** installer, MiniDAW plug-ins and VST3 hosted without Qt, UI redesign from the Logic / Ableton comparison (browser with drag and drop, device-chain knobs, track heights, help bar), multi-select in the piano roll, documents reorganised |
+| **v0.12** | **Executables renamed** (Native = `MiniDAW.exe`, Qt = `MiniDAWQt.exe`), **portable mode**, documents translated to English, **a new GPU interface built on Vulkan** (`MiniDAWVulkan.exe`) with workspaces, a command palette and a Logic / Ableton-style piano roll, ten functions taken from five DAWs, Qt-only features added to Native; later in the cycle: Logic Pro project import, a 19-page tutorial, icon styles (Material Symbols), a **waveform editor for audio regions** (fade handles, zoom, trim at the playhead), the MIDI channel of a track, IME typing, project file version 4, coalesced undo steps, and a glyph time budget with a background device-list cache against freezes |
 
-## 배운 점
-- 계층을 가르고 **Linux에서 테스트되는 부분을 최대한 넓히자** 빌드 실패의 대부분이 Windows 전용 파일의 `include`와 매크로 문제로 좁혀졌다.
-- 화면도 메모리 속 픽셀로 그리면 **창 없이 테스트하고 스크린샷으로 눈으로 확인**할 수 있다.
-- 번역을 "그릴 때 조회"로 하니 새 화면에 번역 코드를 따로 쓸 필요가 없어졌다.
+## What we learned
+- Work that is slow only on the target system (GDI glyphs for Korean, device enumeration) cannot be found on the test machine. Give it a budget or move it off the UI thread by design, and test the design with a deliberately slow fake.
+- Splitting the layers and **widening the part that is tested on Linux** narrowed most build failures to `include` and macro problems in Windows-only files.
+- If the screen is also drawn into pixels in memory, it can be **tested without a window and checked by eye through screenshots**. The Vulkan UI keeps this by rendering on the CPU with a twin of its shader.
+- Looking translations up "where it is drawn" removed the need to write translation code for each new screen.
+- One command table for menus, shortcuts, palette and help sheet keeps them from ever disagreeing.

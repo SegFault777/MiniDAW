@@ -1,44 +1,43 @@
-# 처음 시작하기
+# Getting started
 
-10분 안에 드럼, 코드, 보컬 자리를 가진 곡의 뼈대를 만들어 봅니다.
+In ten minutes you will build the skeleton of a song with drums, chords and a place for vocals.
 
-## 1. 트랙 만들기
-툴바의 **+ Add Track**을 눌러 트랙 종류를 고릅니다.
+## 1. Make tracks
+Press **+ Add Track** and pick a track type.
 
-| 종류 | 용도 |
+| Type | Use |
 | --- | --- |
-| Audio | 마이크 녹음, 가져온 오디오 파일, 루프 |
-| Software Instrument | 신스나 VST3 악기로 연주하는 MIDI 트랙 |
-| Drummer | 스타일만 고르면 알아서 드럼을 연주해 주는 트랙 |
-| Drum Machine | 킥, 스네어, 하이햇, 클랩을 스텝으로 찍는 트랙 |
+| Audio | Microphone recordings, imported audio files, loops |
+| Software Instrument | A MIDI track played by the synth or a VST3 instrument |
+| Drummer | Pick a style and a virtual drummer plays for you |
+| Drum Machine | Program kick, snare, hi-hat and clap with steps |
 
-## 2. 드럼 만들기
-1. **Drummer** 트랙을 만들고, 레인의 빈 곳을 **더블클릭**하면 4마디짜리 Drummer 리전이 생깁니다.
-2. 리전을 더블클릭하면 아래 패널이 **Drummer** 탭으로 바뀝니다. 스타일(Rock, Pop, Hip-Hop, House, Funk, Disco),
-   복잡도, 음량, 스윙, 필인을 바꿔 보세요. **New variation**을 누르면 같은 설정으로 다른 연주가 나옵니다.
-3. 스페이스 막대로 재생합니다.
+## 2. Make drums
+1. Create a **Drummer** track and **double-click** an empty part of its lane: a 4-bar Drummer region appears.
+2. Double-click the region to open the **Drummer** editor. Try the styles (Rock, Pop, Hip-Hop, House, Funk, Disco), complexity, loudness, swing and fills. **New variation** plays the same settings differently.
+3. Press the space bar to play.
 
-## 3. 코드 넣기
-1. **Software Instrument** 트랙을 만들고 빈 곳을 더블클릭해 MIDI 리전을 만듭니다.
-2. 리전을 더블클릭하면 **Piano Roll** 탭이 열립니다. 격자를 클릭해 노트를 찍고, 끌어서 길이를 늘립니다.
-3. 소리가 마음에 들지 않으면 오른쪽 **Browser**의 *Instruments*에서 악기를 트랙으로 끌어다 놓거나,
-   **Devices** 탭의 노브로 소리를 다듬습니다.
+## 3. Add chords
+1. Create a **Software Instrument** track and double-click an empty part of its lane to make a MIDI region.
+2. Double-click the region to open the **Piano Roll**. Click in the grid to draw notes and drag to make them longer.
+3. If you do not like the sound, drag an instrument from the **Browser** (*Instruments*) onto the track, or shape it with the knobs of the **Devices** tab.
+   In the Vulkan version try the **Riff Machine** (`Ctrl+R`) for an instant melody in the key you choose, or stamp whole chords with the **Stamp** menu.
 
-## 4. 루프 붙이기
-오른쪽 **Browser**의 *Loops*에서 항목을 한 번 클릭하면 미리 들을 수 있습니다.
-마음에 들면 **트랙으로 끌어다 놓거나** 더블클릭합니다. 프로젝트 템포와 다르면 인스펙터에서
-**Follow project tempo**를 켜서 템포를 맞춥니다.
+## 4. Add loops
+Click an item in the **Browser** (*Loops*) to audition it. When you like it, **drag it onto a track** or double-click it. If its tempo differs from the project, switch on **Follow project tempo** in the inspector,
+or use **Adapt Project Tempo to Region** (Vulkan) to make the project follow the loop.
 
-## 5. 녹음하기
-1. Audio 트랙 머리의 **R**을 눌러 녹음 대기 상태로 만듭니다.
-2. 상단 **●** 버튼(또는 `R` 키)을 누르고 연주하거나 노래합니다.
-3. 정지하면 리전이 생깁니다. 자세한 내용은 [녹음](recording.md)을 보세요.
+## 5. Record
+1. Press **R** on an audio track header so that it turns red.
+2. Press **record** (or the `R` key) and play or sing.
+3. Stop and a region appears. See [Recording](recording.md).
 
-## 6. 저장과 내보내기
-- **File > Save** (`Ctrl+S`)로 `.mdaw` 프로젝트를 저장합니다.
-- **File > Bounce to WAV...** (`Ctrl+B`)로 완성한 곡을 WAV 파일로 내보냅니다.
-- 작업 중에는 자동 저장이 돌아가며, 프로그램이 비정상 종료되면 다음 실행 때 복구할지 물어 봅니다.
+## 6. Save and export
+- **File > Save** (`Ctrl+S`) stores a `.mdaw` project.
+- **File > Bounce / Export Audio...** (`Ctrl+B`) exports the finished song as a WAV file.
+- Autosave runs while you work; after a crash MiniDAW offers to restore the last autosaved project.
 
-## 막혔을 때
-- 화면 맨 아래 상태 표시줄은 마우스를 올린 버튼의 사용법을 알려 줍니다.
-- 실수했다면 `Ctrl+Z`.
+## When you are stuck
+- The status bar at the bottom explains the control under the mouse.
+- Made a mistake? `Ctrl+Z`.
+- Vulkan version: `Ctrl+K` finds any command by typing a few letters; `F1` lists every shortcut.

@@ -1,28 +1,29 @@
-# 브라우저와 루프
+# Browser and loops
 
-오른쪽의 **Browser**는 세 가지 목록을 한곳에 모아 둡니다.
+The **Browser** gathers three lists in one place. (Native: on the right; Vulkan: on the left.)
 
-| 목록 | 내용 | 놓을 수 있는 곳 |
+| List | Contents | Where you can drop it |
 | --- | --- | --- |
-| **Loops** | 루프 폴더의 오디오 파일 (파일 이름에 `100 BPM` 같은 표기가 있으면 템포가 보입니다) | Audio 트랙, 또는 편곡 영역의 빈 곳(새 Audio 트랙이 생깁니다) |
-| **Instruments** | Synth, Drum Kit, 설치된 VST3 악기 | Software Instrument 트랙, 또는 빈 곳(새 트랙이 생깁니다) |
-| **Effects** | 내장 이펙트, MiniDAW 플러그인, VST3 이펙트 | 아무 트랙 (인서트로 추가됩니다) |
+| **Loops** | Audio files of the loops folder (a name such as `100 BPM` shows the tempo) | An Audio track, or an empty area of the arrangement (a new Audio track is created) |
+| **Instruments** | Synth, Drum Kit, installed VST3 instruments | A Software Instrument track, or an empty area (a new track is created) |
+| **Effects** | Built-in effects, MiniDAW plug-ins, VST3 effects | Any track (added as an insert) |
 
-## 쓰는 법
-- **검색창**에 글자를 치면 이름이나 제조사가 맞는 항목만 보입니다. `Esc`로 지웁니다.
-- **한 번 클릭**: 루프는 바로 미리 들을 수 있습니다.
-- **더블클릭**: 루프는 재생 헤드 위치에, 악기와 이펙트는 선택한 트랙에 넣습니다.
-- **끌어다 놓기**: 항목 옆에 이름표가 따라다니고, 놓는 위치에 따라 위 표처럼 동작합니다.
-- 제목줄(▾ Loops, ▾ Instruments, ▾ Effects)을 클릭하면 그 목록을 접습니다.
-- 브라우저 전체를 `L`로 숨기거나 보입니다.
+## How to use it
+- Type in the **search box** to see only items whose name or vendor matches. `Esc` clears it.
+- **One click**: a loop is auditioned at once. (**Preview** can be switched off: *View > Browser: Preview on Click* in Native, the *Preview* box in Vulkan.)
+- **Double-click**: a loop goes to the playhead, an instrument or effect to the selected track.
+- **Drag and drop**: a name tag follows the cursor and dropping works as in the table above.
+- Click a heading (Loops, Instruments, Effects) to fold that list.
+- `L` (Native) or `B` (Vulkan) hides and shows the whole browser.
 
-## 루프 폴더
-설치 폴더의 `loops`를 먼저 찾습니다. 다른 폴더를 쓰려면 **Preferences > Loops folder**에 경로를 적습니다.
-`.wav .mp3 .flac .ogg .m4a .aif .aiff` 파일이 하위 폴더까지 목록에 올라옵니다.
-(OGG는 Windows 기본 코덱으로 열리지 않을 수 있습니다.)
+## The loops folder
+MiniDAW first looks for `loops` in the installation folder. To use another folder, choose it in **Preferences > Loops folder** (or with *Choose Loops Folder...*).
+`.wav .mp3 .flac .ogg .m4a .aif .aiff` files, including those in sub-folders, appear in the list. (OGG may not open with the default Windows codecs.)
 
-## 루프의 템포 맞추기
-오디오 리전은 원본 속도로 재생됩니다. 프로젝트 템포에 맞추려면
-1. 리전을 선택하고 **인스펙터**를 엽니다.
-2. **Follow project tempo**를 켭니다. 템포를 아직 모르면 자동으로 분석합니다.
-3. 맞지 않으면 **Functions > Detect Tempo...**로 분석 결과를 확인하세요.
+## Matching a loop to the tempo
+An audio region plays at its original speed. To fit it to the project tempo
+1. Select the region and open the **inspector**.
+2. Switch on **Follow project tempo**. If the tempo is not known yet, it is analysed automatically.
+3. If it does not fit, check the analysis with **Functions > Detect Tempo...**.
+
+Or go the other way round (Vulkan): **Region > Adapt Project Tempo to Region...** changes the project tempo so that the loop lasts exactly the number of beats you give.

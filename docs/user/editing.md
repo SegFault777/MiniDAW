@@ -1,82 +1,112 @@
-# 편집
+# Editing
 
-## 리전
-리전은 트랙 위에 놓인 "조각"입니다. 오디오 리전은 녹음/파일의 일부를, MIDI 리전은 노트를 담고 있습니다.
+## Regions
+A region is a "piece" lying on a track. An audio region holds part of a recording or file, a MIDI region holds notes.
 
-| 하고 싶은 일 | 방법 |
+| To do this | Native | Vulkan |
+| --- | --- | --- |
+| Select | click | click |
+| Move | drag (follows the Snap grid) | drag (follows the grid; hold `Alt` to move freely) |
+| Resize | drag the right edge | drag the right edge |
+| Duplicate while moving | - | `Alt`+drag (Logic Pro / Pro Tools) |
+| Split | put the playhead there and `Ctrl+T` | `S` at the playhead, or the **Scissors** tool (`3`) and a click |
+| Copy / cut / paste | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` (paste goes to the playhead) | same |
+| Duplicate | `Ctrl+D` | `Ctrl+D` |
+| Delete | `Delete` | `Delete` (the **Eraser** tool `4` deletes by clicking); `Shift+Delete` is a **Ripple Delete** that closes the gap (Pro Tools Shuffle) |
+| Mute | `Ctrl+M` | `Ctrl+Shift+M`, or the **Mute** tool (`5`) |
+| Rename | `F2` | `F2` |
+| Create | double-click an empty part of a Software Instrument / Drummer lane (4 bars) | the same, or draw with the **Pencil** (`2`) |
+
+All editing functions are in the **Functions** menu (Native) or the **Region / MIDI / Audio** menus (Vulkan), and in the right-click menu of a region.
+
+### All regions
+- **Repeat Region...** - puts N copies one after another.
+- **Join Regions** - merges the region with the next one. MIDI notes are combined; audio from the same recording is joined.
+
+### MIDI region functions
+| Function | Description |
 | --- | --- |
-| 선택 | 클릭 |
-| 이동 | 끌기 (Snap 격자에 맞춰 움직입니다) |
-| 길이 조절 | 오른쪽 가장자리를 끌기 |
-| 자르기 | 재생 헤드를 놓고 `Ctrl+T` |
-| 복사 / 잘라내기 / 붙이기 | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` (붙이기는 재생 헤드 위치에 붙습니다) |
-| 복제 | `Ctrl+D` |
-| 삭제 | `Delete` |
-| 음소거 | `Ctrl+M` |
-| 이름 바꾸기 | `F2` |
-| 만들기 | Software Instrument / Drummer 트랙의 빈 곳을 더블클릭 (4마디) |
+| Quantize... | Moves notes onto a grid (1/4 to 1/32) with strength (0-100%), swing and an option to quantize lengths too. |
+| Scale Quantize... | Moves notes into the key and scale you choose. 12 scales. |
+| Humanize... | Loosens timing and velocity a little so it sounds played by a person. |
+| Arpeggiate... | Spreads stacked notes into an arpeggio. |
+| Chord Trigger... | Turns single notes into chords (10 types). |
+| Transpose... | -48 to +48 semitones |
+| Crescendo / Decrescendo... | Changes velocity gradually from a start to an end value. |
+| Fixed Note Length... | Makes all notes the same length |
+| Scale Velocity... | Multiplies velocity (%) and adds an offset |
+| Legato | Stretches each note up to the next one. |
+| Fix Overlaps | Cuts the earlier note when the same pitch overlaps. |
+| Remove Duplicate Notes | Keeps one of two identical notes. |
+| Retrograde | Plays backwards |
+| Invert Pitches | Mirrors the pitches around the middle of the lowest and highest note. |
 
-**Functions 메뉴**(또는 리전을 오른쪽 클릭)에 모든 편집 기능이 있습니다.
-
-### 모든 리전
-- **Repeat Region...** - 복사본을 N개 이어 붙입니다.
-- **Join Regions** - 다음 리전과 합칩니다. MIDI는 노트가 합쳐지고, 같은 녹음에서 나온 오디오는 이어 붙습니다.
-
-### MIDI 리전 기능
-| 기능 | 설명 |
+### Audio region functions
+| Function | Description |
 | --- | --- |
-| Quantize... | 노트를 격자(1/4 ~ 1/32)에 맞춥니다. 세기(0~100%)와 스윙, 길이 포함 여부를 정할 수 있습니다. |
-| Scale Quantize... | 노트를 고른 조(key)와 음계에 맞춥니다. 12가지 음계가 있습니다. |
-| Humanize... | 타이밍과 벨로시티를 조금씩 흐트러뜨려 사람이 친 것처럼 만듭니다. |
-| Arpeggiate... | 겹쳐 있는 노트를 아르페지오로 풀어 줍니다. |
-| Chord Trigger... | 단일 노트를 코드(10종)로 바꿉니다. |
-| Transpose... | -48 ~ +48 반음 이동 |
-| Crescendo / Decrescendo... | 벨로시티를 시작값에서 끝값으로 서서히 바꿉니다. |
-| Fixed Note Length... | 모든 노트 길이를 같게 |
-| Scale Velocity... | 벨로시티에 배율(%)과 더하기 값을 적용 |
-| Legato | 각 노트를 다음 노트까지 늘입니다. |
-| Fix Overlaps | 같은 음이 겹치면 앞 노트를 잘라 줍니다. |
-| Remove Duplicate Notes | 같은 자리에 같은 음이 둘이면 하나만 남깁니다. |
-| Retrograde | 거꾸로 연주 |
-| Invert Pitches | 가장 낮은 음과 높은 음의 가운데를 기준으로 음높이를 뒤집습니다. |
+| Strip Silence... | Cuts away the parts quieter than a threshold (dB). You set the minimum silence length and padding; the cut edges get a short fade. |
+| Detect Tempo... | Analyses the tempo and lets you choose *follow the project tempo* or *set the project tempo to this value*. |
+| Reverse Region | Plays backwards |
+| Trim Start to Playhead / Trim End to Playhead | Cuts the start or the end of the region at the playhead (Vulkan version; the audio keeps its place, the region only gets shorter). Not for stretched or transposed audio. See [the audio editor](vulkan-interface.md). |
+| Normalize Region | Raises the level until the loudest peak reaches the maximum. |
+| Measure Loudness | Reports the integrated loudness of the region in LUFS (ITU-R BS.1770 / EBU R128). |
 
-### 오디오 리전 기능
-| 기능 | 설명 |
-| --- | --- |
-| Strip Silence... | 기준(dB)보다 조용한 구간을 잘라 냅니다. 최소 무음 길이와 여유(padding)를 정할 수 있고, 잘린 가장자리에는 짧은 페이드가 붙습니다. |
-| Detect Tempo... | 템포를 분석해 **프로젝트 템포를 따라가기** 또는 **프로젝트 템포를 이 값으로**를 고르게 합니다. |
-| Reverse Region | 거꾸로 재생 |
-| Normalize Region | 가장 큰 소리가 최대가 되도록 키웁니다. |
-| Measure Loudness | 구간의 통합 라우드니스를 LUFS로 알려 줍니다(ITU-R BS.1770 / EBU R128). |
+Strip Silence cannot be used on audio that has been stretched or transposed (Follow project tempo, Transpose).
 
-늘이거나 음정을 바꾼 오디오(Follow project tempo, Transpose)에는 Strip Silence를 쓸 수 없습니다.
+The **gain** and the **fade in / out** of an audio region are set in the inspector (sliders) or, in the Vulkan version, by dragging the fade handles in the [audio editor](vulkan-interface.md).
 
-## 피아노 롤
-MIDI 리전을 더블클릭하거나 아래 패널의 **Piano Roll** 탭(`P`)을 엽니다.
+## Functions borrowed from other DAWs (v0.12, Vulkan version)
+| From | Function | What it does |
+| --- | --- | --- |
+| **Logic Pro** | **Adapt Project Tempo to Region...** (Region menu) | Sets the project tempo so the selected audio region lasts exactly N beats (0 = guess the beats from the audio). Drop in a drum loop and the whole project follows it. |
+| **Logic Pro** | **Make Groove Template** / **Apply Groove Template...** (MIDI menu) | Takes the timing and velocity feel of one MIDI region and lays it over another, with a strength control. |
+| **Ableton Live** | **Capture MIDI** (`Ctrl+Shift+C`) | Turns what you just played, without recording, into a MIDI region. See [Recording](recording.md). |
+| **Ableton Live** | **Fold** and **Scale Highlight** in the piano roll; **Transform** tools | Fold shows only the rows that have notes or belong to the scale; Highlight shades the scale and outlines notes outside it; Stretch x2 / /2, Strum, Double Pattern in the Functions menu. |
+| **FL Studio** | **Chord Stamp** (Stamp menu of the piano roll) | One click writes a whole chord (any of 10 types, or a diatonic triad / seventh in the key). |
+| **FL Studio** | **Riff Machine...** (`Ctrl+R`, `Ctrl+Alt+R` for a new roll) | Writes a musical melody in the key and scale you pick; the seed decides which riff you get. |
+| **Cubase** | **Logical Editor...** (`Ctrl+L`) | Filter notes by pitch, velocity, length and position (two conditions) and then delete, transpose, set or scale velocity and length, move... all the matching notes. |
+| **Cubase** | **MixConsole Snapshots** | Save the whole mixer balance under a name and recall it; see [Mixing](mixing-and-effects.md). |
+| **Pro Tools** | **Tab to Transient** (`Tab` / `Shift+Tab`) | Jumps the playhead to the next / previous hit of the selected audio region. |
+| **Pro Tools** | **Beat Detective...** (Region menu) | Cuts an audio region at its transients and can pull the pieces onto the grid (conform). |
 
-- **노트 추가**: 빈 칸을 클릭합니다. 클릭한 채 오른쪽으로 끌면 길이가 정해집니다.
-- **이동**: 노트를 끕니다(시간과 음높이). **크기 조절**: 노트의 오른쪽 끝을 끕니다.
-- **삭제**: 노트를 오른쪽 클릭하거나 선택하고 `Delete`.
-- **여러 노트 선택**: `Shift`+클릭으로 추가/제거, 빈 곳을 `Shift`+드래그하면 사각형으로 선택, `Ctrl+A`는 전부.
-  선택한 노트는 한꺼번에 이동하고 크기가 바뀌며, `Ctrl+C` / `Ctrl+X` / `Ctrl+V`(재생 헤드에 붙이기),
-  `Ctrl+D`(바로 뒤에 복제)를 쓸 수 있습니다.
-- **벨로시티**: 아래 막대 영역에서 막대를 위아래로 끕니다.
-- **건반**: 왼쪽 건반을 클릭하면 소리가 납니다.
-- **확대/축소**: `Ctrl`+휠(가로), 휠(세로 스크롤), `Shift`+휠(가로 스크롤)
+## Piano roll
+Double-click a MIDI region, or open the **Piano Roll** tab (`P`, Native) / **Editor** tab (`E`, Vulkan).
 
-## 스텝 시퀀서
-Drum Machine 트랙을 선택하면(헤더 더블클릭) **Step Sequencer** 탭이 열립니다.
-4줄(Kick, Snare, Hi-Hat, Clap) x 16스텝의 칸을 클릭해 켜고 끄고, 끌어서 여러 칸을 칠할 수 있습니다.
-재생 중에는 지금 스텝에 흰 테두리가 따라갑니다. 패턴은 한 마디(16분음표 16개)씩 반복됩니다.
-**Track > Convert Pattern to MIDI Region...**으로 패턴을 MIDI 리전(몇 마디든)으로 바꿀 수 있습니다.
+- **Add a note**: click an empty cell; drag to the right to set the length.
+- **Move**: drag a note (time and pitch). **Resize**: drag the right end of a note.
+- **Delete**: right-click a note, or select it and press `Delete`.
+- **Select several notes**: `Shift`+click adds / removes, `Shift`+drag on an empty spot draws a rectangle, `Ctrl+A` selects all.
+  Selected notes move and resize together, and you can use `Ctrl+C` / `Ctrl+X` / `Ctrl+V` (paste at the playhead) and `Ctrl+D` (duplicate right behind).
+- **Velocity**: drag the bars in the lower area up and down.
+- **Keys**: click the keys on the left to hear them.
+- **Zoom**: `Ctrl`+wheel (horizontal), wheel (vertical scroll), `Shift`+wheel (horizontal scroll)
 
-## 드러머
-Drummer 리전을 선택하고 **Drummer** 탭을 엽니다.
+### The Vulkan piano roll
+The Vulkan version's piano roll follows the MIDI editors of Logic Pro and Ableton Live:
+- A real **piano** on the left; click or glide across it to hear the notes.
+- **Velocity colours** (Logic Pro): blue = soft, green, yellow, red = hard; switch to track colour with the *Colour* menu. Notes show their names when long enough.
+- **Region bar** above the ruler (Logic Pro): drag its end to resize the region.
+- **Grid** menu with **Auto** (Ableton Live), **Snap**, and a **Quantize** button with its own value (`Q`).
+- **Functions** menu: Scale Quantize, Humanize, Legato, Fixed Length, Transpose, Crescendo, Stretch, Strum, Double Pattern, Retrograde, Chord Trigger, Arpeggiator, Logical Editor, Groove ...
+- The **chord** of the selected notes (or of what sounds at the playhead) is named in the toolbar: C, Am, G7, Cmaj7, C/E ...
+- **Key and scale**, **Highlight**, **Fold**, **Lock** (notes snap to the scale), **Stamp** (chords), **Ghost** notes of the other regions.
+- A **velocity lane** you can paint: drag across the notes. Drag the divider above it to make it taller.
+- Keys: `B` draw mode, `Q` quantize, arrows nudge in time (left / right) or by a semitone (up / down; `Shift` = octave), `Ctrl+D` duplicate, `Alt`+drag copy, `Delete` remove, `Esc` deselect.
+- Two zoom sliders (H and V) in the toolbar and the **info line** in the status bar that describes the note under the mouse.
+- `Shift+X` makes the bottom panel as large as possible; `F7` switches to the Edit workspace.
+
+## Step sequencer
+Select a Drum Machine track (double-click its header) and the **Step Sequencer** tab opens. Click the cells of 4 rows (Kick, Snare, Hi-Hat, Clap) x 16 steps to switch them on or off; drag to paint several cells.
+While playing, the current step has a white outline. The pattern repeats one bar (sixteen 16th notes) at a time.
+**Track > Convert Pattern to MIDI Region...** turns the pattern into a MIDI region of any number of bars.
+
+## Drummer
+Select a Drummer region and open the **Drummer** tab.
 - **Style**: Rock, Pop, Hip-Hop, House, Funk, Disco
-- **Complexity / Loudness / Swing**: 슬라이더
-- **Fills**: 마디 끝의 필인
-- **New variation**: 같은 설정에서 다른 연주 (난수 시드를 바꿉니다)
-- **Bars**: 리전 길이
+- **Complexity / Loudness / Swing**: sliders
+- **Fills**: a fill at the end of bars
+- **New variation**: the same settings played differently (changes the random seed)
+- **Bars**: region length
 
-## 되돌리기
-`Ctrl+Z` (되돌리기), `Ctrl+Shift+Z` 또는 `Ctrl+Y` (다시 하기). 템포와 오토메이션 변경도 되돌릴 수 있습니다.
+## Undo
+`Ctrl+Z` (undo), `Ctrl+Shift+Z` or `Ctrl+Y` (redo). Tempo and automation changes can be undone too. The last 60 steps are kept. A drag (a fade handle, or the gain and fade sliders of an audio region) is one step, not one per movement.

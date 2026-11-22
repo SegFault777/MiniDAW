@@ -1,25 +1,35 @@
-# 설치
+# Installation
 
-## 설치 프로그램 (권장)
-1. 릴리스 페이지에서 `MiniDAW-<버전>-setup.exe`를 내려받아 실행합니다.
-2. 설치 형태를 고릅니다. 관리자 권한 없이 **내 계정에만** 설치하거나, **모든 사용자**용으로 설치할 수 있습니다.
-3. 선택 항목
-   - 바탕화면 바로가기
-   - `.mdaw` 프로젝트 파일 연결 (더블클릭으로 열기)
-   - 내 플러그인용 폴더 만들기 (`%LOCALAPPDATA%\MiniDAW\plugins`)
-4. 설치가 끝나면 시작 메뉴의 **MiniDAW**를 실행합니다.
+## Installer (recommended, Native version)
+1. Download `MiniDAW-<version>-setup.exe` from the release page and run it.
+2. Choose how to install: for **your account only** (no administrator rights needed) or for **all users**.
+3. Optional items
+   - desktop shortcut
+   - association of `.mdaw` project files (double-click to open)
+   - a folder for your own plug-ins (`%LOCALAPPDATA%\MiniDAW\plugins`)
+4. When the installer finishes, start **MiniDAW** from the Start menu.
 
-이전 Qt 버전이 설치되어 있으면 같은 설치 프로그램이 **그 위에 업그레이드**하고 필요 없는 Qt 파일은 지웁니다.
+If an older Qt version is installed, the same installer **upgrades it in place** and removes the Qt files that are no longer needed.
 
-## 설치 없이 쓰기 (포터블)
-`MiniDAW-windows-x64-portable.zip`을 원하는 폴더에 풀고 `MiniDAW.exe`를 실행합니다.
-설정과 자동 저장 파일은 프로그램 폴더가 아니라 `%LOCALAPPDATA%\MiniDAW`에 저장되므로, 폴더를 옮겨도 설정이 유지됩니다.
+## The Vulkan version has an installer too
+`MiniDAW-Vulkan-<version>-setup.exe` installs the Vulkan version (`MiniDAWVulkan.exe`) as **MiniDAW Vulkan**, in its own folder and with its own Start menu entry, so it can sit next to the
+Native version. Associating `.mdaw` files with it is off by default because the Native version may already use them. Both versions open the same projects.
 
-## 시스템 요구 사항
-- Windows 10 또는 11 (64비트)
-- 소리를 낼 오디오 장치 (내장 소리 장치도 충분합니다)
-- 녹음을 하려면 마이크 또는 오디오 인터페이스
+## Portable editions (no installation)
+| Download | Contents |
+| --- | --- |
+| `MiniDAW-windows-x64-portable.zip` | Native version: `MiniDAW.exe` |
+| `MiniDAW-Vulkan-windows-x64-portable.zip` | Vulkan version: `MiniDAWVulkan.exe` and its `shaders` folder |
+| `MiniDAW-Qt-windows-x64-portable.zip` | Qt version: `MiniDAWQt.exe` |
 
-## 삭제
-설정 > 앱 > MiniDAW > 제거. 설정, 자동 저장 파일, 내가 넣은 플러그인은
-`%LOCALAPPDATA%\MiniDAW`에 그대로 남습니다. 완전히 지우려면 이 폴더를 삭제하세요.
+Unzip into any folder (a USB stick works too) and run the program. In the Native and Vulkan editions the file **`MiniDAW.portable`** sits next to the program: it switches on
+**portable mode**. Settings, autosaves and your own plug-ins are then kept in the **`data`** folder beside the program, so nothing is written to the computer and you can
+carry everything with you. Delete `MiniDAW.portable` to use `%LOCALAPPDATA%\MiniDAW` again. The status bar of the Vulkan version shows "Portable" when the mode is on.
+
+## System requirements
+- Windows 10 or 11 (64-bit)
+- An audio device for playback (the built-in sound device is fine); a microphone or audio interface for recording
+- Vulkan version only: a graphics card or integrated GPU with a Vulkan 1.0 driver (all graphics drivers since about 2017 include one). If Vulkan is not available the program says so and offers to start the Native version.
+
+## Uninstall
+Settings > Apps > MiniDAW > Uninstall. Your settings, autosaves and your own plug-ins stay in `%LOCALAPPDATA%\MiniDAW`; delete that folder to remove them completely.

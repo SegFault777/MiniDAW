@@ -11,6 +11,8 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#include <objbase.h>
+#include <shlobj.h>
 #include <windowsx.h>
 #include <commdlg.h>
 #include <shellapi.h>
@@ -26,17 +28,19 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../core/AppPaths.h"
 #include "../core/Session.h"
 #include "../platform/Audio.h"
 #include "../core/I18n.h"
 #include "../platform/Decode.h"
+#include "../platform/Mp3Encode.h"
 #include "../platform/Midi.h"
 #include "../platform/PluginHost.h"
 #include "../ui/Ui.h"
 #include "Vst3Native.h"
 
 #ifndef MINIDAW_VERSION
-#define MINIDAW_VERSION "0.11"
+#define MINIDAW_VERSION "0.12"
 #endif
 
 namespace {
@@ -211,10 +215,24 @@ std::string fileDialog(HWND owner, const std::string& title, const std::string& 
     return ok ? narrow(path) : std::string();
 }
 
-void importDropped(App& a, const std::string& path) {
-    a.ui->message("Importing " + path);
-    a.session.importAudio(path, -1, a.session.positionBeats());
+// "Choose Loops Folder", "Add VST3 Folder": the shell's folder picker.
+std::string folderDialog(HWND owner, const std::string& title) {
+    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);   // harmless when COM is already running on this thread
+    const std::wstring t = widen(title);
+    BROWSEINFOW bi{};
+    bi.hwndOwner = owner;
+    bi.lpszTitle = t.c_str();
+    bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+    PIDLIST_ABSOLUTE pidl = SHBrowseForFolderW(&bi);
+    if (!pidl) return {};
+    wchar_t path[MAX_PATH * 2] = {};
+    const BOOL ok = SHGetPathFromIDListW(pidl, path);
+    CoTaskMemFree(pidl);
+    return ok ? narrow(path) : std::string();
 }
+
+// Dropped files and the file given on the command line ("open with"): projects, audio files and MIDI files are all accepted.
+void importDropped(App& a, const std::string& path) { a.ui->openAny(path); }
 
 LRESULT CALLBACK wndProc(HWND h, UINT m, WPARAM w, LPARAM l) {
     App* a = gApp;
@@ -370,8 +388,10 @@ void openMidi(App& a) {
                 if (cmd == 0x90 && d2 > 0) a.session.noteOn(track, d1, d2);
                 else if (cmd == 0x80 || (cmd == 0x90 && d2 == 0)) a.session.noteOff(track, d1);
             });
-            return;
+            if (a.midi) return;
+            break;   // the device exists but could not be opened
         }
+    if (a.ui) a.ui->message("Could not open the MIDI input " + want);
 }
 
 std::vector<std::string> splitFolders(const std::string& text) {
@@ -438,8 +458,8 @@ int main() {
         GetModuleFileNameW(nullptr, exe, DWORD(std::size(exe)));
         std::string path = narrow(exe);
         app.exeDir = path.substr(0, path.find_last_of("/\\"));
-        const std::string appData = envDir("LOCALAPPDATA");
-        app.dataDir = (appData.empty() ? app.exeDir : appData) + "\\MiniDAW";
+        const core::AppPaths paths = core::resolveAppPaths(app.exeDir, envDir("LOCALAPPDATA"), [](const std::string& f) { return GetFileAttributesW(widen(f).c_str()) != INVALID_FILE_ATTRIBUTES; });
+        app.dataDir = paths.dataDir;   // "<exe folder>\\data" in a portable copy, else %LOCALAPPDATA%\\MiniDAW
         CreateDirectoryW(widen(app.dataDir).c_str(), nullptr);
         app.settingsPath = app.dataDir + "\\native-settings.ini";
         loadSettings(app);
@@ -463,6 +483,7 @@ int main() {
     core::Session::Hooks hooks;
     hooks.changed = [&app](bool) { if (app.ui) app.ui->invalidate(); };
     hooks.message = [&app](const std::string& s) { if (app.ui) app.ui->message(s); };
+    hooks.encodeMp3 = [](const std::vector<float>& pcm, int rate, int kbps, const std::string& path, std::string* err) { return platform::encodeMp3(pcm, rate, kbps, path, err); };
     hooks.decode = [&app](const std::string& path, core::Session::DecodeDone done) {
         ++app.decoding;
         std::thread([&app, path, done = std::move(done)]() mutable {
@@ -501,6 +522,7 @@ int main() {
 
     ui::Host host;
     host.fileDialog = [&app](const std::string& t, const std::string& f, bool save) { return fileDialog(app.hwnd, t, f, save); };
+    host.folderDialog = [&app](const std::string& t) { return folderDialog(app.hwnd, t); };
     host.quit = [&app] { PostMessageW(app.hwnd, WM_CLOSE, 0, 0); };
     host.setTitle = [&app](const std::string& t) { SetWindowTextW(app.hwnd, widen(t).c_str()); };
     host.loopFolder = app.settings.count("loops") && !app.settings["loops"].empty() ? app.settings["loops"] : app.exeDir + "\\loops";
@@ -556,7 +578,7 @@ int main() {
     {   // "MiniDAW.exe project.mdaw" (file association, drag a file onto the program)
         int argc = 0;
         wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-        if (argv && argc >= 2) app.ui->openFile(narrow(argv[1]));
+        if (argv && argc >= 2) app.ui->openAny(narrow(argv[1]));
         if (argv) LocalFree(argv);
     }
     SetTimer(app.hwnd, 1, 33, nullptr);

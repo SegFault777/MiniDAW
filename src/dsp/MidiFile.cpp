@@ -79,13 +79,16 @@ bool readMidiFile(const std::vector<std::uint8_t>& data, MidiSong& out, std::str
             if (status == 0xFF) {
                 const int type = data[r.p++];
                 const size_t mlen = r.var();
-                if (type == 0x51 && mlen == 3 && !gotTempo) {
-                    out.bpm = 60000000.0 / double((data[r.p] << 16) | (data[r.p + 1] << 8) | data[r.p + 2]);
-                    gotTempo = true;
-                } else if (type == 0x58 && mlen >= 2 && !gotSig) {
-                    out.num = data[r.p];
-                    out.den = 1 << std::min<int>(data[r.p + 1], 5);
-                    gotSig = true;
+                if (type == 0x51 && mlen == 3 && r.p + 3 <= data.size()) {
+                    const double bpm = 60000000.0 / std::max(1.0, double((data[r.p] << 16) | (data[r.p + 1] << 8) | data[r.p + 2]));
+                    out.tempos.push_back({double(tick) / div, bpm});
+                    if (!gotTempo) { out.bpm = bpm; gotTempo = true; }
+                } else if (type == 0x58 && mlen >= 2 && r.p + 2 <= data.size()) {
+                    const int num = std::max<int>(1, data[r.p]), den = 1 << std::min<int>(data[r.p + 1], 5);
+                    out.meters.push_back({double(tick) / div, num, den});
+                    if (!gotSig) { out.num = num; out.den = den; gotSig = true; }
+                } else if ((type == 0x06 || type == 0x07) && r.p + mlen <= data.size()) {   // marker / cue point
+                    out.markers.push_back({double(tick) / div, std::string(reinterpret_cast<const char*>(&data[r.p]), mlen)});
                 } else if (type == 0x03) {
                     track.name.assign(reinterpret_cast<const char*>(&data[r.p]), std::min(mlen, end - r.p));
                 }
@@ -116,6 +119,12 @@ bool readMidiFile(const std::vector<std::uint8_t>& data, MidiSong& out, std::str
         }
     }
     if (out.tracks.empty()) { error = "The file contains no notes."; return false; }
+    auto byBeat = [](const auto& a, const auto& b) { return a.beat < b.beat; };
+    std::stable_sort(out.tempos.begin(), out.tempos.end(), byBeat);
+    std::stable_sort(out.meters.begin(), out.meters.end(), byBeat);
+    std::stable_sort(out.markers.begin(), out.markers.end(), byBeat);
+    if (!out.tempos.empty()) out.bpm = out.tempos.front().bpm;
+    if (!out.meters.empty()) { out.num = out.meters.front().num; out.den = out.meters.front().den; }
     return true;
 }
 
@@ -129,13 +138,29 @@ std::vector<std::uint8_t> writeMidiFile(const MidiSong& song) {
         put32(o, std::uint32_t(body.size()));
         o.insert(o.end(), body.begin(), body.end());
     };
-    {   // conductor track: tempo and time signature
+    {   // conductor track: the whole tempo map, every time signature change and the markers, in tick order
+        struct Meta { std::uint64_t tick; int order; std::vector<std::uint8_t> bytes; };
+        std::vector<Meta> metas;
+        auto tickOf = [&](double beat) { return std::uint64_t(std::llround(std::max(0.0, beat) * kPpq)); };
+        auto ddOf = [](int den) { int dd = 0; while ((1 << dd) < den) ++dd; return dd; };
+        auto tempoEvent = [](double bpm) {
+            const std::uint32_t mpq = std::uint32_t(std::llround(60000000.0 / std::max(1.0, bpm)));
+            return std::vector<std::uint8_t>{0xFF, 0x51, 0x03, std::uint8_t(mpq >> 16), std::uint8_t(mpq >> 8), std::uint8_t(mpq)};
+        };
+        const auto tempos = song.tempos.empty() ? std::vector<MidiTempoChange>{{0, song.bpm}} : song.tempos;
+        for (const auto& t : tempos) metas.push_back({tickOf(t.beat), 0, tempoEvent(t.bpm)});
+        const auto meters = song.meters.empty() ? std::vector<MidiMeterChange>{{0, song.num, song.den}} : song.meters;
+        for (const auto& m : meters) metas.push_back({tickOf(m.beat), 1, {0xFF, 0x58, 0x04, std::uint8_t(m.num), std::uint8_t(ddOf(m.den)), 24, 8}});
+        for (const auto& mk : song.markers) {
+            std::vector<std::uint8_t> e = {0xFF, 0x06, std::uint8_t(std::min<size_t>(mk.name.size(), 127))};
+            e.insert(e.end(), mk.name.begin(), mk.name.begin() + std::ptrdiff_t(std::min<size_t>(mk.name.size(), 127)));
+            metas.push_back({tickOf(mk.beat), 2, std::move(e)});
+        }
+        std::stable_sort(metas.begin(), metas.end(), [](const Meta& a, const Meta& b) { return a.tick != b.tick ? a.tick < b.tick : a.order < b.order; });
         std::vector<std::uint8_t> b;
-        const std::uint32_t mpq = std::uint32_t(std::llround(60000000.0 / song.bpm));
-        putVar(b, 0); b.insert(b.end(), {0xFF, 0x51, 0x03, std::uint8_t(mpq >> 16), std::uint8_t(mpq >> 8), std::uint8_t(mpq)});
-        int dd = 0;
-        while ((1 << dd) < song.den) ++dd;
-        putVar(b, 0); b.insert(b.end(), {0xFF, 0x58, 0x04, std::uint8_t(song.num), std::uint8_t(dd), 24, 8});
+        putVar(b, 0); b.insert(b.end(), {0xFF, 0x03, 4, 'T', 'e', 'm', 'p'});   // the track name Logic Pro and others expect on the conductor track
+        std::uint64_t last = 0;
+        for (const Meta& m : metas) { putVar(b, std::uint32_t(m.tick - last)); last = m.tick; b.insert(b.end(), m.bytes.begin(), m.bytes.end()); }
         putVar(b, 0); b.insert(b.end(), {0xFF, 0x2F, 0x00});
         chunk(b);
     }

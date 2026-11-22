@@ -21,7 +21,7 @@ jobs:
       - name: Run the tests
         run: bash tests/run.sh
 
-  # The native (Qt-free) version is the product: it gets the installer and the portable zip.
+  # The Native version (MiniDAW.exe) is the one that gets installed: installer plus portable zip (settings in a "data" folder).
   native:
     runs-on: windows-latest
     steps:
@@ -43,7 +43,7 @@ jobs:
         id: ver
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.11-dev' }
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.12-dev' }
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Install Inno Setup
@@ -65,7 +65,7 @@ jobs:
       - name: Upload portable build
         uses: actions/upload-artifact@v4
         with:
-          name: MiniDAW-portable
+          name: MiniDAW-Native-portable
           path: MiniDAW-windows-x64-portable.zip
 
       - name: Publish release
@@ -76,7 +76,7 @@ jobs:
             installer-out/*.exe
             MiniDAW-windows-x64-portable.zip
 
-  # The old Qt version is still built (portable zip only) until the native version has nothing left to learn from it.
+  # The Qt version (MiniDAWQt.exe) is still built (portable zip only).
   qt:
     runs-on: windows-latest
     steps:
@@ -107,7 +107,7 @@ jobs:
         id: ver
         shell: pwsh
         run: |
-          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.11-dev' }
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.12-dev' }
           "version=$v" >> $env:GITHUB_OUTPUT
 
       - name: Build and deploy the Qt version
@@ -127,3 +127,90 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: MiniDAW-Qt-windows-x64-portable.zip
+
+  # The Vulkan version (MiniDAWVulkan.exe): a GPU user interface. Needs the Vulkan headers (header-only) and a GLSL compiler.
+  vulkan:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Get the Vulkan headers
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/KhronosGroup/Vulkan-Headers.git "$RUNNER_TEMP/Vulkan-Headers"
+          echo "VULKAN_HEADERS_DIR=$RUNNER_TEMP/Vulkan-Headers" >> "$GITHUB_ENV"
+
+      # The GLSL compiler. Prebuilt glslang downloads are not reliable (the rolling "main-tot" release has no Windows zip),
+      # so: 1) the LunarG Vulkan SDK from Chocolatey (it contains glslangValidator and glslc), and if that fails
+      # 2) glslang is built from source (about 3 minutes, without the optimizer so no extra dependencies are needed).
+      - name: Get a GLSL compiler
+        shell: bash
+        run: |
+          T="$RUNNER_TEMP"
+          VAL=""
+          if choco install vulkan-sdk -y --no-progress; then
+            VAL="$(find /c/VulkanSDK -iname 'glslangValidator.exe' 2>/dev/null | head -n 1)"
+          else
+            echo "Chocolatey could not install the Vulkan SDK; building glslang from source"
+          fi
+          if [ -z "$VAL" ]; then
+            git clone --depth 1 https://github.com/KhronosGroup/glslang.git "$T/glslang-src"
+            cmake -S "$T/glslang-src" -B "$T/glslang-build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+              -DENABLE_OPT=OFF -DENABLE_HLSL=OFF -DENABLE_CTEST=OFF -DBUILD_EXTERNAL=OFF -DGLSLANG_TESTS=OFF
+            cmake --build "$T/glslang-build" --target glslang-standalone
+            VAL="$(find "$T/glslang-build" -iname 'glslang*.exe' | grep -i -E 'glslang(Validator)?\.exe$' | head -n 1)"
+          fi
+          if [ -z "$VAL" ]; then echo "No GLSL compiler could be found or built"; exit 1; fi
+          VAL="$(cygpath -m "$VAL")"
+          echo "GLSL compiler: $VAL"
+          "$VAL" --version | head -n 3
+          echo "GLSLANG_VALIDATOR=$VAL" >> "$GITHUB_ENV"
+
+      - name: Get the VST3 SDK (optional)
+        shell: bash
+        continue-on-error: true
+        run: |
+          git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/steinbergmedia/vst3sdk.git "$RUNNER_TEMP/vst3sdk"
+          echo "VST3_SDK_DIR=$RUNNER_TEMP/vst3sdk" >> "$GITHUB_ENV"
+
+      - name: Determine version
+        id: ver
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like 'refs/tags/v*') { $v = $env:GITHUB_REF_NAME.Substring(1) } else { $v = '0.12-dev' }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Build, deploy and create the installer
+        shell: bash
+        env:
+          MINIDAW_VERSION: ${{ steps.ver.outputs.version }}
+        run: bash build.sh vulkan-release
+
+      - name: Upload the Vulkan installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniDAW-Vulkan-installer
+          path: installer-out/MiniDAW-Vulkan-*-setup.exe
+
+      - name: Upload the Vulkan portable build
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniDAW-Vulkan-portable
+          path: MiniDAW-Vulkan-windows-x64-portable.zip
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            installer-out/MiniDAW-Vulkan-*-setup.exe
+            MiniDAW-Vulkan-windows-x64-portable.zip

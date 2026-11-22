@@ -1,28 +1,40 @@
-# 코딩 규칙
+# Coding rules
 
-## 일반
-- C++20. 예외는 경계(파일 읽기 등)에서만 쓰고, 오류는 `bool`/`std::string* error`로 돌려줍니다.
-- 계층 규칙은 [architecture.md](architecture.md)를 따릅니다. `src/core` 아래에 UI나 창 관련 코드를 넣지 않습니다.
-- 모델을 바꾸는 `Session` 메서드는 **변경 전에 `checkpoint()`**, 변경 뒤에 `changed(...)`를 부릅니다. 드래그처럼 한 동작이 여러 번 값을 바꾸면
-  **처음에 한 번만** `checkpoint()`를 부르고 중간에는 값만 바꿉니다.
-- UI 스레드가 아닌 곳에서 `NativeUi`를 부르지 않습니다. 다른 스레드의 결과는 `PostMessage`로 넘깁니다.
-- 오디오 콜백(`fillInt16`, `pushRecorded`) 안에서는 메모리 할당, 파일 입출력, 오래 걸리는 잠금을 피합니다.
+## General
+- C++20. Exceptions only at boundaries (reading files and the like); errors are returned as `bool` / `std::string* error`.
+- Follow the layer rules in [architecture.md](architecture.md). No UI or window code under `src/core`.
+- A `Session` method that changes the model calls **`checkpoint()` before the change** and `changed(...)` after it. If one gesture changes values many times (a drag), call `checkpoint()` **once at the start** and only change values afterwards. If the caller cannot tell where a gesture starts (a slider that sets a value every frame), use `checkpointCoalesced(tag)`: a change with the same tag within 0.6 s joins the previous step. `setRegionAudio` has an `undoStep` argument for callers that did the checkpoint themselves. Note edits through `setRegionNotes` do not checkpoint, so call `checkpoint()` first.
+- Never call a UI object (`NativeUi`, `Studio`) from a thread other than the UI thread; pass results from other threads with `PostMessage`.
+- Inside the audio callback (`fillInt16`, `pushRecorded`) avoid memory allocation, file I/O and long locks.
 
-## 문자열과 번역
-- UI에 보이는 영어 문구는 그대로 쓰고(`Canvas`가 번역), 숫자가 섞이면 `%1` 패턴을 씁니다.
-- 코어 메시지는 `Session::tr`을 거칩니다.
-- 파일 경로와 문자열은 내부에서 **UTF-8** `std::string`입니다. Windows API를 부르는 곳에서만 `widen`/`narrow`로 바꿉니다.
+## Strings and translations
+- Write user-visible English text as it is (the canvas / `Studio::tr` translates it); if numbers are mixed in, use the `%1` pattern.
+- Vulkan UI: build messages that contain numbers or names with `Studio::fmt("Saved %1", value)` (pattern first, then fill in); never concatenate English pieces, because the translation table looks up the whole pattern.
+- Core messages go through `Session::tr`.
+- Paths and strings are **UTF-8** `std::string` inside. Convert with `widen` / `narrow` only where the Windows API is called.
 
-## 자주 나는 MSVC 오류
-| 증상 | 원인과 해결 |
+## Vulkan UI habits
+- Coordinates are dp (logical units); `DrawList` applies the scale and pixel-snaps edges.
+- Draw and handle input in one place (`g.interact`). Several edits in one frame make `m_tracks` indices stale: after a deletion check `m_modelDirty` and do one deletion per frame.
+- Add a command with `addCmd` in `StudioCommands.cpp`; do not bind keys elsewhere. Unconditionally active commands must not share a shortcut (a test checks it).
+- Whenever the mouse is over the piano roll, arrows / Delete / Ctrl+C V X D A / Q / B belong to the roll, not to the global commands.
+
+## Frequent MSVC errors
+| Symptom | Cause and fix |
 | --- | --- |
-| `C4003 min/max`, `ParamSet` 정의 안 됨 같은 연쇄 오류 | `windows.h` 앞에 `NOMINMAX`가 없다. 파일 맨 위에서 정의하고 `-DNOMINMAX`도 쓴다 |
-| `std::clamp`/`std::min`이 없다 | `#include <algorithm>` 누락(GCC는 다른 헤더가 끌어와 주므로 Linux에서 안 보인다) |
-| 정의보다 먼저 쓴 `static` 함수 | 파일 위쪽에 선언을 둔다 |
-| `fopen`/`sscanf` 경고 | `-D_CRT_SECURE_NO_WARNINGS`(이미 켜져 있음) |
-| 링크 오류 `LNK2005` (CRT 충돌) | 네이티브와 VST3 SDK는 모두 `-MT`. 섞지 않는다 |
+| `C4003 min/max`, "`ParamSet` is not defined" and similar chains | `NOMINMAX` is missing before `windows.h`. Define it at the top of the file and also use `-DNOMINMAX` |
+| `std::clamp` / `std::min` not found | `#include <algorithm>` is missing (GCC gets it through other headers, so it is invisible on Linux) |
+| A `static` function used before its definition | Put a declaration at the top of the file |
+| A member used before its declaration inside a class | Reorder the members; MSVC and GCC differ in what they accept |
+| `fopen` / `sscanf` warnings | `-D_CRT_SECURE_NO_WARNINGS` (already on) |
+| Link error `LNK2005` (CRT conflict) | Native and the VST3 SDK are both `-MT`. Do not mix |
+| `error C2628: 'TextStyle' followed by 'char'` | `<windows.h>` (rpcndr.h) defines `small` as a macro for `char`. `src/vulkan/Theme.h` does `#undef small`; do the same if you name something `small`, `near` or `far` |
+| `std::min` / `std::max` with `LONG` and `int` | The types must match: write `std::min<int>(a, b)` when mixing Windows types (`LONG`, `DWORD`) with `int` |
+| `warning C4005: 'NOMINMAX': macro redefinition` | The build already passes `-DNOMINMAX`; use `#ifndef NOMINMAX` before defining it in a file |
+| The window is black while its edge is dragged | Windows runs a modal loop while sizing, so the main loop does not render. `VkMain.cpp` draws from `WM_SIZE` / `WM_PAINT` (`renderNow`); keep that when you change the window code |
+| `LNK2019` for `ThreadChecker::create`, `StringConvert::convert` or `IPlugFrame::iid` | A VST3 SDK source file is missing from the build. The place of these files changes between SDK versions, so `build.sh` looks for them by name / content; add a new file name to `vst3_named_sources` if another symbol is missing |
+| Vulkan: a struct field that does not exist | `tests/mock/vulkan/vulkan.h` is only a stand-in; check the field against the real Khronos header |
 
-## 커밋 메시지와 버전
-- 버전 문자열은 `src/main.cpp`, `src/MainWindow.cpp`, `src/native/Win32App.cpp`, `build.sh`, `.github/workflows/build.yml`,
-  `installer/*.iss`, `README.md`에 있습니다. 올릴 때 모두 같이 바꾸고 `CHANGELOG.md`에 항목을 추가합니다.
-- 핫픽스는 `0.10_1`처럼 밑줄 번호를 붙입니다.
+## Commit messages and versions
+- The version string appears in `src/main.cpp`, `src/MainWindow.cpp`, `src/native/Win32App.cpp`, `src/vulkan/VkMain.cpp`, `build.sh`, `.github/workflows/build.yml`, `installer/*.iss` and `README.md`. Change them all together and add an entry to `CHANGELOG.md`.
+- A hotfix gets an underscore number like `0.10_1`.

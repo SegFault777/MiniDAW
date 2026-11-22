@@ -9,6 +9,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "Id3.h"
 #include "../dsp/AudioOps.h"
 #include "../dsp/DrumKit.h"
 #include "../dsp/Drummer.h"
@@ -92,6 +93,8 @@ struct Track {
     TrackType type = TrackType::Audio;
     float volume = 0.8f, pan = 0.f, sendA = 0.f, sendB = 0.f;
     bool mute = false, solo = false, armed = false;
+    int midiChannel = 0;                           ///< MIDI channel used when the track is exported to a MIDI file: 0 = automatic, 1..16 (Drummer tracks are automatic = 10)
+    int group = 0;                                 ///< mixer group: 0 = none, 1..8 = A..H. Grouped tracks move their faders, pans, sends, mute and solo together
     std::vector<Region> regions;
     DrumPattern steps{};
     std::vector<std::shared_ptr<dsp::Effect>> inserts;
@@ -118,13 +121,46 @@ struct Marker {
 };
 
 /// Options of "Bounce to WAV" (v0.5).
+/// Cubase MixConsole style snapshot: the level, pan, send and mute / solo state of every channel under a name.
+struct MixChannel {
+    int trackId = 0;
+    float volume = 0.8f, pan = 0.f, sendA = 0.f, sendB = 0.f;
+    bool mute = false, solo = false;
+};
+struct MixSnapshot {
+    std::string name;
+    float master = 0.9f;
+    std::vector<MixChannel> channels;
+};
+
+/// The file type of an export. MP3 needs an encoder from the platform layer (Session::Hooks::encodeMp3).
+enum class ExportContainer { Wav, Aiff, Mp3 };
+
+/// What a MIDI file import does with the tempo map and the time signatures of the file.
+enum class MidiTempoPolicy {
+    Auto,          ///< adopt them when the project has no regions yet, otherwise keep the project's (the default)
+    UseFile,       ///< always replace the project's tempo map and time signatures with the file's
+    KeepProject,   ///< never touch the project's tempo map and time signatures
+};
+
+struct MidiImportOptions {
+    MidiTempoPolicy tempo = MidiTempoPolicy::Auto;
+    bool splitChannels = false;   ///< a file track that uses several MIDI channels becomes one track per channel
+};
+
 struct ExportOptions {
+    ExportContainer container = ExportContainer::Wav;
+    int sampleRate = 44100;                              ///< 44100, 48000, 88200 or 96000 (MP3: 44100 or 48000).
+    int mp3Kbps = 192;                                   ///< 128, 160, 192, 224, 256 or 320.
+    Id3Tags tags;                                        ///< title / artist / album / year / comment of an MP3 file.
     bool cycleOnly = false;                              ///< Bounce only the cycle range instead of the whole project.
     dsp::WavFormat format = dsp::WavFormat::Pcm16;       ///< 16-bit, 24-bit or 32-bit float.
     bool normalize = false;                              ///< Scale the result so that its peak reaches 'normalizeDb'.
     float normalizeDb = -1.f;
     bool dither = false;                                 ///< TPDF dither (16-bit only).
     bool tail = true;                                    ///< Add 2 s for reverb and echo tails.
+    bool stemSends = true;                               ///< Stems: keep the reverb and echo of the sends (false = dry stems, only the insert effects).
+    bool masterEffects = true;                           ///< Stems: keep the master volume and the limiter (false = the stems carry only the track effects).
 };
 
 }  // namespace core

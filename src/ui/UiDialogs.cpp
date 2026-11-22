@@ -4,8 +4,10 @@
 // Parameter dialogs of the Qt-free UI (the counterparts of the Qt dialogs of MainWindow.cpp).
 #include <algorithm>
 #include <cmath>
+#include "../core/FileTypes.h"
 #include "../core/MidiOps.h"
 #include "../dsp/Drummer.h"
+#include "../core/ExportFormats.h"
 #include "Ui.h"
 
 namespace ui {
@@ -194,22 +196,76 @@ void NativeUi::dlgTempo() {
 
 void NativeUi::dlgBounce() {
     m_s.pause();
-    openDialog(std::make_unique<Dialog>("Bounce", Dialog::Values{Field::choice("Range", {"Whole project", "Cycle range"}, m_s.loopOn() ? 1 : int(last("bRange", 0))), Field::choice("Format", {"16-bit PCM", "24-bit PCM", "32-bit float"}, int(last("bFormat", 0))), Field::check("Dither (16-bit)", last("bDither", 1) > 0), Field::check("Normalize", last("bNorm", 0) > 0), Field::number("Normalize level", last("bLevel", -1), -12, 0, 0.5, 1, " dBFS"), Field::check("Add reverb / echo tail (2 s)", last("bTail", 1) > 0)}, [this](const Dialog::Values& v) {
-        m_last["bRange"] = v[0].index; m_last["bFormat"] = v[1].index; m_last["bDither"] = v[2].checked; m_last["bNorm"] = v[3].checked; m_last["bLevel"] = v[4].value; m_last["bTail"] = v[5].checked;
-        if (!m_host.fileDialog) { message("File dialogs are not available here."); return; }
-        std::string path = m_host.fileDialog("Bounce to WAV", "WAV|*.wav", true);
-        if (path.empty()) return;
-        if (path.find('.') == std::string::npos) path += ".wav";
+    openDialog(std::make_unique<Dialog>("Bounce", Dialog::Values{Field::choice("Range", {"Whole project", "Cycle range"}, m_s.loopOn() ? 1 : int(last("bRange", 0))),
+        Field::choice("Format", core::exportFormatNames(), int(last("bFormat", 1))), Field::choice("Sample rate", core::exportRateNames(), int(last("bRate", 0))),
+        Field::choice("MP3 bit rate", core::exportMp3RateNames(), int(last("bKbps", 2))), Field::check("Dither (16-bit)", last("bDither", 0) != 0),
+        Field::check("Normalize", last("bNorm", 0) != 0), Field::number("Normalize to", last("bLevel", -1), -24, 0, 0.5, 1, " dB"),
+        Field::check("Add a 2 s tail for reverb and echo", last("bTail", 1) != 0), Field::check("One file for every track (stems)", false),
+        Field::check("Stems: keep master volume and limiter", last("bMaster", 1) != 0),
+        Field::check("Stems: keep reverb and echo sends", last("bSends", 1) != 0),
+        Field::input("Title (MP3)", ""), Field::input("Artist (MP3)", ""), Field::input("Album (MP3)", "")},
+        [this](const Dialog::Values& v) {
+        m_last["bRange"] = v[0].index; m_last["bFormat"] = v[1].index; m_last["bRate"] = v[2].index; m_last["bKbps"] = v[3].index;
+        m_last["bDither"] = v[4].checked; m_last["bNorm"] = v[5].checked; m_last["bLevel"] = v[6].value; m_last["bTail"] = v[7].checked; m_last["bMaster"] = v[9].checked; m_last["bSends"] = v[10].checked;
         core::ExportOptions opt;
+        core::applyExportChoices(opt, v[1].index, v[2].index, v[3].index);
         opt.cycleOnly = v[0].index == 1;
-        opt.format = dsp::WavFormat(v[1].index);
-        opt.dither = v[2].checked && opt.format == dsp::WavFormat::Pcm16;
-        opt.normalize = v[3].checked;
-        opt.normalizeDb = float(v[4].value);
-        opt.tail = v[5].checked;
+        opt.dither = v[4].checked && opt.format == dsp::WavFormat::Pcm16;
+        opt.normalize = v[5].checked;
+        opt.normalizeDb = float(v[6].value);
+        opt.tail = v[7].checked;
+        opt.masterEffects = v[9].checked;
+        opt.stemSends = v[10].checked;
+        opt.tags.title = v[11].text; opt.tags.artist = v[12].text; opt.tags.album = v[13].text; opt.tags.comment = "Made with MiniDAW";
         std::string err;
+        if (v[8].checked) {   // stems
+            if (!m_host.folderDialog) { message("File dialogs are not available here."); return; }
+            const std::string folder = m_host.folderDialog("Export every track to a folder");
+            if (folder.empty()) return;
+            std::vector<std::string> files;
+            if (m_s.exportStems(folder, opt, &files, &err)) message(msg("Exported %1 files.", std::to_string(files.size()))); else message(msg("Could not bounce: %1", err));
+            return;
+        }
+        if (!m_host.fileDialog) { message("File dialogs are not available here."); return; }
+        std::string path = m_host.fileDialog("Bounce / Export Audio", core::exportFilter(opt.container), true);
+        if (path.empty()) return;
+        path = core::withExportExtension(path, opt.container);
         message(m_s.exportAudio(path, opt, &err) ? msg("Bounced to %1", path) : msg("Could not bounce: %1", err));
     }, "Bounce"));
+}
+
+void NativeUi::dlgImportMidi() {
+    openDialog(std::make_unique<Dialog>("Import MIDI File", Dialog::Values{Field::choice("Tempo and time signature", {"Adopt if the project is empty", "Use the file's", "Keep the project's"}, int(last("mTempo", 0))),
+        Field::check("One track for every MIDI channel", last("mSplit", 0) != 0)},
+        [this](const Dialog::Values& v) {
+        m_last["mTempo"] = v[0].index; m_last["mSplit"] = v[1].checked;
+        core::MidiImportOptions opt;
+        opt.tempo = v[0].index == 1 ? core::MidiTempoPolicy::UseFile : v[0].index == 2 ? core::MidiTempoPolicy::KeepProject : core::MidiTempoPolicy::Auto;
+        opt.splitChannels = v[1].checked;
+        if (!m_host.fileDialog) { message("File dialogs are not available here."); return; }
+        const std::string p = m_host.fileDialog("Import MIDI File", core::midiFilter(), false);
+        if (p.empty()) return;
+        std::string err;
+        if (m_s.importMidiFile(p, &err, opt)) message(msg("Imported %1", p)); else message(msg("Could not import: %1", err));
+    }, "Import"));
+}
+
+void NativeUi::dlgAux(int bus) {
+    auto fx = m_s.auxEffect(bus);
+    if (!fx) return;
+    Dialog::Values f;
+    std::vector<dsp::Param*> params;
+    for (const auto& p : fx->params) {
+        params.push_back(p.get());
+        if (p->stepped && !p->choices.empty()) f.push_back(Field::choice(p->name, p->choices, int(p->get())));
+        else f.push_back(Field::slider(p->name, p->get(), p->min, p->max, p->stepped ? 0 : (p->max - p->min > 50.f ? 1 : 2), p->unit.empty() ? std::string() : " " + p->unit));
+    }
+    f.push_back(Field::button("Reset to Defaults", [fx] { fx->resetToDefaults(); }, true));
+    openDialog(std::make_unique<Dialog>(bus == 0 ? "Aux A: Reverb" : "Aux B: Echo", std::move(f), [this, params](const Dialog::Values& v) {
+        for (size_t i = 0; i < params.size(); ++i) params[i]->set(params[i]->stepped && !params[i]->choices.empty() ? float(v[i].index) : float(v[i].value));
+        m_s.markDirty();
+        message("Aux effect updated.");
+    }));
 }
 
 void NativeUi::dlgAbout() {
@@ -224,6 +280,15 @@ void NativeUi::dlgRename() {
         const int t = m_selTrack;
         openDialog(std::make_unique<Dialog>("Rename Track", Dialog::Values{Field::input("Name", m_tracks[size_t(t)].name)}, [this, t](const Dialog::Values& v) { m_s.renameTrack(t, v[0].text); }));
     } else message("Select a track or a region first.");
+}
+
+void NativeUi::dlgMidiChannel(int t) {
+    const auto tracks = m_s.snapshot();   // not m_tracks: that copy is refreshed once per frame
+    if (t < 0 || t >= int(tracks.size())) return;
+    std::vector<std::string> chans{"Auto"};
+    for (int i = 1; i <= 16; ++i) chans.push_back(std::to_string(i));
+    openDialog(std::make_unique<Dialog>("MIDI Channel", Dialog::Values{Field::choice("Channel", chans, tracks[size_t(t)].midiChannel), Field::note("The channel of this track in an exported MIDI file.")},
+                                        [this, t](const Dialog::Values& v) { m_s.setTrackMidiChannel(t, v[0].index); m_dirty = true; }));
 }
 
 }  // namespace ui
@@ -271,6 +336,29 @@ void NativeUi::dlgPreferences() {
                              Field::input("Loops folder", get("loops", m_host.loopFolder.c_str())),
                              Field::input("VST3 folders (separate with ;)", get("vst3Folders", "")),
                              Field::button("Rescan plug-ins", [this] { if (m_host.rescanPlugins) { m_host.rescanPlugins(); message("Scanning plug-ins in the background..."); } }),
+                             Field::button("Play Test Tone", [this] { m_s.playTestTone(); }),
+                             Field::button("Choose Loops Folder...", [this] {
+                                 if (!m_host.folderDialog) { message("Folder dialogs are not available here."); return; }
+                                 const std::string dir = m_host.folderDialog("Choose Loops Folder");
+                                 if (dir.empty()) return;
+                                 m_host.settings["loops"] = dir;
+                                 m_host.loopFolder = dir;
+                                 m_loopsLoaded = false;
+                                 if (m_host.applySettings) m_host.applySettings(m_host.settings);
+                                 message("Loops folder: " + dir);
+                                 m_reopenPrefs = true;   // reopen so the field shows the new folder
+                             }, true),
+                             Field::button("Add VST3 Folder...", [this] {
+                                 if (!m_host.folderDialog) { message("Folder dialogs are not available here."); return; }
+                                 const std::string dir = m_host.folderDialog("Add VST3 Folder");
+                                 if (dir.empty()) return;
+                                 std::string& list = m_host.settings["vst3Folders"];
+                                 list += (list.empty() ? "" : ";") + dir;
+                                 if (m_host.applySettings) m_host.applySettings(m_host.settings);
+                                 if (m_host.rescanPlugins) m_host.rescanPlugins();
+                                 message("Added " + dir + " - scanning plug-ins in the background...");
+                                 m_reopenPrefs = true;
+                             }, true),
                              Field::note("Restart MiniDAW to apply a new language. Autosave 0 = off.")};
     openDialog(std::make_unique<Dialog>("Preferences", std::move(fields), [this, outs, ins, midis, langList, bufs](const Dialog::Values& v) {
         std::map<std::string, std::string> s = m_host.settings;

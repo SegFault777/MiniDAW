@@ -1,31 +1,34 @@
-# 릴리스 절차
+# Release process
 
-## 1. 준비
-- [ ] 이번 버전에 넣을 것이 모두 들어갔다 (`CHANGELOG.md`의 "Unreleased" 성격의 항목이 정리됐다)
-- [ ] `bash tests/run.sh` 통과
-- [ ] 마지막 CI(`main`)의 세 작업(`tests`, `native`, `qt`)이 초록색이다
-- [ ] 새 영어 문구가 네 언어 `translations/*.tsv`에 있다
-- [ ] 문서(`docs/user`, `docs/dev`)가 바뀐 동작과 맞다
+## 1. Preparation
+- [ ] Everything planned for this version is in (the "unreleased" entries of `CHANGELOG.md` are tidy)
+- [ ] `bash tests/run.sh` passes
+- [ ] The latest CI run on `main` is green for all four jobs (`tests`, `native`, `vulkan`, `qt`)
+- [ ] New English text is in the four `translations/*.tsv`
+- [ ] The documents (`docs/user`, `docs/dev`) match the changed behaviour
+- [ ] If the project file format changed in a way that older programs would misread, `kProjectVersion` (`src/core/ProjectIO.cpp`) is raised (see [architecture](../dev/architecture.md))
+- [ ] The Vulkan interface has been started on a real GPU at least once for this release, and its screens were compared with the screenshots of `tests/vulkan_tests`
 
-## 2. 버전 올리기
-모든 곳을 한 번에 바꿉니다 (`docs/dev/coding-rules.md`의 목록):
-`src/main.cpp`, `src/MainWindow.cpp`, `src/native/Win32App.cpp`, `build.sh`, `.github/workflows/build.yml`, `installer/MiniDAW.iss`, `installer/MiniDAW-Qt.iss`, `README.md`.
-그리고 `CHANGELOG.md`에 `## [버전] - 날짜` 항목을 추가합니다.
+## 2. Raise the version
+Change it everywhere at once (the list is in `docs/dev/coding-rules.md`):
+`src/main.cpp`, `src/MainWindow.cpp`, `src/native/Win32App.cpp`, `src/vulkan/VkMain.cpp`, `build.sh`, `.github/workflows/build.yml`, `installer/MiniDAW.iss`, `installer/MiniDAW-Qt.iss`, `README.md`.
+Then add a `## [version] - date` entry to `CHANGELOG.md`.
 
-## 3. 태그
+## 3. Tag
 ```
-git commit -am "Release 0.11"
-git tag v0.11
-git push && git push origin v0.11
+git commit -am "Release 0.12"
+git tag v0.12
+git push && git push origin v0.12
 ```
-핫픽스는 `v0.11_1`처럼 밑줄 번호를 붙입니다. 태그를 푸시하면 CI가 설치 프로그램과 포터블 zip을 만들어 릴리스에 붙입니다.
+A hotfix gets an underscore number like `v0.12_1`. When the tag is pushed, CI builds the installer and the portable zips (Native, Vulkan, Qt) and attaches them to the release.
 
-## 4. 릴리스 후 점검
-- [ ] 설치 프로그램을 **깨끗한 PC(또는 VM)** 에 설치해 실행한다
-- [ ] 이전 버전 위에 설치해(업그레이드) 설정과 프로젝트가 살아 있는지 본다
-- [ ] 프로젝트를 저장하고 다시 열어 본다, 녹음해 본다, WAV로 내보내 본다
-- [ ] 플러그인 하나를 불러 본다 (VST3가 켜진 빌드인지는 빌드 로그의 `VST3 hosting:` 줄로 확인)
-- [ ] 제거하면 사용자 데이터(`%LOCALAPPDATA%\MiniDAW`)가 남는지 확인
+## 4. Checks after the release
+- [ ] Install the installer on a **clean PC (or VM)** and run it
+- [ ] Install over the previous version (upgrade) and check that settings and projects survive
+- [ ] Unzip the portable zips (Native and Vulkan) to a new folder: they must start, and must write only inside `data\` next to the exe
+- [ ] Save a project and open it again, record, export to WAV
+- [ ] Load a plug-in (the `VST3 hosting:` line of the build log tells whether VST3 was enabled)
+- [ ] After uninstalling, check that user data (`%LOCALAPPDATA%\MiniDAW`) remains
 
-## 5. 알려진 문제 기록
-릴리스 노트에 이번 버전의 알려진 문제를 적습니다(예: "OGG 파일은 Windows 기본 코덱으로 열리지 않을 수 있음").
+## 5. Record known problems
+Write the known problems of this version in the release notes (for example "OGG files may not open with the default Windows codec").

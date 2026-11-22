@@ -1,18 +1,29 @@
-# MiniDAW 사용 설명서
+# MiniDAW User Guide
 
-MiniDAW는 가볍고 빠른 Windows용 디지털 오디오 워크스테이션(DAW)입니다.
-이 설명서는 음악을 만들어 본 적이 없어도 따라 할 수 있게 쓰여 있습니다.
+MiniDAW is a light, fast digital audio workstation (DAW) for Windows. This guide is written so that you can follow it even if you have never made music before.
 
-1. [설치](installation.md)
-2. [처음 시작하기](getting-started.md) - 10분 안에 첫 곡의 뼈대 만들기
-3. [화면 구성](interface.md)
-4. [녹음](recording.md)
-5. [편집](editing.md) - 리전, 피아노 롤, 스텝 시퀀서, 드러머
-6. [믹싱과 이펙트](mixing-and-effects.md) - 믹서, 디바이스, 오토메이션, 템포
-7. [브라우저와 루프](browser-and-loops.md)
-8. [플러그인](plugins.md) - MiniDAW 플러그인과 VST3
-9. [환경설정](preferences.md)
-10. [단축키](shortcuts.md)
-11. [문제 해결](troubleshooting.md)
+MiniDAW comes in three flavours that share the same engine, the same project files and the same sounds:
 
-> English quick start: [quickstart-en.md](quickstart-en.md)
+| Program | What it is |
+| --- | --- |
+| **`MiniDAW.exe`** | The **Native** version. Light, runs on every PC, no GPU needed. This is the one the installer puts on your computer. |
+| **`MiniDAWVulkan.exe`** | The **Vulkan** version. A brand-new, GPU-drawn interface built around the best ideas of Logic Pro, Ableton Live, FL Studio, Cubase and Pro Tools. Sharp at any display scale. |
+| **`MiniDAWQt.exe`** | The original **Qt** version, kept as a portable build. |
+
+Both `MiniDAW.exe` and `MiniDAWVulkan.exe` have a **portable** edition: unzip it anywhere (even a USB stick) and nothing is written to the computer.
+
+1. [Installation](installation.md) - installer, portable editions
+2. [Getting started](getting-started.md) - the skeleton of a first song in 10 minutes
+3. [The screen](interface.md) - the Native interface
+4. [The Vulkan interface](vulkan-interface.md) - workspaces, command palette, tools, Logic / Ableton / FL Studio / Cubase / Pro Tools features
+5. [Recording](recording.md)
+6. [Editing](editing.md) - regions, piano roll, step sequencer, Drummer
+7. [Mixing and effects](mixing-and-effects.md) - mixer, devices, automation, tempo, snapshots
+8. [Browser and loops](browser-and-loops.md)
+9. [Plug-ins](plugins.md) - MiniDAW plug-ins and VST3
+10. [Preferences](preferences.md)
+11. [Keyboard shortcuts](shortcuts.md)
+12. [Troubleshooting](troubleshooting.md)
+
+> Short version: [quickstart-en.md](quickstart-en.md)
+- [Working with other programs](exchange-with-other-daws.md) - open and export MP3, WAV, AIFF, MIDI and stems for Logic Pro, Ableton Live, Cubase and others

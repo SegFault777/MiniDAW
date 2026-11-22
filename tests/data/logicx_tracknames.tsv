@@ -1,0 +1,89 @@
+fixtures/F0_baseline.logicx	1	Inst 1Stereo Out
+fixtures/F10_sigs.logicx	1	Inst 1Stereo Out
+fixtures/F11_markers.logicx	1	Inst 1Stereo Out
+fixtures/F12_markers.logicx	1	Inst 1Stereo Out
+fixtures/F13_settled_or_not.logicx	1	Inst 1Stereo Out
+fixtures/F14_audio_base.logicx	1	Audio 1Stereo Out
+fixtures/F15_audio_bar5.logicx	1	ZZAUDIOZZStereo Out
+fixtures/F16_sr48.logicx	1	Inst 1Stereo Out
+fixtures/F17_base.logicx	1	Audio 1Stereo Out
+fixtures/F18_audio.logicx	1	ZZAUDIOZZStereo Out
+fixtures/F19_multi_base.logicx	3	Audio 1Audio 2Audio 3Stereo Out
+fixtures/F1_tempo.logicx	1	Inst 1Stereo Out
+fixtures/F20_multi_regions.logicx	3	ZZAUDIOZZ_30203Stereo Out
+fixtures/F21_multitrack_regions.logicx	3	047048049Stereo Out
+fixtures/F22_multimidi.logicx	4	Inst 1Inst 2Inst 3Inst 4Stereo Out
+fixtures/F23_av.logicx	7	Inst 1Inst 2Inst 3Inst 4047048049Stereo Out
+fixtures/F2_tempomap.logicx	1	Inst 1Stereo Out
+fixtures/F3_marker.logicx	1	Inst 1Stereo Out
+fixtures/F4_midiregion.logicx	1	Inst 1Stereo Out
+fixtures/F4b_midinotes.logicx	1	Inst 1Stereo Out
+fixtures/F4c_midinotes_bar2.logicx	1	Inst 1Stereo Out
+fixtures/F5_region_moved.logicx	1	Inst 1Stereo Out
+fixtures/F6_audio.logicx	2	Inst 1ZZAUDIOZZStereo Out
+fixtures/F7_trackname.logicx	1	ZZTRACKZZStereo Out
+fixtures/F8_twotracks.logicx	2	Inst 1Inst 2Stereo Out
+fixtures/F9_meter.logicx	1	Inst 1Stereo Out
+fixtures/F9_tempometer.logicx	1	Inst 1Stereo Out
+fixtures/TAKES.logicx	1	VoxStereo Out
+fixtures/TAKES3.logicx	3	Audio 1Audio 2Audio 3Stereo Out
+fixtures/TEST_all_steelydan.logicx	1	Inst 1Stereo Out
+fixtures/TEST_exportall_multi.logicx	3	047048049Stereo Out
+fixtures/ctl_caf.logicx	1	controlStereo Out
+fixtures/ctl_wav.logicx	1	controlStereo Out
+fixtures/lots of audio tracks/1 audio track.logicx	1	Audio 1Stereo Out
+fixtures/lots of audio tracks/1 from 1000 audio tracks.logicx	1	Audio 1Stereo Out
+fixtures/lots of audio tracks/1 from 64 audio tracks.logicx	1	Audio 1Stereo Out
+fixtures/lots of audio tracks/1 region 4 from 64 audio tracks.logicx	4	Audio 1Audio 2Audio 3Audio 4Stereo Out
+fixtures/lots of audio tracks/10 audio tracks.logicx	10	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Stereo Out
+fixtures/lots of audio tracks/1000 audio tracks.logicx	1000	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Audio 11Audio 12Audio 13Audio 14Audio 15Audio 16Audio 17Audio 18Audio 19Audio 20Audio 21Audio 22Audio 23Audio 24Audio 25Audio 26Audio 27Audio 28Audio 29Audio 30Audio 31Audio 32Audio 33Audio 34Audio 35Audio 36Audio 37Audio 38Audio 39Audio 40Audio 41Audio 42Audio 43Audio 44Audio 45Audio 46Audio 47Audio 48Audio 49Audio 50Audio 51Audio 52Audio 53Audio 54Audio 55Audio 56Audio 57Audio 58Audio 59Audio 60Audio 61Audio 62Audio 63Audio 64Audio 65Audio 66Audio 67Audio 68Audio 69Audio 70Audio 71Audio 72Audio 73Audio 74Audio 75Audio 76Audio 77Audio 78Audio 79Audio 80Audio 81Audio 82Audio 83Audio 84Audio 85Audio 86Audio 87Audio 88Audio 89Audio 90Audio 91Audio 92Audio 93Audio 94Audio 95Audio 96Audio 97Audio 98Audio 99Audio 100Audio 101Audio 102Audio 103Audio 104Audio 105Audio 106Audio 107Audio 108Audio 109Audio 110Audio 111Audio 112Audio 113Audio 114Audio 115Audio 116Audio 117Audio 118Audio 119Audio 120Audio 121Audio 122Audio 123Audio 124Audio 125Audio 126Audio 127Audio 128Audio 129Audio 130Audio 131Audio 132Audio 133Audio 134Audio 135Audio 136Audio 137Audio 138Audio 139Audio 140Audio 141Audio 142Audio 143Audio 144Audio 145Audio 146Audio 147Audio 148Audio 149Audio 150Audio 151Audio 152Audio 153Audio 154Audio 155Audio 156Audio 157Audio 158Audio 159Audio 160Audio 161Audio 162Audio 163Audio 164Audio 165Audio 166Audio 167Audio 168Audio 169Audio 170Audio 171Audio 172Audio 173Audio 174Audio 175Audio 176Audio 177Audio 178Audio 179Audio 180Audio 181Audio 182Audio 183Audio 184Audio 185Audio 186Audio 187Audio 188Audio 189Audio 190Audio 191Audio 192Audio 193Audio 194Audio 195Audio 196Audio 197Audio 198Audio 199Audio 200Audio 201Audio 202Audio 203Audio 204Audio 205Audio 206Audio 207Audio 208Audio 209Audio 210Audio 211Audio 212Audio 213Audio 214Audio 215Audio 216Audio 217Audio 218Audio 219Audio 220Audio 221Audio 222Audio 223Audio 224Audio 225Audio 226Audio 227Audio 228Audio 229Audio 230Audio 231Audio 232Audio 233Audio 234Audio 235Audio 236Audio 237Audio 238Audio 239Audio 240Audio 241Audio 242Audio 243Audio 244Audio 245Audio 246Audio 247Audio 248Audio 249Audio 250Audio 251Audio 252Audio 253Audio 254Audio 255Audio 256Audio 257Audio 258Audio 259Audio 260Audio 261Audio 262Audio 263Audio 264Audio 265Audio 266Audio 267Audio 268Audio 269Audio 270Audio 271Audio 272Audio 273Audio 274Audio 275Audio 276Audio 277Audio 278Audio 279Audio 280Audio 281Audio 282Audio 283Audio 284Audio 285Audio 286Audio 287Audio 288Audio 289Audio 290Audio 291Audio 292Audio 293Audio 294Audio 295Audio 296Audio 297Audio 298Audio 299Audio 300Audio 301Audio 302Audio 303Audio 304Audio 305Audio 306Audio 307Audio 308Audio 309Audio 310Audio 311Audio 312Audio 313Audio 314Audio 315Audio 316Audio 317Audio 318Audio 319Audio 320Audio 321Audio 322Audio 323Audio 324Audio 325Audio 326Audio 327Audio 328Audio 329Audio 330Audio 331Audio 332Audio 333Audio 334Audio 335Audio 336Audio 337Audio 338Audio 339Audio 340Audio 341Audio 342Audio 343Audio 344Audio 345Audio 346Audio 347Audio 348Audio 349Audio 350Audio 351Audio 352Audio 353Audio 354Audio 355Audio 356Audio 357Audio 358Audio 359Audio 360Audio 361Audio 362Audio 363Audio 364Audio 365Audio 366Audio 367Audio 368Audio 369Audio 370Audio 371Audio 372Audio 373Audio 374Audio 375Audio 376Audio 377Audio 378Audio 379Audio 380Audio 381Audio 382Audio 383Audio 384Audio 385Audio 386Audio 387Audio 388Audio 389Audio 390Audio 391Audio 392Audio 393Audio 394Audio 395Audio 396Audio 397Audio 398Audio 399Audio 400Audio 401Audio 402Audio 403Audio 404Audio 405Audio 406Audio 407Audio 408Audio 409Audio 410Audio 411Audio 412Audio 413Audio 414Audio 415Audio 416Audio 417Audio 418Audio 419Audio 420Audio 421Audio 422Audio 423Audio 424Audio 425Audio 426Audio 427Audio 428Audio 429Audio 430Audio 431Audio 432Audio 433Audio 434Audio 435Audio 436Audio 437Audio 438Audio 439Audio 440Audio 441Audio 442Audio 443Audio 444Audio 445Audio 446Audio 447Audio 448Audio 449Audio 450Audio 451Audio 452Audio 453Audio 454Audio 455Audio 456Audio 457Audio 458Audio 459Audio 460Audio 461Audio 462Audio 463Audio 464Audio 465Audio 466Audio 467Audio 468Audio 469Audio 470Audio 471Audio 472Audio 473Audio 474Audio 475Audio 476Audio 477Audio 478Audio 479Audio 480Audio 481Audio 482Audio 483Audio 484Audio 485Audio 486Audio 487Audio 488Audio 489Audio 490Audio 491Audio 492Audio 493Audio 494Audio 495Audio 496Audio 497Audio 498Audio 499Audio 500Audio 501Audio 502Audio 503Audio 504Audio 505Audio 506Audio 507Audio 508Audio 509Audio 510Audio 511Audio 512Audio 513Audio 514Audio 515Audio 516Audio 517Audio 518Audio 519Audio 520Audio 521Audio 522Audio 523Audio 524Audio 525Audio 526Audio 527Audio 528Audio 529Audio 530Audio 531Audio 532Audio 533Audio 534Audio 535Audio 536Audio 537Audio 538Audio 539Audio 540Audio 541Audio 542Audio 543Audio 544Audio 545Audio 546Audio 547Audio 548Audio 549Audio 550Audio 551Audio 552Audio 553Audio 554Audio 555Audio 556Audio 557Audio 558Audio 559Audio 560Audio 561Audio 562Audio 563Audio 564Audio 565Audio 566Audio 567Audio 568Audio 569Audio 570Audio 571Audio 572Audio 573Audio 574Audio 575Audio 576Audio 577Audio 578Audio 579Audio 580Audio 581Audio 582Audio 583Audio 584Audio 585Audio 586Audio 587Audio 588Audio 589Audio 590Audio 591Audio 592Audio 593Audio 594Audio 595Audio 596Audio 597Audio 598Audio 599Audio 600Audio 601Audio 602Audio 603Audio 604Audio 605Audio 606Audio 607Audio 608Audio 609Audio 610Audio 611Audio 612Audio 613Audio 614Audio 615Audio 616Audio 617Audio 618Audio 619Audio 620Audio 621Audio 622Audio 623Audio 624Audio 625Audio 626Audio 627Audio 628Audio 629Audio 630Audio 631Audio 632Audio 633Audio 634Audio 635Audio 636Audio 637Audio 638Audio 639Audio 640Audio 641Audio 642Audio 643Audio 644Audio 645Audio 646Audio 647Audio 648Audio 649Audio 650Audio 651Audio 652Audio 653Audio 654Audio 655Audio 656Audio 657Audio 658Audio 659Audio 660Audio 661Audio 662Audio 663Audio 664Audio 665Audio 666Audio 667Audio 668Audio 669Audio 670Audio 671Audio 672Audio 673Audio 674Audio 675Audio 676Audio 677Audio 678Audio 679Audio 680Audio 681Audio 682Audio 683Audio 684Audio 685Audio 686Audio 687Audio 688Audio 689Audio 690Audio 691Audio 692Audio 693Audio 694Audio 695Audio 696Audio 697Audio 698Audio 699Audio 700Audio 701Audio 702Audio 703Audio 704Audio 705Audio 706Audio 707Audio 708Audio 709Audio 710Audio 711Audio 712Audio 713Audio 714Audio 715Audio 716Audio 717Audio 718Audio 719Audio 720Audio 721Audio 722Audio 723Audio 724Audio 725Audio 726Audio 727Audio 728Audio 729Audio 730Audio 731Audio 732Audio 733Audio 734Audio 735Audio 736Audio 737Audio 738Audio 739Audio 740Audio 741Audio 742Audio 743Audio 744Audio 745Audio 746Audio 747Audio 748Audio 749Audio 750Audio 751Audio 752Audio 753Audio 754Audio 755Audio 756Audio 757Audio 758Audio 759Audio 760Audio 761Audio 762Audio 763Audio 764Audio 765Audio 766Audio 767Audio 768Audio 769Audio 770Audio 771Audio 772Audio 773Audio 774Audio 775Audio 776Audio 777Audio 778Audio 779Audio 780Audio 781Audio 782Audio 783Audio 784Audio 785Audio 786Audio 787Audio 788Audio 789Audio 790Audio 791Audio 792Audio 793Audio 794Audio 795Audio 796Audio 797Audio 798Audio 799Audio 800Audio 801Audio 802Audio 803Audio 804Audio 805Audio 806Audio 807Audio 808Audio 809Audio 810Audio 811Audio 812Audio 813Audio 814Audio 815Audio 816Audio 817Audio 818Audio 819Audio 820Audio 821Audio 822Audio 823Audio 824Audio 825Audio 826Audio 827Audio 828Audio 829Audio 830Audio 831Audio 832Audio 833Audio 834Audio 835Audio 836Audio 837Audio 838Audio 839Audio 840Audio 841Audio 842Audio 843Audio 844Audio 845Audio 846Audio 847Audio 848Audio 849Audio 850Audio 851Audio 852Audio 853Audio 854Audio 855Audio 856Audio 857Audio 858Audio 859Audio 860Audio 861Audio 862Audio 863Audio 864Audio 865Audio 866Audio 867Audio 868Audio 869Audio 870Audio 871Audio 872Audio 873Audio 874Audio 875Audio 876Audio 877Audio 878Audio 879Audio 880Audio 881Audio 882Audio 883Audio 884Audio 885Audio 886Audio 887Audio 888Audio 889Audio 890Audio 891Audio 892Audio 893Audio 894Audio 895Audio 896Audio 897Audio 898Audio 899Audio 900Audio 901Audio 902Audio 903Audio 904Audio 905Audio 906Audio 907Audio 908Audio 909Audio 910Audio 911Audio 912Audio 913Audio 914Audio 915Audio 916Audio 917Audio 918Audio 919Audio 920Audio 921Audio 922Audio 923Audio 924Audio 925Audio 926Audio 927Audio 928Audio 929Audio 930Audio 931Audio 932Audio 933Audio 934Audio 935Audio 936Audio 937Audio 938Audio 939Audio 940Audio 941Audio 942Audio 943Audio 944Audio 945Audio 946Audio 947Audio 948Audio 949Audio 950Audio 951Audio 952Audio 953Audio 954Audio 955Audio 956Audio 957Audio 958Audio 959Audio 960Audio 961Audio 962Audio 963Audio 964Audio 965Audio 966Audio 967Audio 968Audio 969Audio 970Audio 971Audio 972Audio 973Audio 974Audio 975Audio 976Audio 977Audio 978Audio 979Audio 980Audio 981Audio 982Audio 983Audio 984Audio 985Audio 986Audio 987Audio 988Audio 989Audio 990Audio 991Audio 992Audio 993Audio 994Audio 995Audio 996Audio 997Audio 998Audio 999Audio 1,000Stereo Out
+fixtures/lots of audio tracks/11 audio tracks.logicx	11	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Audio 11Stereo Out
+fixtures/lots of audio tracks/12 audio tracks.logicx	12	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Audio 11Audio 12Stereo Out
+fixtures/lots of audio tracks/13 audio tracks.logicx	13	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Audio 11Audio 12Audio 13Stereo Out
+fixtures/lots of audio tracks/14 audio tracks.logicx	14	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Audio 11Audio 12Audio 13Audio 14Stereo Out
+fixtures/lots of audio tracks/15 audio tracks.logicx	15	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Audio 11Audio 12Audio 13Audio 14Audio 15Stereo Out
+fixtures/lots of audio tracks/16 audio tracks.logicx	16	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Audio 11Audio 12Audio 13Audio 14Audio 15Audio 16Stereo Out
+fixtures/lots of audio tracks/2 audio tracks.logicx	2	Audio 1Audio 2Stereo Out
+fixtures/lots of audio tracks/2 from 1000 audio tracks.logicx	2	Audio 1Audio 2Stereo Out
+fixtures/lots of audio tracks/2 from 64 audio tracks.logicx	2	Audio 1Audio 2Stereo Out
+fixtures/lots of audio tracks/2 region 4 from 64 audio tracks.logicx	4	Audio 1Audio 2Audio 3Audio 4Stereo Out
+fixtures/lots of audio tracks/3 audio tracks.logicx	3	Audio 1Audio 2Audio 3Stereo Out
+fixtures/lots of audio tracks/3 from 1000 audio tracks.logicx	3	Audio 1Audio 2Audio 3Stereo Out
+fixtures/lots of audio tracks/3 from 64 audio tracks.logicx	3	Audio 1Audio 2Audio 3Stereo Out
+fixtures/lots of audio tracks/3 region 4 from 64 audio tracks.logicx	4	Audio 1Audio 2Audio 3Audio 4Stereo Out
+fixtures/lots of audio tracks/4 audio tracks.logicx	4	Audio 1Audio 2Audio 3Audio 4Stereo Out
+fixtures/lots of audio tracks/4 from 1000 audio tracks.logicx	4	Audio 1Audio 2Audio 3Audio 4Stereo Out
+fixtures/lots of audio tracks/4 from 64 audio tracks.logicx	4	Audio 1Audio 2Audio 3Audio 4Stereo Out
+fixtures/lots of audio tracks/4 region 4 from 64 audio tracks.logicx	4	Audio 1Audio 2Audio 3Audio 4Stereo Out
+fixtures/lots of audio tracks/5 audio tracks.logicx	5	Audio 1Audio 2Audio 3Audio 4Audio 5Stereo Out
+fixtures/lots of audio tracks/5 from 1000 audio tracks.logicx	5	Audio 1Audio 2Audio 3Audio 4Audio 5Stereo Out
+fixtures/lots of audio tracks/6 audio tracks.logicx	6	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Stereo Out
+fixtures/lots of audio tracks/64 audio tracks.logicx	64	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Audio 10Audio 11Audio 12Audio 13Audio 14Audio 15Audio 16Audio 17Audio 18Audio 19Audio 20Audio 21Audio 22Audio 23Audio 24Audio 25Audio 26Audio 27Audio 28Audio 29Audio 30Audio 31Audio 32Audio 33Audio 34Audio 35Audio 36Audio 37Audio 38Audio 39Audio 40Audio 41Audio 42Audio 43Audio 44Audio 45Audio 46Audio 47Audio 48Audio 49Audio 50Audio 51Audio 52Audio 53Audio 54Audio 55Audio 56Audio 57Audio 58Audio 59Audio 60Audio 61Audio 62Audio 63Audio 64Stereo Out
+fixtures/lots of audio tracks/7 audio tracks.logicx	7	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Stereo Out
+fixtures/lots of audio tracks/8 audio tracks.logicx	8	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Stereo Out
+fixtures/lots of audio tracks/9 audio tracks.logicx	9	Audio 1Audio 2Audio 3Audio 4Audio 5Audio 6Audio 7Audio 8Audio 9Stereo Out
+fixtures/lots of regions/0 regions.logicx	1	Audio 1Stereo Out
+fixtures/lots of regions/1 regions.logicx	1	Audio 1Stereo Out
+fixtures/lots of regions/2 regions.logicx	1	Audio 1Stereo Out
+fixtures/lots of regions/3 regions.logicx	1	Audio 1Stereo Out
+fixtures/lots of regions/4 regions.logicx	1	Audio 1Stereo Out
+fixtures/lots of regions/5 regions.logicx	1	Audio 1Stereo Out
+fixtures/lots of regions/6 regions.logicx	1	Audio 1Stereo Out
+fixtures/midi test/audio_inst.logicx	2	Audio 1Inst 1Stereo Out
+fixtures/midi test/mixed_template + 1 audio.logicx	3	Inst 1Audio 1Audio 2Stereo Out
+fixtures/midi test/mixed_template + 1 inst.logicx	3	Inst 1Audio 1Inst 2Stereo Out
+fixtures/midi test/mixed_template + 2 inst.logicx	4	Inst 1Audio 1Inst 2Inst 3Stereo Out
+fixtures/midi test/mixed_template + 3 inst.logicx	5	Inst 1Audio 1Inst 2Inst 3Inst 4Stereo Out
+fixtures/midi test/mixed_template + 4 inst.logicx	6	Inst 1Audio 1Inst 2Inst 3Inst 4Inst 5Stereo Out
+fixtures/midi test/mixed_template.logicx	2	Inst 1Audio 1Stereo Out
+fixtures/stereo test/mono.logicx	1	Audio 1Stereo Out
+fixtures/stereo test/stereo.logicx	1	Audio 1Stereo Out
+templates/F13_settled_or_not.logicx	1	Inst 1Stereo Out
+templates/F17_base.logicx	1	Audio 1Stereo Out
+templates/F18_audio.logicx	1	ZZAUDIOZZStereo Out
+templates/F19_multi_base.logicx	3	Audio 1Audio 2Audio 3Stereo Out
+templates/F19b_4audio.logicx	4	Audio 1Audio 2Audio 3Audio 4Stereo Out
+templates/F21_multitrack_regions.logicx	3	047048049Stereo Out
+templates/F22_multimidi.logicx	4	Inst 1Inst 2Inst 3Inst 4Stereo Out
+templates/F23_av.logicx	7	Inst 1Inst 2Inst 3Inst 4047048049Stereo Out
+templates/F4_midiregion.logicx	1	Inst 1Stereo Out

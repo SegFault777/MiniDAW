@@ -1,12 +1,14 @@
 // MiniDAW - a lightweight Logic Pro-inspired digital audio workstation
 // Copyright (C) 2026 MiniDAW contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include "../core/LogicImport.h"
 #include <algorithm>
 #include <cmath>
 #include <chrono>
 #include <cstring>
 #include <cstdio>
 #include <string>
+#include "../core/FileTypes.h"
 #include "Ui.h"
 
 namespace ui {
@@ -56,12 +58,13 @@ void NativeUi::addRecent(const std::string& path) {
 
 void NativeUi::openProject(const std::string& p) {
     std::string err;
-    if (m_s.loadProject(p, &err)) { message(msg("Opened %1", p)); addRecent(p); m_selTrack = m_selRegion = -1; }
+    if (m_s.loadProject(p, &err)) { message(m_s.loadedFromNewerVersion() ? std::string("Opened a project saved by a newer MiniDAW: some settings may be missing.") : msg("Opened %1", p)); addRecent(p); m_selTrack = m_selRegion = -1; }
     else message(msg("Could not open the project: %1", err));
     if (m_host.setTitle) m_host.setTitle("MiniDAW - " + p);
 }
 
 bool NativeUi::tick() {
+    if (m_reopenPrefs) { m_reopenPrefs = false; dlgPreferences(); m_dirty = true; }
     if (m_auditionPitch >= 0 && m_drag == Drag::None && --m_auditionTicks <= 0) { m_s.noteOff(m_auditionTrack, m_auditionPitch); m_auditionPitch = -1; }
     const bool active = m_s.isPlaying() || m_s.isRecording() || m_meterL > 0.004f || m_meterR > 0.004f;
     if (m_s.isPlaying() && m_drag == Drag::None) ensureVisible(m_s.positionBeats());
@@ -83,9 +86,10 @@ void NativeUi::openMenu(const std::vector<MenuItem>& items, int x, int y) {
 }
 
 std::vector<MenuItem> NativeUi::fileMenu() {
-    return {item("New Project", "Ctrl+N", [this] { doFile("new"); }), item("Open...", "Ctrl+O", [this] { doFile("open"); }), item("Open Recent...", "", [this] { openMenu(recentMenu(), m_menuRect.x + 20, m_menuRect.y + 60); }), sep(),
+    return {item("New Project", "Ctrl+N", [this] { doFile("new"); }), item("Open...", "Ctrl+O", [this] { doFile("open"); }), item("Open Recent...", "", [this] { openMenu(recentMenu(), m_menuRect.x + 20, m_menuRect.y + 60); }),
+            item("Recover Autosaved Project", "", [this] { doFile("recover"); }, m_s.hasAutosave()), sep(),
             item("Save", "Ctrl+S", [this] { doFile("save"); }), item("Save As...", "Ctrl+Shift+S", [this] { doFile("saveas"); }), sep(),
-            item("Import Audio...", "Ctrl+I", [this] { doFile("import"); }), item("Import MIDI File...", "", [this] { doFile("importmidi"); }),
+            item("Import Audio...", "Ctrl+I", [this] { doFile("import"); }), item("Import MIDI File...", "", [this] { doFile("importmidi"); }), item("Import Logic Pro Project Folder...", "", [this] { doFile("importlogic"); }),
             item("Export MIDI File...", "", [this] { doFile("exportmidi"); }), item("Bounce to WAV...", "Ctrl+B", [this] { dlgBounce(); }), sep(),
             item("Preferences...", "Ctrl+,", [this] { dlgPreferences(); }), sep(), item("Quit", "", [this] { if (m_host.quit) m_host.quit(); })};
 }
@@ -96,9 +100,16 @@ std::vector<MenuItem> NativeUi::recentMenu() {
         auto it = m_host.settings.find("recent" + std::to_string(i));
         if (it == m_host.settings.end() || it->second.empty()) continue;
         const std::string path = it->second, shown = path.substr(path.find_last_of("/\\") == std::string::npos ? 0 : path.find_last_of("/\\") + 1);
-        m.push_back(item(shown, "", [this, path] { openProject(path); }));
+        m.push_back(item(shown, "", [this, path] { guardUnsaved([this, path] { openProject(path); }); }));
     }
     if (m.empty()) m.push_back(item("No recent projects", "", [] {}, false));
+    else {
+        m.push_back(sep());
+        m.push_back(item("Clear Menu", "", [this] {
+            for (int i = 1; i <= 5; ++i) m_host.settings["recent" + std::to_string(i)] = std::string();
+            if (m_host.applySettings) m_host.applySettings(m_host.settings);
+        }));
+    }
     return m;
 }
 
@@ -151,6 +162,8 @@ std::vector<MenuItem> NativeUi::viewMenu() {
             item("Mixer", "", [this] { m_mixer = true; m_tab = Tab::Mixer; m_dirty = true; }), item("Piano Roll", "P", [this] { m_mixer = true; m_tab = Tab::PianoRoll; m_dirty = true; }),
             item("Step Sequencer", "", [this] { m_mixer = true; m_tab = Tab::Steps; m_dirty = true; }), item("Drummer Editor", "", [this] { m_mixer = true; m_tab = Tab::Drummer; m_dirty = true; }),
             item("Devices", "", [this] { showTab(TabSmart); }),
+            item("Aux A: Reverb...", "", [this] { dlgAux(0); }), item("Aux B: Echo...", "", [this] { dlgAux(1); }),
+            item(previewOnClick() ? "Browser: Preview on Click (On)" : "Browser: Preview on Click (Off)", "", [this] { m_host.settings["previewOnClick"] = previewOnClick() ? "0" : "1"; if (m_host.applySettings) m_host.applySettings(m_host.settings); }),
             item(m_browser ? "Hide Browser" : "Show Browser", "L", [this] { m_browser = !m_browser; relayout(); }),
             item("Track Height: Compact", "", [this] { m_trackH = 34; m_dirty = true; }), item("Track Height: Normal", "", [this] { m_trackH = 60; m_dirty = true; }), item("Track Height: Tall", "", [this] { m_trackH = 96; m_dirty = true; }),
             item("Inspector", "I", [this] { showTab(TabInspector); }), sep(),
@@ -177,6 +190,7 @@ std::vector<MenuItem> NativeUi::trackMenu(int t) {
     m.push_back(item("Move Track Up", "", [=, this] { m_s.moveTrack(t, t - 1); m_selTrack = t - 1; m_dirty = true; }, valid && t > 0));
     m.push_back(item("Move Track Down", "", [=, this] { m_s.moveTrack(t, t + 1); m_selTrack = t + 1; m_dirty = true; }, valid && t + 1 < int(m_tracks.size())));
     m.push_back(item("Rename Track...", "", [this] { m_selRegion = -1; dlgRename(); }, valid));
+    m.push_back(item("MIDI Channel...", "", [=, this] { dlgMidiChannel(t); }, valid && m_tracks[size_t(t)].type == core::TrackType::Instrument));
     m.push_back(sep());
     m.push_back(item("Bounce in Place", "", [=, this] { m_s.bounceTrackInPlace(t); m_dirty = true; }, valid && m_tracks[size_t(t)].type != core::TrackType::Audio));
     m.push_back(item("Convert Pattern to MIDI Region...", "", [this] { dlgPatternToMidi(); }, valid && m_tracks[size_t(t)].type == core::TrackType::Drums));
@@ -206,6 +220,39 @@ void NativeUi::gotoMarker(int dir) {
     m_dirty = true;
 }
 
+void NativeUi::guardUnsaved(std::function<void()> proceed) {
+    if (!m_s.isDirty()) { proceed(); return; }
+    Dialog::Values f = {Field::note("Save changes to the project before continuing?"), Field::button("Discard Changes", proceed, true)};
+    openDialog(std::make_unique<Dialog>("Unsaved changes", std::move(f), [this, proceed](const Dialog::Values&) {
+        doFile("save");
+        if (!m_s.isDirty()) proceed();   // still dirty = the save was cancelled or failed: stay in the project
+    }, "Save", true));
+}
+
+bool NativeUi::previewOnClick() const {
+    auto it = m_host.settings.find("previewOnClick");
+    return it == m_host.settings.end() || it->second != "0";
+}
+
+void NativeUi::openAny(const std::string& p) {
+    switch (core::classifyFile(p)) {
+    case core::FileKind::Project: guardUnsaved([this, p] { openProject(p); m_dirty = true; }); break;
+    case core::FileKind::Audio: m_s.importAudio(p, m_selTrack, m_s.positionBeats()); message(msg("Importing %1", p)); break;
+    case core::FileKind::Logic: { std::string summary; core::importLogicPackage(m_s, p, &summary); message(summary); break; }
+    case core::FileKind::Midi: {
+        std::string err;
+        if (m_s.importMidiFile(p, &err)) message(msg("Imported %1", p)); else message(msg("Could not import: %1", err));
+        break;
+    }
+    default: {
+        const std::string e = core::fileExtension(p);
+        message(msg("This file type is not supported (%1). Supported: %2", e.empty() ? std::string("no extension") : e, core::supportedExtensionsText()));
+        break;
+    }
+    }
+    m_dirty = true;
+}
+
 void NativeUi::doFile(const std::string& what) {
     auto ask = [&](const char* title, const char* filter, bool save) -> std::string {
         if (!m_host.fileDialog) { message("File dialogs are not available here."); return {}; }
@@ -213,20 +260,32 @@ void NativeUi::doFile(const std::string& what) {
     };
     std::string err;
     const char* kProject = "MiniDAW project|*.mdaw";
-    if (what == "new") { m_s.newProject(); m_selTrack = m_selRegion = -1; message("New project."); }
-    else if (what == "open") {
-        const std::string p = ask("Open Project", kProject, false);
-        if (!p.empty()) openProject(p);
+    if (what == "new") { guardUnsaved([this] { doFile("newnow"); }); return; }
+    else if (what == "open") { const std::string p = ask("Open", core::openFilter().c_str(), false); if (!p.empty()) openAny(p); return; }
+    else if (what == "recover") { guardUnsaved([this] { doFile("recovernow"); }); return; }
+    else if (what == "newnow") { m_s.newProject(); m_selTrack = m_selRegion = -1; message("New project."); }
+    else if (what == "opennow") {
+        const std::string p = ask("Open", core::openFilter().c_str(), false);
+        if (!p.empty()) openAny(p);
+    } else if (what == "recovernow") {
+        if (!m_s.hasAutosave()) message("There is no autosaved project to recover.");
+        else if (m_s.loadProject(m_s.autosavePath(), &err)) { m_s.markRecovered(); m_selTrack = m_selRegion = -1; message("Recovered the autosaved project. Please save it."); }
+        else message(msg("Could not open the project: %1", err));
     } else if (what == "save" || what == "saveas") {
         std::string p = what == "save" ? m_s.projectPath() : std::string();
         if (p.empty()) p = ask("Save Project", kProject, true);
         if (!p.empty()) { if (p.find('.') == std::string::npos) p += ".mdaw"; if (m_s.saveProject(p, &err)) { message(msg("Saved %1", p)); addRecent(p); } else message(msg("Could not save: %1", err)); }
     } else if (what == "import") {
-        const std::string p = ask("Import Audio", "Audio files|*.wav;*.mp3;*.m4a;*.aac;*.flac;*.wma", false);
+        const std::string p = ask("Import Audio", core::audioFilter().c_str(), false);
         if (!p.empty()) { m_s.importAudio(p, m_selTrack, m_s.positionBeats()); message(msg("Importing %1", p)); }
     } else if (what == "importmidi") {
-        const std::string p = ask("Import MIDI File", "MIDI files|*.mid;*.midi", false);
-        if (!p.empty()) { if (m_s.importMidiFile(p, &err)) message(msg("Imported %1", p)); else message(msg("Could not import: %1", err)); }
+        dlgImportMidi();
+    } else if (what == "importlogic") {
+        if (!m_host.folderDialog) { message("Folder dialogs are not available here."); }
+        else {
+            const std::string d = m_host.folderDialog("Choose a Logic Pro project (.logicx folder)");
+            if (!d.empty()) { std::string summary; core::importLogicPackage(m_s, d, &summary); message(summary); }
+        }
     } else if (what == "exportmidi") {
         std::string p = ask("Export MIDI File", "MIDI files|*.mid", true);
         if (!p.empty()) { if (p.find('.') == std::string::npos) p += ".mid"; if (m_s.exportMidiFile(p, &err)) message(msg("Exported %1", p)); else message(msg("Could not export: %1", err)); }
@@ -299,7 +358,7 @@ void NativeUi::mouseDown(int x, int y, int button, int mods) {
             m_browserSel = a;
             m_payPending = true; m_payActive = false; m_payX = x; m_payY = y;
             m_payKind = it.kind; m_payId = it.id; m_payName = it.name; m_payPath = it.path;
-            if (it.kind == 0) m_s.audition(it.path);
+            if (it.kind == 0 && previewOnClick()) m_s.audition(it.path);
             m_drag = Drag::Browser;
         }
         break;

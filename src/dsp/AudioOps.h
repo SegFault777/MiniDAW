@@ -61,6 +61,11 @@ inline int bytesPerSample(WavFormat f) { return f == WavFormat::Pcm16 ? 2 : f ==
 /// plus a "fact" chunk for Float32).
 std::vector<std::uint8_t> wavHeader(WavFormat f, int sampleRate, std::uint64_t frames);
 
+/// AIFF header for a stereo file of 'frames' frames (16 or 24 bit PCM, big-endian samples follow; Float32 is not allowed in plain AIFF).
+std::vector<std::uint8_t> aiffHeader(WavFormat f, int sampleRate, std::uint64_t frames);
+/// Turns the little-endian sample bytes made by encodeSamples into big-endian ones (for AIFF), in place.
+void swapSampleBytes(std::vector<std::uint8_t>& bytes, int bytesPerSample);
+
 /// Converts interleaved stereo float to the sample format and appends the bytes to 'out'.
 /// 'gain' is applied first. With 'dither' 16-bit output uses TPDF dither (state in 'seed').
 /// Integer formats are clipped to full scale.

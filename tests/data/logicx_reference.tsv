@@ -1,0 +1,89 @@
+fixtures/F0_baseline.logicx	0	0	0	1	0	1	0
+fixtures/F10_sigs.logicx	0	0	0	1	0	4	0
+fixtures/F11_markers.logicx	0	0	0	1	3	1	0
+fixtures/F12_markers.logicx	0	0	0	1	3	1	0
+fixtures/F13_settled_or_not.logicx	0	0	0	1	0	1	0
+fixtures/F14_audio_base.logicx	0	0	0	1	0	1	0
+fixtures/F15_audio_bar5.logicx	1	0	0	1	0	1	0
+fixtures/F16_sr48.logicx	0	0	0	1	0	1	0
+fixtures/F17_base.logicx	0	0	0	1	0	1	0
+fixtures/F18_audio.logicx	1	0	0	1	0	1	0
+fixtures/F19_multi_base.logicx	0	0	0	1	0	1	0
+fixtures/F1_tempo.logicx	0	0	0	1	0	1	0
+fixtures/F20_multi_regions.logicx	3	0	0	1	0	1	0
+fixtures/F21_multitrack_regions.logicx	3	0	0	1	0	1	0
+fixtures/F22_multimidi.logicx	0	4	0	1	0	1	0
+fixtures/F23_av.logicx	3	4	0	1	0	1	0
+fixtures/F2_tempomap.logicx	0	0	0	2	0	1	0
+fixtures/F3_marker.logicx	0	0	0	1	1	1	0
+fixtures/F4_midiregion.logicx	0	1	0	1	0	1	0
+fixtures/F4b_midinotes.logicx	0	1	3	1	0	1	0
+fixtures/F4c_midinotes_bar2.logicx	0	1	3	1	0	1	0
+fixtures/F5_region_moved.logicx	0	1	0	1	0	1	0
+fixtures/F6_audio.logicx	1	0	0	1	0	1	0
+fixtures/F7_trackname.logicx	0	0	0	1	0	1	0
+fixtures/F8_twotracks.logicx	0	0	0	1	0	1	0
+fixtures/F9_meter.logicx	0	0	0	1	0	2	0
+fixtures/F9_tempometer.logicx	0	0	0	4	0	3	0
+fixtures/TAKES.logicx	3	0	0	1	0	1	0
+fixtures/TAKES3.logicx	3	0	0	1	0	1	0
+fixtures/TEST_all_steelydan.logicx	0	0	0	248	13	7	0
+fixtures/TEST_exportall_multi.logicx	3	0	0	2	3	2	0
+fixtures/ctl_caf.logicx	1	0	0	1	0	1	0
+fixtures/ctl_wav.logicx	1	0	0	1	0	1	0
+fixtures/lots of audio tracks/1 audio track.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/1 from 1000 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/1 from 64 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/1 region 4 from 64 audio tracks.logicx	1	1	0	1	0	1	0
+fixtures/lots of audio tracks/10 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/1000 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/11 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/12 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/13 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/14 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/15 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/16 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/2 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/2 from 1000 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/2 from 64 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/2 region 4 from 64 audio tracks.logicx	1	1	0	1	0	1	0
+fixtures/lots of audio tracks/3 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/3 from 1000 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/3 from 64 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/3 region 4 from 64 audio tracks.logicx	1	1	0	1	0	1	0
+fixtures/lots of audio tracks/4 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/4 from 1000 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/4 from 64 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/4 region 4 from 64 audio tracks.logicx	1	1	0	1	0	1	0
+fixtures/lots of audio tracks/5 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/5 from 1000 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/6 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/64 audio tracks.logicx	0	1	0	1	0	1	0
+fixtures/lots of audio tracks/7 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/8 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of audio tracks/9 audio tracks.logicx	0	0	0	1	0	1	0
+fixtures/lots of regions/0 regions.logicx	0	0	0	1	0	1	0
+fixtures/lots of regions/1 regions.logicx	1	0	0	1	0	1	0
+fixtures/lots of regions/2 regions.logicx	2	0	0	1	0	1	0
+fixtures/lots of regions/3 regions.logicx	3	0	0	1	0	1	0
+fixtures/lots of regions/4 regions.logicx	4	0	0	1	0	1	0
+fixtures/lots of regions/5 regions.logicx	5	0	0	1	0	1	0
+fixtures/lots of regions/6 regions.logicx	6	0	0	1	0	1	0
+fixtures/midi test/audio_inst.logicx	0	0	0	1	0	1	0
+fixtures/midi test/mixed_template + 1 audio.logicx	0	1	0	1	0	1	0
+fixtures/midi test/mixed_template + 1 inst.logicx	0	1	0	1	0	1	0
+fixtures/midi test/mixed_template + 2 inst.logicx	0	1	0	1	0	1	0
+fixtures/midi test/mixed_template + 3 inst.logicx	0	1	0	1	0	1	0
+fixtures/midi test/mixed_template + 4 inst.logicx	0	1	0	1	0	1	0
+fixtures/midi test/mixed_template.logicx	0	1	0	1	0	1	0
+fixtures/stereo test/mono.logicx	0	0	0	1	0	1	0
+fixtures/stereo test/stereo.logicx	0	0	0	1	0	1	0
+templates/F13_settled_or_not.logicx	0	0	0	1	0	1	0
+templates/F17_base.logicx	0	0	0	1	0	1	0
+templates/F18_audio.logicx	1	0	0	1	0	1	0
+templates/F19_multi_base.logicx	0	0	0	1	0	1	0
+templates/F19b_4audio.logicx	0	0	0	1	0	1	0
+templates/F21_multitrack_regions.logicx	3	0	0	1	0	1	0
+templates/F22_multimidi.logicx	0	4	0	1	0	1	0
+templates/F23_av.logicx	3	4	0	1	0	1	0
+templates/F4_midiregion.logicx	0	1	0	1	0	1	0

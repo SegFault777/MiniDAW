@@ -1,46 +1,52 @@
-# 믹싱과 이펙트
+# Mixing and effects
 
-## 믹서
-아래 패널의 **Mixer** 탭(기본)에 트랙마다 채널 스트립이 있습니다.
-- 맨 위 색 알약: 트랙 이름
-- 인서트 슬롯 4개: 걸어 둔 이펙트 이름
-- 팬 노브: 위아래로 끌면 좌우 위치가 바뀌고, 더블클릭하면 가운데로 돌아옵니다.
-- **페이더**: 볼륨(dB). 0 dB 근처에서 달라붙고, 더블클릭하면 -1.9 dB(기본값)로 돌아옵니다. 옆의 두 막대는 좌우 레벨 미터입니다.
-- **M / S / R**: 음소거 / 솔로 / 녹음 대기
-- 맨 오른쪽 **Master**: 전체 볼륨과 출력 레벨
+## The mixer
+The **Mixer** tab (the default) of the bottom panel has a channel strip for every track.
+- The coloured pill on top: the track name
+- Four insert slots: the names of the effects on the track
+- Pan knob: drag up or down to move left and right; double-click to return to the centre.
+- **Fader**: volume (dB). It sticks near 0 dB; double-click returns it to -1.9 dB (the default). The two bars beside it are the left and right level meters.
+- **M / S / R**: mute / solo / record arm
+- **Master** on the far right: overall volume and output level
 
-## 인스펙터
-선택한 트랙의 **색**, 볼륨, 팬, **센드 A (리버브)**, **센드 B (에코)**, 악기(Synth, Drum Kit, VST3 악기),
-악기 프리셋, **인서트 목록**과 선택한 리전의 속성(이름, 음소거, 게인, 페이드 인/아웃, 뒤집기, 노멀라이즈,
-프로젝트 템포 따르기, 반음 이동)을 한 곳에서 바꿉니다.
+## Inspector
+Change the **colour**, volume, pan, **send A (reverb)**, **send B (echo)**, instrument (Synth, Drum Kit, VST3 instrument), instrument preset and the **insert list** of the selected track,
+and the properties of the selected region (name, mute, gain, fade in / out, reverse, normalize, follow project tempo, transpose) in one place.
 
-## 디바이스 (이펙트와 악기 노브)
-**Devices** 탭은 악기와 인서트 이펙트를 왼쪽에서 오른쪽으로 **신호가 흐르는 순서대로 카드**로 보여 줍니다.
-- 노브를 **위아래로 끌어** 값을 바꿉니다. `Shift`를 누르고 끌면 미세 조절, **더블클릭**하면 기본값입니다.
-- 카드 오른쪽 위의 **B**는 바이패스(이펙트를 잠시 끔), **x**는 삭제, **E**는 VST3 플러그인 자체 창입니다.
-- 파라미터가 8개보다 많으면 카드 아래의 `<` `>`로 쪽을 넘깁니다.
-- 맨 끝의 **Add an effect** 카드로 이펙트를 더합니다.
+## Devices (effect and instrument knobs)
+The **Devices** tab shows the instrument and the insert effects as **cards in signal-flow order**, from left to right.
+- **Drag a knob up or down** to change it. Hold `Shift` for fine control; **double-click** for the default value.
+- Top right of a card: **B** bypasses the effect for a moment, **x** deletes it, **E** opens the window of a VST3 plug-in.
+- With more than 8 parameters, page through them with `<` `>` under the card.
+- The **Add an effect** card at the end adds effects.
 
-내장 이펙트: Channel EQ, Compressor, Echo, Reverb, Overdrive, Chorus, Filter. (센드 A는 리버브, 센드 B는 에코로 보내집니다.)
+Built-in effects: Channel EQ, Compressor, Echo, Reverb, Overdrive, Chorus, Filter. (Send A goes to the reverb, send B to the echo.)
+**View > Aux A: Reverb...** and **Aux B: Echo...** (Native) or the buttons in the Devices tab (Vulkan) edit the parameters of these two shared effects.
 
-## 오토메이션
-**Automation** 탭에서 **Volume / Pan / Send A / Send B / Tempo** 가운데 하나를 고릅니다.
-- 빈 곳을 클릭하면 점이 생기고, 점을 끌어 옮기고, **오른쪽 클릭**으로 지웁니다. 점 사이는 직선으로 이어집니다.
-- 위치는 격자(Snap)에 맞춰집니다.
-- **Tempo**는 프로젝트 템포의 변화입니다. 점이 하나뿐이면 일정한 템포이고, 점을 더하면 템포가 서서히 바뀝니다.
+## Automation
+In the **Automation** tab choose one of **Volume / Pan / Send A / Send B / Tempo**.
+- Click an empty spot to add a point, drag points to move them, **right-click** to delete. Lines join the points.
+- Positions follow the grid (Snap).
+- **Tempo** is the change of the project tempo. One point means a constant tempo; add points and the tempo changes gradually.
 
-## 템포와 박자
-- **View > Tempo...**: 프로젝트 템포(20~300 BPM)
-- **View > Tap Tempo**(`T`): 박자에 맞춰 두드리면 평균 템포로 설정
-- **View > Time Signature...**: 지금 위치(마디)부터 박자표를 바꿉니다. 눈금자와 메트로놈의 강세가 따라갑니다.
+## Tempo and time signature
+- **Tempo...**: project tempo (20 to 300 BPM)
+- **Tap Tempo** (`T`): tap along with the beat and the average becomes the tempo
+- **Time Signature...**: changes the time signature from the current bar on. The ruler and the accents of the metronome follow.
 
-## 마커
-`M`으로 현재 위치에 마커를 더하고, `[` `]`로 이전/다음 마커로 이동합니다. 눈금자의 마커를 끌어 옮기고,
-오른쪽 클릭으로 이름을 바꾸거나 지웁니다.
+## Markers
+`M` adds a marker at the current position, `[` and `]` jump to the previous / next marker. Drag a marker on the ruler to move it; right-click to rename or delete it.
 
-## 최종 결과 내보내기
-**File > Bounce to WAV...** (`Ctrl+B`)
-- 범위: 프로젝트 전체 / 사이클 범위
-- 형식: 16비트 PCM, 24비트 PCM, 32비트 부동소수점
-- 16비트에서는 **디더**, 필요하면 **노멀라이즈**(목표 dBFS), 리버브/에코의 **꼬리** 2초 추가
-- **Track > Bounce in Place**: 선택한 악기 트랙을 오디오로 굳힙니다.
+## MixConsole Snapshots (Vulkan version, from Cubase)
+The **Snapshots** tab stores the level, pan, sends, mute and solo of every channel plus the master volume under a name.
+- **Save Snapshot** (`Ctrl+Shift+Enter`) saves the current balance. **Recall** (or `Alt+1` ... `Alt+9`) brings it back; one `Ctrl+Z` undoes the recall.
+- Rename with **Aa**, delete with **x**. Snapshots are saved inside the project file.
+
+Use them to compare mixes, to keep a "verse" and a "chorus" balance, or to try something risky.
+
+## Bouncing the final result
+**File > Bounce to WAV...** (Native) / **Bounce / Export Audio...** (Vulkan), `Ctrl+B`
+- Range: whole project / cycle range
+- Format: 16-bit PCM, 24-bit PCM, 32-bit float
+- For 16 bit: **dither**; if you want, **normalize** (target dBFS) and a 2 second **tail** for reverb and echo
+- **Track > Bounce in Place**: renders the selected instrument track to audio.

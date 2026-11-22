@@ -20,4 +20,8 @@ double integratedLoudness(const float* stereo, size_t frames);
 std::vector<std::pair<size_t, size_t>> findSoundRanges(const float* stereo, size_t frames, double thresholdDb,
                                                        size_t minSilenceFrames, size_t padFrames);
 
+/// Onset positions (frame indices) of a stereo buffer: drum hits, plucks, syllables. 'sensitivity' 0..1 (higher finds more),
+/// 'minGapFrames' is the shortest distance between two transients. Used by Tab to Transient and Beat Detective.
+std::vector<size_t> findTransients(const float* stereo, size_t frames, double sensitivity = 0.5, size_t minGapFrames = 2205);
+
 }  // namespace dsp

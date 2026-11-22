@@ -6,18 +6,21 @@
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
+#include <map>
+#include <set>
 #include <regex>
 #include "../dsp/MidiFile.h"
 #include "../dsp/Stretch.h"
 #include "Files.h"
 #include "Internal.h"
 #include "Json.h"
+#include "Mp3Gapless.h"
 #include "Session.h"
 
 namespace core {
 
 namespace {
-const int kProjectVersion = 3;
+const int kProjectVersion = 4;   // 4: mixer groups, mix snapshots, per-track MIDI channel (older programs ignore these fields)
 
 std::string typeToString(TrackType t) {
     switch (t) {
@@ -107,8 +110,33 @@ void Session::importAudio(const std::string& path, int track, double startBeat) 
     });
 }
 
+void Session::importAudioPlacements(const std::string& path, const std::vector<AudioPlacement>& places) {
+    if (places.empty()) return;
+    decodeAsync(path, [this, places](std::shared_ptr<AudioData> data, std::string err) {
+        if (!data) { message(err); return; }
+        const i64 total = data->frames();
+        {
+            std::lock_guard<std::mutex> l(m_mutex);
+            for (const AudioPlacement& p : places) {
+                if (p.track < 0 || p.track >= int(m_tracks.size()) || m_tracks[size_t(p.track)].type != TrackType::Audio) continue;
+                Region r;
+                r.name = data->name;
+                r.start = std::max(0.0, p.startBeat);
+                r.source = r.audio = data;
+                const i64 off = std::clamp<i64>(p.srcOffset, 0, total);
+                const i64 len = p.frames > 0 ? std::min<i64>(p.frames, total - off) : total - off;
+                if (len <= 0) continue;
+                r.offset = r.srcOffset = off;
+                r.frames = r.srcFrames = len;
+                m_tracks[size_t(p.track)].regions.push_back(r);
+            }
+        }
+        changed(false);
+    });
+}
+
 // ------------------------------------------------------------------ MIDI files
-bool Session::importMidiFile(const std::string& path, std::string* error) {
+bool Session::importMidiFile(const std::string& path, std::string* error, const MidiImportOptions& options) {
     std::string raw;
     if (!readFile(path, raw, error)) return false;
     dsp::MidiSong song;
@@ -120,33 +148,65 @@ bool Session::importMidiFile(const std::string& path, std::string* error) {
         std::lock_guard<std::mutex> l(m_mutex);
         for (const Track& t : m_tracks) empty = empty && t.regions.empty();
     }
-    if (empty) {   // adopt the tempo and time signature of the file into an empty project
+    const bool adopt = options.tempo == MidiTempoPolicy::UseFile || (options.tempo == MidiTempoPolicy::Auto && empty);
+    if (adopt) {   // adopt the tempo map and the time signatures of the file
         auto tm = std::make_shared<dsp::TempoMap>(*tempoMap());
-        tm->setTempo({{0, song.bpm, false}});
-        tm->setMeter({{1, song.num, song.den}});
+        std::vector<dsp::TempoPoint> tp;
+        for (const auto& t : song.tempos) {
+            if (!tp.empty() && std::fabs(tp.back().bpm - t.bpm) < 1e-6) continue;   // a repeated tempo is not a change
+            if (!tp.empty() && std::fabs(tp.back().beat - t.beat) < 1e-9) tp.back().bpm = t.bpm;
+            else tp.push_back({t.beat, t.bpm, false});
+        }
+        if (tp.empty()) tp.push_back({0, song.bpm, false});
+        tm->setTempo(tp);
+        std::vector<dsp::MeterPoint> mp;   // meter changes are given in beats: find the bar of each one
+        int bar = 1, num = song.num, den = song.den;
+        double at = 0;
+        mp.push_back({1, num, den});
+        for (const auto& m : song.meters) {
+            if (m.beat <= 1e-9) { mp.front() = {1, m.num, m.den}; num = m.num; den = m.den; continue; }
+            const double barLen = double(num) * 4.0 / double(den);
+            bar += int(std::llround((m.beat - at) / barLen));
+            at = m.beat; num = m.num; den = m.den;
+            if (mp.back().bar == bar) mp.back() = {bar, num, den}; else mp.push_back({bar, num, den});
+        }
+        tm->setMeter(mp);
         setTempoMap(tm, false);
     }
+    for (const auto& mk : song.markers) addMarker(mk.beat, mk.name);
     const auto tm = tempoMap();
     {
         std::lock_guard<std::mutex> l(m_mutex);
         int n = 1;
-        for (const dsp::MidiTrack& mt : song.tracks) {
+        auto addTrack = [&](const std::string& name, const std::vector<const dsp::MidiNote*>& notes, int channel) {
             bool drums = true;
             double maxEnd = 0;
-            for (const dsp::MidiNote& note : mt.notes) {
-                drums = drums && note.channel == 9;
-                maxEnd = std::max(maxEnd, note.startBeat + note.lengthBeats);
+            for (const dsp::MidiNote* note : notes) {
+                drums = drums && note->channel == 9;
+                maxEnd = std::max(maxEnd, note->startBeat + note->lengthBeats);
             }
-            const std::string name = mt.name.empty() ? tr("Imported %1").arg(n).str() : mt.name;
             Track t = makeTrack(drums ? TrackType::Drummer : TrackType::Instrument, name);
+            if (!drums && channel >= 0) t.midiChannel = channel + 1;   // exporting the project again gives the notes their channel back
             Region r;
             r.midi = true;
             r.name = name;
             r.start = 0;
             r.lengthBeats = std::max(tm->barLength(1), tm->nextBarLine(maxEnd));
-            for (const dsp::MidiNote& note : mt.notes) r.notes.push_back({note.pitch, note.startBeat, note.lengthBeats, note.velocity});
+            for (const dsp::MidiNote* note : notes) r.notes.push_back({note->pitch, note->startBeat, note->lengthBeats, note->velocity});
             t.regions.push_back(std::move(r));
             m_tracks.push_back(std::move(t));
+        };
+        for (const dsp::MidiTrack& mt : song.tracks) {
+            const std::string name = mt.name.empty() ? tr("Imported %1").arg(n).str() : mt.name;
+            std::map<int, std::vector<const dsp::MidiNote*>> byChannel;
+            for (const dsp::MidiNote& note : mt.notes) byChannel[note.channel].push_back(&note);
+            if (options.splitChannels && byChannel.size() > 1) {
+                for (const auto& [ch, notes] : byChannel) addTrack(name + " (ch " + std::to_string(ch + 1) + ")", notes, ch);
+            } else {
+                std::vector<const dsp::MidiNote*> all;
+                for (const dsp::MidiNote& note : mt.notes) all.push_back(&note);
+                addTrack(name, all, byChannel.size() == 1 ? byChannel.begin()->first : -1);
+            }
             ++n;
         }
     }
@@ -160,15 +220,39 @@ bool Session::exportMidiFile(const std::string& path, std::string* error) {
     song.bpm = tm->bpmAt(0);
     song.num = tm->meterAtBeat(0).num;
     song.den = tm->meterAtBeat(0).den;
-    for (const Track& t : snapshot()) {
+    {   // the tempo map: a glide (ramp) has no MIDI event, so it is written as one step per beat
+        const auto& pts = tm->tempoPoints();
+        for (size_t i = 0; i < pts.size(); ++i) {
+            song.tempos.push_back({pts[i].beat, pts[i].bpm});
+            if (pts[i].ramp && i + 1 < pts.size())
+                for (double b = pts[i].beat + 1.0; b < pts[i + 1].beat - 1e-9; b += 1.0)
+                    song.tempos.push_back({b, tm->bpmAt(b)});
+        }
+        for (const dsp::MeterPoint& mp : tm->meterPoints()) song.meters.push_back({tm->barStart(mp.bar), mp.num, mp.den});
+        for (const Marker& mk : markers()) song.markers.push_back({mk.beat, mk.name});
+    }
+    const std::vector<Track> tracks = snapshot();
+    // channels: a chosen channel is kept; the automatic ones are 1, 2, 3 ... in track order, skipping channel 10 (drums) and any chosen one
+    std::set<int> taken;
+    for (const Track& t : tracks)
+        if (t.type == TrackType::Instrument && t.midiChannel > 0) taken.insert(t.midiChannel - 1);
+    int nextAuto = 0;
+    auto autoChannel = [&] {
+        while (nextAuto == 9 || taken.count(nextAuto)) ++nextAuto;
+        const int ch = nextAuto < 16 ? nextAuto : 0;   // more than 15 tracks: share channel 1
+        ++nextAuto;
+        return ch;
+    };
+    for (const Track& t : tracks) {
         if (t.type != TrackType::Instrument && t.type != TrackType::Drummer) continue;
         dsp::MidiTrack mt;
         mt.name = t.name;
+        const int channel = t.type == TrackType::Drummer ? 9 : t.midiChannel > 0 ? t.midiChannel - 1 : autoChannel();
         for (const Region& r : t.regions) {
             if (!r.midi) continue;
             for (const Note& n : r.notes) {
                 if (n.start >= r.lengthBeats) continue;
-                mt.notes.push_back({t.type == TrackType::Drummer ? 9 : 0, n.pitch, n.velocity, r.start + n.start,
+                mt.notes.push_back({channel, n.pitch, n.velocity, r.start + n.start,
                                     std::min(n.length, r.lengthBeats - n.start)});
             }
         }
@@ -208,7 +292,7 @@ void Session::clearAutosave() {
 
 void Session::markRecovered() {
     m_path.clear();
-    m_dirty = true;
+    markDirty();
 }
 
 /// Writes the project. An autosave never changes the project's path or dirty state; it keeps every
@@ -231,6 +315,8 @@ bool Session::writeProject(const std::string& path, bool autosave, std::string* 
         o["sendB"] = double(t.sendB);
         o["mute"] = t.mute;
         o["solo"] = t.solo;
+        if (t.group > 0) o["group"] = t.group;
+        if (t.midiChannel > 0) o["midiChannel"] = t.midiChannel;
         if (t.type == TrackType::Drums) {
             Json rows = Json::array();
             for (const auto& row : t.steps) {
@@ -362,6 +448,30 @@ bool Session::writeProject(const std::string& path, bool autosave, std::string* 
         }
         root["markers"] = marks;
     }
+    {   // Cubase style mixer snapshots (v0.12)
+        Json snaps = Json::array();
+        std::lock_guard<std::mutex> l(m_mutex);
+        for (const MixSnapshot& sn : m_snapshots) {
+            Json j = Json::object();
+            j["name"] = sn.name;
+            j["master"] = double(sn.master);
+            Json chans = Json::array();
+            for (const MixChannel& c : sn.channels) {
+                Json o = Json::object();
+                o["id"] = c.trackId;
+                o["volume"] = double(c.volume);
+                o["pan"] = double(c.pan);
+                o["sendA"] = double(c.sendA);
+                o["sendB"] = double(c.sendB);
+                o["mute"] = c.mute;
+                o["solo"] = c.solo;
+                chans.push(o);
+            }
+            j["channels"] = chans;
+            snaps.push(j);
+        }
+        root["snapshots"] = snaps;
+    }
     root["loopOn"] = loopOn();
     root["loopA"] = loopA();
     root["loopB"] = loopB();
@@ -377,6 +487,8 @@ bool Session::writeProject(const std::string& path, bool autosave, std::string* 
 }
 
 // ------------------------------------------------------------------ load
+int Session::projectFileVersion() { return kProjectVersion; }
+
 bool Session::loadProject(const std::string& path, std::string* error) {
     std::string text;
     if (!readFile(path, text, error)) return false;
@@ -384,6 +496,7 @@ bool Session::loadProject(const std::string& path, std::string* error) {
     if (!Json::parse(text, root) || !root.isObject() || root["format"].toString() != "MiniDAW")
         return fail(error, tr("Not a valid MiniDAW project file."));
     const std::string dir = parentDir(path);
+    m_loadedVersion = int(root["version"].toInt(0));
 
     stopRecording();
     m_playing = false;
@@ -410,6 +523,25 @@ bool Session::loadProject(const std::string& path, std::string* error) {
         m_markers.clear();
         for (const Json& mo : root["markers"].items()) m_markers.push_back({mo["beat"].toDouble(), mo["name"].toString()});
         std::sort(m_markers.begin(), m_markers.end(), [](const Marker& a, const Marker& b) { return a.beat < b.beat; });
+        m_snapshots.clear();
+        for (const Json& so : root["snapshots"].items()) {
+            MixSnapshot sn;
+            sn.name = so["name"].toString();
+            sn.master = float(so["master"].toDouble(0.9));
+            for (const Json& co : so["channels"].items()) {
+                MixChannel c;
+                c.trackId = int(co["id"].toDouble());
+                c.volume = float(co["volume"].toDouble(0.8));
+                c.pan = float(co["pan"].toDouble(0));
+                c.sendA = float(co["sendA"].toDouble(0));
+                c.sendB = float(co["sendB"].toDouble(0));
+                c.mute = co["mute"].toBool();
+                c.solo = co["solo"].toBool();
+                sn.channels.push_back(c);
+            }
+            sn.name = sn.name.empty() ? "Snapshot" : sn.name;
+            m_snapshots.push_back(std::move(sn));
+        }
         for (const Json& o : root["tracks"].items()) {
             Track t = makeTrack(typeFromString(o["type"].toString()), o["name"].toString());
             t.color = colorFromHex(o["color"].toString(), t.color);
@@ -419,6 +551,8 @@ bool Session::loadProject(const std::string& path, std::string* error) {
             t.sendB = float(o["sendB"].toDouble(0));
             t.mute = o["mute"].toBool();
             t.solo = o["solo"].toBool();
+            t.group = std::clamp(int(o["group"].toInt(0)), 0, 8);
+            t.midiChannel = std::clamp(int(o["midiChannel"].toInt(0)), 0, 16);
             if (t.type == TrackType::Drums) {
                 const auto& rows = o["steps"].items();
                 for (size_t r = 0; r < size_t(kDrumRows) && r < rows.size(); ++r) {
@@ -584,8 +718,6 @@ bool Session::exportAudio(const std::string& path, const ExportOptions& opt, std
     const i64 end = i64(std::llround(tempo->beatToFrame(endBeat))) + (opt.tail ? i64(kSampleRate) * 2 : 0);   // tail for reverb / echo
     const i64 total = end - first;
 
-    std::ofstream out(toPath(path), std::ios::binary | std::ios::trunc);   // streamed: long projects need no memory
-    if (!out) return fail(error, "cannot write " + path);
     constexpr int kBlock = 4096;
     ensureScratch(size_t(kBlock) * 2);
     // Renders [first, end) through the whole signal path and hands every block to 'sink'.
@@ -609,18 +741,130 @@ bool Session::exportAudio(const std::string& path, const ExportOptions& opt, std
         gain = dsp::normalizeGain(peak, opt.normalizeDb);
     }
 
-    const auto header = dsp::wavHeader(opt.format, kSampleRate, std::uint64_t(total));
+    const bool fast = opt.container == ExportContainer::Wav && opt.sampleRate == kSampleRate;
+    if (fast) {   // the usual case: WAV at 44.1 kHz is streamed, so long projects need no memory
+        std::ofstream out(toPath(path), std::ios::binary | std::ios::trunc);
+        if (!out) return fail(error, "cannot write " + path);
+        const auto header = dsp::wavHeader(opt.format, kSampleRate, std::uint64_t(total));
+        out.write(reinterpret_cast<const char*>(header.data()), std::streamsize(header.size()));
+        std::vector<std::uint8_t> bytes;
+        std::uint32_t seed = 12345u;
+        pass([&](const float* b, int n) {
+            bytes.clear();
+            dsp::encodeSamples(b, size_t(n), opt.format, gain, opt.dither, seed, bytes);
+            out.write(reinterpret_cast<const char*>(bytes.data()), std::streamsize(bytes.size()));
+            return bool(out);
+        });
+        out.flush();
+        if (!out) return fail(error, "cannot write " + path);
+        return true;
+    }
+
+    // Other formats / sample rates: render into memory, convert, then write.
+    static const int kRates[] = {44100, 48000, 88200, 96000};
+    if (std::find(std::begin(kRates), std::end(kRates), opt.sampleRate) == std::end(kRates)) return fail(error, tr("This sample rate is not supported."));
+    if (opt.container == ExportContainer::Aiff && opt.format == dsp::WavFormat::Float32) return fail(error, tr("AIFF files are 16-bit or 24-bit."));
+    int kbps = opt.mp3Kbps;
+    if (opt.container == ExportContainer::Mp3) {
+        if (!m_hooks.encodeMp3) return fail(error, tr("MP3 export is not available on this system."));
+        if (opt.sampleRate != 44100 && opt.sampleRate != 48000) return fail(error, tr("MP3 files can be 44.1 or 48 kHz."));
+        static const int kRatesMp3[] = {128, 160, 192, 224, 256, 320};
+        int best = kRatesMp3[0];
+        for (int r : kRatesMp3) if (std::abs(r - kbps) < std::abs(best - kbps)) best = r;
+        kbps = best;
+    }
+    if (total > i64(kSampleRate) * 60 * 90) return fail(error, tr("The project is too long to export in this format (90 minutes at most)."));
+    std::vector<float> mix;
+    mix.reserve(size_t(total) * 2);
+    pass([&](const float* b, int n) { mix.insert(mix.end(), b, b + size_t(n) * 2); return true; });
+    if (gain != 1.f) for (float& v : mix) v *= gain;
+    if (opt.sampleRate != kSampleRate) mix = resampleStereo(mix, kSampleRate, opt.sampleRate);
+    const std::uint64_t frames = mix.size() / 2;
+
+    if (opt.container == ExportContainer::Mp3) {
+        std::string eerr;
+        if (!m_hooks.encodeMp3(mix, opt.sampleRate, kbps, path, &eerr)) return fail(error, eerr.empty() ? std::string(tr("The MP3 encoder failed.")) : eerr);
+        std::string terr;
+        if (!addGaplessHeader(path, frames, kMp3EncoderDelay, &terr)) return fail(error, terr);   // gapless: delay / padding in an Info frame
+        if (!prependId3v2(path, opt.tags, &terr)) return fail(error, terr);
+        return true;
+    }
+    std::ofstream out(toPath(path), std::ios::binary | std::ios::trunc);
+    if (!out) return fail(error, "cannot write " + path);
+    const bool aiff = opt.container == ExportContainer::Aiff;
+    const auto header = aiff ? dsp::aiffHeader(opt.format, opt.sampleRate, frames) : dsp::wavHeader(opt.format, opt.sampleRate, frames);
     out.write(reinterpret_cast<const char*>(header.data()), std::streamsize(header.size()));
     std::vector<std::uint8_t> bytes;
     std::uint32_t seed = 12345u;
-    pass([&](const float* b, int n) {
+    constexpr size_t kChunk = 1 << 16;
+    for (size_t at = 0; at < frames; at += kChunk) {
+        const size_t n = std::min<size_t>(kChunk, size_t(frames) - at);
         bytes.clear();
-        dsp::encodeSamples(b, size_t(n), opt.format, gain, opt.dither, seed, bytes);
+        dsp::encodeSamples(mix.data() + at * 2, n, opt.format, 1.f, opt.dither, seed, bytes);
+        if (aiff) dsp::swapSampleBytes(bytes, dsp::bytesPerSample(opt.format));
         out.write(reinterpret_cast<const char*>(bytes.data()), std::streamsize(bytes.size()));
-        return bool(out);
-    });
+    }
     out.flush();
     if (!out) return fail(error, "cannot write " + path);
+    return true;
+}
+
+bool Session::exportStems(const std::string& folder, const ExportOptions& optIn, std::vector<std::string>* written, std::string* error) {
+    ExportOptions opt = optIn;
+    opt.cycleOnly = optIn.cycleOnly;
+    opt.stemSends = optIn.stemSends;
+    const auto tracks = snapshot();
+    std::vector<int> audible;   // tracks that have something to play
+    for (int i = 0; i < int(tracks.size()); ++i) {
+        const Track& t = tracks[size_t(i)];
+        bool content = !t.regions.empty();
+        if (t.type == TrackType::Drums) for (const auto& row : t.steps) for (bool b : row) content |= b;
+        if (content && !t.mute) audible.push_back(i);
+    }
+    if (audible.empty()) return fail(error, tr("There is nothing to bounce."));
+    makeDirs(folder);
+    const char* ext = opt.container == ExportContainer::Mp3 ? ".mp3" : opt.container == ExportContainer::Aiff ? ".aiff" : ".wav";
+    // every stem has the length of the whole project, so the files line up: the length is decided once from the whole mix
+    std::vector<std::pair<bool, bool>> saved;   // original mute / solo
+    for (const Track& t : tracks) saved.emplace_back(t.mute, t.solo);
+    const float savedMaster = m_master;
+    const bool savedLimiterBypass = m_limiter->bypass;
+    auto restore = [&] {
+        std::lock_guard<std::mutex> l(m_mutex);
+        for (size_t i = 0; i < m_tracks.size() && i < saved.size(); ++i) { m_tracks[i].mute = saved[i].first; m_tracks[i].solo = saved[i].second; }
+        m_master = savedMaster;
+        m_limiter->bypass = savedLimiterBypass;
+        m_noSends = false;
+    };
+    if (!opt.stemSends) { std::lock_guard<std::mutex> l(m_mutex); m_noSends = true; }   // dry stems: the aux returns stay out
+    if (!opt.masterEffects) {   // stems with the track effects only: no master volume, no limiter
+        std::lock_guard<std::mutex> l(m_mutex);
+        m_master = 1.f;
+        m_limiter->bypass = true;
+    }
+    bool ok = true;
+    std::string firstError;
+    int number = 0;
+    for (int idx : audible) {
+        {
+            std::lock_guard<std::mutex> l(m_mutex);
+            for (size_t i = 0; i < m_tracks.size(); ++i) { m_tracks[i].solo = int(i) == idx; m_tracks[i].mute = false; }
+        }
+        std::string name = tracks[size_t(idx)].name;
+        for (char& c : name) if (std::string("\\/:*?\"<>|").find(c) != std::string::npos) c = '_';
+        char num[16];
+        std::snprintf(num, sizeof num, "%02d ", ++number);
+        const std::string file = folder + "/" + num + name + ext;
+        std::string err;
+        ExportOptions o = opt;
+        o.normalize = false;   // stems keep their level relative to each other
+        if (opt.container == ExportContainer::Mp3 && o.tags.title.empty()) o.tags.title = name;
+        if (exportAudio(file, o, &err)) { if (written) written->push_back(file); }
+        else { ok = false; if (firstError.empty()) firstError = err; }
+    }
+    restore();
+    changed(false);
+    if (!ok) return fail(error, firstError);
     return true;
 }
 

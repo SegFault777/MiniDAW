@@ -13,6 +13,8 @@ Save	저장
 Save As…	다른 이름으로 저장…
 Import Audio…	오디오 가져오기…
 Import MIDI File…	MIDI 파일 가져오기…
+Import Logic Pro Project Folder…	Logic Pro 프로젝트 폴더 가져오기…
+Choose a Logic Pro project (.logicx folder)	Logic Pro 프로젝트(.logicx 폴더) 선택
 Export MIDI File…	MIDI 파일 내보내기…
 Bounce to WAV…	WAV로 바운스…
 Preferences…	환경설정…
@@ -231,9 +233,6 @@ Normalize	노멀라이즈
 Automation	오토메이션
 Automation Parameter	오토메이션 파라미터
 Volume	볼륨
-Pan	팬
-Send A	센드 A
-Send B	센드 B
 Marker %1	마커 %1
 Add Marker	마커 추가
 Next Marker	다음 마커
@@ -558,3 +557,369 @@ Click to toggle a step, drag to paint	클릭하면 스텝 켜기/끄기, 끌어�
 Click to add a point, drag to move it, right-click to delete it	클릭하면 점 추가, 끌어서 이동, 오른쪽 클릭으로 삭제
 Click to add a point, drag to move it, right-click to delete it.	클릭하면 점 추가, 끌어서 이동, 오른쪽 클릭으로 삭제합니다.
 %1 notes copied.	%1개의 노트를 복사했습니다.
+All	전체
+Inst	악기
+FX	이펙트
+Project	프로젝트
+Drums	드럼
+Narrow	좁게
+Track Height: Small	트랙 높이: 아주 작게
+Track Height: Medium	트랙 높이: 보통
+Track Height: Large	트랙 높이: 크게
+Track Height: Extra Large	트랙 높이: 아주 크게
+Mixer: Narrow Strips	믹서: 좁은 스트립
+Browser: Project Clips	브라우저: 프로젝트 클립
+No channels of this kind.	이 종류의 채널이 없어요.
+No regions yet.	아직 리전이 없어요.
+# v0.12 Vulkan interface
+   from	시작
+   to	끝
++ Add Effect	+ 이펙트 추가
++ Add Track	+ 트랙 추가
++ FX	+ FX
++ Insert	+ 인서트
++ Save Snapshot	+ 스냅샷 저장
++ Track	+ 트랙
+%1 note changed.	노트 %1개 변경됨.
+%1 notes changed.	노트 %1개 변경됨.
+Action	동작
+Adapt Tempo...	템포 맞추기...
+Add condition 2	조건 2 추가
+Also snap note lengths	노트 길이도 스냅
+Apply	적용
+Apply Groove...	그루브 적용...
+Apply to the notes that do NOT match	조건에 맞지 않는 노트에 적용
+Arm Record	녹음 준비
+Audio Region	오디오 리전
+Auto	자동
+Auto: %1	자동: %1
+Auto: Bar	자동: 마디
+Aux A: Reverb	Aux A: 리버브
+Aux A: Reverb...	Aux A: 리버브...
+Aux B: Echo	Aux B: 에코
+Aux B: Echo...	Aux B: 에코...
+BROWSER	브라우저
+Bar	마디
+Beat Detective...	비트 디텍티브...
+Beat unit	박 단위
+Bounce / Export Audio...	바운스 / 오디오 내보내기...
+Capture MIDI	MIDI 캡처
+Clear Lane	레인 지우기
+Click to add a point - drag to move - right-click to delete - the line is followed during playback	클릭하면 점 추가 - 드래그로 이동 - 오른쪽 클릭으로 삭제 - 재생 중 선을 따라갑니다
+Colour: Velocity	색상: 벨로시티
+Command Palette	명령 팔레트
+Command Palette...	명령 팔레트...
+Condition 1	조건 1
+Condition 2	조건 2
+Cycle Track Height	트랙 높이 순환
+Damping	댐핑
+Density	밀도
+Discard Changes	변경 내용 버리기
+Drum Machine - click the steps, drag to paint	드럼 머신 - 스텝을 클릭하거나 드래그해서 칠하세요
+Eraser	지우개
+Eraser Tool	지우개 도구
+Esc or F1 closes - Ctrl+K searches every command	Esc 또는 F1로 닫기 - Ctrl+K로 모든 명령 검색
+Feedback	피드백
+Filter: every condition must match. Action: applied to the notes that match.	필터: 모든 조건이 맞아야 합니다. 동작: 조건에 맞는 노트에 적용됩니다.
+Fold	접기
+Fold Notes	노트 접기
+Follow Playhead	재생 헤드 따라가기
+Functions v	기능 v
+Ghost	고스트
+Go to End	끝으로 이동
+Go to Start	처음으로 이동
+Grid: %1	격자: %1
+Help	도움말
+Highlight	강조
+Keyboard Shortcuts	키보드 단축키
+Keyboard Shortcuts...	키보드 단축키...
+Keyboard shortcuts	키보드 단축키
+Largest leap	최대 도약
+Lock	잠금
+Logical Editor	로지컬 에디터
+Logical Editor...	로지컬 에디터...
+Lowest octave	가장 낮은 옥타브
+MIDI Region	MIDI 리전
+Make Groove	그루브 만들기
+Marker added.	마커를 추가했습니다.
+Maximize Bottom Panel	아래 패널 최대화
+Mix	믹스
+MixConsole Snapshots	믹스콘솔 스냅샷
+Musical typing on: A W S E D F T G Y H U J K play notes, Z / X change the octave.	음악 타이핑 켜짐: A W S E D F T G Y H U J K로 연주, Z / X로 옥타브 변경.
+Mute Region	리전 음소거
+Mute Tool	음소거 도구
+Mute Track	트랙 음소거
+Next Grid Size	다음 격자 크기
+No next marker.	다음 마커가 없습니다.
+Not following the playhead.	재생 헤드를 따라가지 않습니다.
+Note length	노트 길이
+Nothing to bounce.	바운스할 것이 없습니다.
+Nudge Region Left	리전 왼쪽으로 이동
+Nudge Region Right	리전 오른쪽으로 이동
+OK	확인
+Parameter	매개변수
+Pattern doubled to %1 beats.	패턴을 %1박으로 두 배로 늘렸습니다.
+Pencil	연필
+Pencil Tool	연필 도구
+Pitch	음높이
+Playhead Back One Bar	재생 헤드 한 마디 뒤로
+Playhead Forward One Bar	재생 헤드 한 마디 앞으로
+Pointer	포인터
+Pointer Tool	포인터 도구
+Preview	미리 듣기
+Put the playhead inside a region to split it.	리전을 나누려면 재생 헤드를 리전 안에 두세요.
+Recall	불러오기
+Recall Previous Snapshot	이전 스냅샷 불러오기
+Recalled %1	%1 불러옴
+Recalled mixer snapshot %1	믹서 스냅샷 %1을 불러왔습니다
+Rename Region...	리전 이름 바꾸기...
+Riff Machine	리프 머신
+Riff Machine...	리프 머신...
+Riff written (seed %1).	리프를 작성했습니다(시드 %1).
+Riff...	리프...
+Ripple Delete Region	리플 삭제
+Ripple delete: the following regions moved %1 beats earlier.	리플 삭제: 뒤따르는 리전이 %1박 앞으로 이동했습니다.
+Roll New Riff	새 리프 굴리기
+Save Mixer Snapshot	믹서 스냅샷 저장
+Saved mixer snapshot %1 (Alt+%2 recalls it)	믹서 스냅샷 %1을 저장했습니다(Alt+%2로 불러오기)
+Scissors	가위
+Scissors Tool	가위 도구
+Search commands	명령 검색
+Search loops, instruments, effects	루프, 악기, 이펙트 검색
+Seed (new number = new riff)	시드(숫자가 바뀌면 새 리프)
+Select Next Track	다음 트랙 선택
+Select Previous Track	이전 트랙 선택
+Select a Drum Machine track to program its steps.	스텝을 프로그래밍하려면 드럼 머신 트랙을 선택하세요.
+Select a MIDI region to edit its notes - or double-click an instrument lane to create one.	노트를 편집하려면 MIDI 리전을 선택하세요 - 또는 악기 레인을 더블클릭해서 만드세요.
+Select a region to see its properties.	속성을 보려면 리전을 선택하세요.
+Select an audio region (or put the playhead inside one) to tab to its transients.	트랜지언트로 이동하려면 오디오 리전을 선택하세요(또는 재생 헤드를 그 안에 두세요).
+Settings are kept in %LOCALAPPDATA%\MiniDAW.	설정은 %LOCALAPPDATA%\MiniDAW에 저장됩니다.
+Show / Hide Bottom Panel	아래 패널 표시 / 숨기기
+Show / Hide Browser	브라우저 표시 / 숨기기
+Show / Hide Inspector	인스펙터 표시 / 숨기기
+Show Automation	오토메이션 표시
+Show Devices	디바이스 표시
+Show Editor	에디터 표시
+Show Mixer	믹서 표시
+Show Snapshots	스냅샷 표시
+Show Step Sequencer	스텝 시퀀서 표시
+Size	크기
+Snap	스냅
+Snap off.	스냅 꺼짐.
+Snap on: %1	스냅 켜짐: %1
+Snapshots	스냅샷
+Solo Track	트랙 솔로
+Sound	소리
+Space: play  -  R: record  -  1-5: tools  -  Tab: next transient  -  Ctrl+K: search every command  -  F1: shortcuts	Space: 재생  -  R: 녹음  -  1-5: 도구  -  Tab: 다음 트랜지언트  -  Ctrl+K: 모든 명령 검색  -  F1: 단축키
+Stamp	스탬프
+Steps	스텝
+Stop and Return to Start	정지하고 처음으로
+Store levels, pans, sends, mutes and solos under a name and bring them back with one click or Alt+1 ... 9.	레벨, 팬, 센드, 음소거, 솔로를 이름을 붙여 저장하고 클릭 한 번 또는 Alt+1 ... 9로 불러옵니다.
+Tab to Next Transient	다음 트랜지언트로 이동
+Tab to Previous Transient	이전 트랜지언트로 이동
+Tap	탭
+Time	시간
+Transport	트랜스포트
+Typing Octave Down	타이핑 옥타브 내리기
+Typing Octave Up	타이핑 옥타브 올리기
+Use + Add Effect in the Devices panel or drag an effect from the browser.	디바이스 패널의 + 이펙트 추가를 쓰거나 브라우저에서 이펙트를 끌어오세요.
+Value	값
+Velocity from	벨로시티 시작
+Velocity to	벨로시티 끝
+Vulkan user interface. GPL-3.0-or-later.	Vulkan 사용자 인터페이스. GPL-3.0-or-later.
+Width	폭
+Workspace: Arrange	워크스페이스: 편곡
+Workspace: Edit	워크스페이스: 편집
+Workspace: Edit - the editor gets most of the window	워크스페이스: 편집 - 에디터가 창 대부분을 차지합니다
+Workspace: Mix	워크스페이스: 믹스
+Workspace: Mix - the mixer gets most of the window	워크스페이스: 믹스 - 믹서가 창 대부분을 차지합니다
+Write Riff	리프 작성
+Writes a new melody in the scale into this region (replaces its notes).	이 리전에 스케일에 맞는 새 멜로디를 작성합니다(기존 노트는 대체됩니다).
+Zoom to Fit Project	프로젝트에 맞게 확대/축소
+Zoom to Selected Region	선택한 리전에 맞게 확대/축소
+Zoomed to fit the project.	프로젝트에 맞게 확대/축소했습니다.
+%1 regions selected.	%1개 리전을 선택했습니다.
+Select All Regions	모든 리전 선택
+Nothing fits the tracks at this place.	이 위치의 트랙에는 맞는 것이 없습니다.
+Tempo (BPM)	템포 (BPM)
+Click to add a tempo change - drag to move - double-click a point to ramp to the next - right-click to delete	클릭하면 템포 변화 추가 - 드래그로 이동 - 점을 더블클릭하면 다음 점까지 램프 - 오른쪽 클릭으로 삭제
+Select a Drummer region to shape its groove - or double-click a Drummer track's lane to create one.	그루브를 만들려면 Drummer 리전을 선택하세요 - 또는 Drummer 트랙 레인을 더블클릭해서 만드세요.
+Seed	시드
+Add fills at the end	끝에 필인 추가
+Roll New Variation	새 변주 만들기
+This region has no notes yet.	이 리전에는 아직 노트가 없습니다.
+Show Drummer	Drummer 표시
+Side Stick	사이드 스틱
+Tom	탐
+Closed Hat	클로즈드 햇
+Pedal Hat	페달 햇
+Open Hat	오픈 햇
+Crash	크래시
+Ride	라이드
+Ride Bell	라이드 벨
+Tambourine	탬버린
+Cowbell	카우벨
+Percussion	퍼커션
+Tempo and time signature	템포와 박자
+Adopt if the project is empty	프로젝트가 비어 있으면 가져오기
+Use the file's	파일의 것 사용
+Keep the project's	프로젝트의 것 유지
+One track for every MIDI channel	MIDI 채널마다 트랙 하나
+The notes start at bar 1. Markers of the file are added.	노트는 1마디에서 시작합니다. 파일의 마커도 추가됩니다.
+Import	가져오기
+Icon style	아이콘 스타일
+Classic	클래식
+Material Symbols needs its font files in the fonts folder.	Material Symbols는 fonts 폴더에 글꼴 파일이 있어야 합니다.
+Without them the classic icons are used.	글꼴이 없으면 클래식 아이콘을 씁니다.
+MIDI Ch	MIDI 채널
+MIDI Channel...	MIDI 채널...
+MIDI Channel	MIDI 채널
+Channel	채널
+The channel of this track in an exported MIDI file.	내보낸 MIDI 파일에서 이 트랙이 쓸 채널입니다.
+Opened a project saved by a newer MiniDAW: some settings may be missing.	새 버전의 MiniDAW로 저장한 프로젝트를 열었습니다. 일부 설정이 빠졌을 수 있습니다.
+Preferences and handy extras	환경 설정과 편리한 기능
+Preferences (Ctrl+,) chooses the audio output and input, the buffer size, the language, the interface scale and the icon style. A smaller buffer lowers the delay, a larger one is safer on a slow computer.	환경 설정(Ctrl+,)에서 오디오 출력과 입력, 버퍼 크기, 언어, 화면 배율, 아이콘 스타일을 고릅니다. 버퍼가 작을수록 지연이 줄고, 클수록 느린 컴퓨터에서 더 안전합니다.
+For another program you can choose the MIDI channel of an instrument track: select the track and use MIDI Ch in the inspector. Auto numbers the channels for you, and the drums always use channel 10.	다른 프로그램에서 쓰려면 악기 트랙의 MIDI 채널을 고를 수 있습니다. 트랙을 선택하고 인스펙터의 MIDI 채널을 쓰세요. 자동은 채널을 알아서 매기고, 드럼은 항상 10번 채널을 씁니다.
+The layout of the window is remembered for the next start. Ctrl+K finds any command by name, also the ones that have no menu entry.	창 배치는 다음 실행 때도 기억됩니다. Ctrl+K는 메뉴에 없는 명령까지 이름으로 찾아 줍니다.
+Looking for audio devices... open Preferences again in a moment.	오디오 장치를 찾는 중입니다... 잠시 후 환경 설정을 다시 여세요.
+Drag the round handles to set the fades. Double-click a handle to remove its fade. Click the waveform to move the playhead. Ctrl + wheel zooms, the wheel scrolls.	둥근 핸들을 끌어 페이드를 조절하세요. 핸들을 더블클릭하면 해당 페이드가 없어집니다. 파형을 클릭하면 재생 위치가 이동합니다. Ctrl+휠은 확대/축소, 휠은 스크롤입니다.
+Zoom in (Ctrl + wheel)	확대 (Ctrl+휠)
+Zoom out (Ctrl + wheel)	축소 (Ctrl+휠)
+Trim Start to Playhead	시작을 재생 위치에서 자르기
+Trim End to Playhead	끝을 재생 위치에서 자르기
+Trim Start	시작 자르기
+Trim End	끝 자르기
+Cut the start of the region at the playhead	리전의 시작을 재생 위치에서 자릅니다
+Cut the end of the region at the playhead	리전의 끝을 재생 위치에서 자릅니다
+Stretched or transposed audio cannot be trimmed here.	늘이거나 음정을 바꾼 오디오는 여기서 자를 수 없습니다.
+Put the playhead inside the audio region first.	먼저 재생 위치를 오디오 리전 안에 두세요.
+# Tutorial
+Mixer groups	믹서 그룹
+Bringing files in	파일 가져오기
+Exporting for other DAWs	다른 DAW용으로 내보내기
+Tracks in the same mixer group move together: faders, pans, sends, mute and solo. A drum kit recorded on six tracks is the classic example.	같은 믹서 그룹의 트랙은 페이더, 팬, 센드, 뮤트, 솔로가 함께 움직입니다. 트랙 여섯 개에 녹음한 드럼 세트가 대표적인 예입니다.
+In the mixer, click the small circle at the top of a channel strip and choose a group from A to H, or right-click a track in the arrangement and use Mixer Group. Every group has its own colour.	믹서에서 채널 스트립 위쪽의 작은 원을 눌러 A~H 중 그룹을 고르거나, 편곡 화면에서 트랙을 오른쪽 클릭해 믹서 그룹을 선택하세요. 그룹마다 색이 다릅니다.
+Hold Alt while you change a control to change only that track. Ctrl+K and typing group b also puts the selected track in group B.	Alt를 누른 채 조작하면 그 트랙만 바뀝니다. Ctrl+K를 누르고 group b를 입력해도 선택한 트랙이 B 그룹이 됩니다.
+Drag an audio or MIDI file onto the window, or use File > Open. MiniDAW reads WAV, AIFF, MP3, M4A and FLAC audio and Standard MIDI Files.	오디오나 MIDI 파일을 창으로 끌어다 놓거나 파일 > 열기를 쓰세요. MiniDAW는 WAV, AIFF, MP3, M4A, FLAC 오디오와 표준 MIDI 파일을 읽습니다.
+File > Import MIDI File asks what to do with the tempo map of the file, and whether a track that uses several channels becomes one track per channel.	파일 > MIDI 파일 가져오기에서는 파일의 템포 맵을 어떻게 할지, 여러 채널을 쓰는 트랙을 채널마다 트랙으로 나눌지 고를 수 있습니다.
+A Logic Pro project is a folder ending in .logicx: File > Import Logic Pro Project Folder brings in its tempo, markers, track names, audio regions and MIDI regions. Plug-ins, automation and the mixer are not read.	Logic Pro 프로젝트는 .logicx로 끝나는 폴더입니다. 파일 > Logic Pro 프로젝트 폴더 가져오기로 템포, 마커, 트랙 이름, 오디오 리전, MIDI 리전을 가져옵니다. 플러그인, 오토메이션, 믹서는 읽지 않습니다.
+Bounce / Export Audio (Ctrl+B) writes WAV, AIFF or MP3 from 44.1 to 96 kHz. MP3 files get title, artist and album tags.	바운스 / 오디오 내보내기(Ctrl+B)는 44.1~96 kHz의 WAV, AIFF, MP3를 만듭니다. MP3에는 제목, 아티스트, 앨범 태그가 들어갑니다.
+Tick One file for every track to export stems. All files start at the same point and have the same length, so they line up at bar 1 in Logic Pro, Ableton Live or Cubase.	트랙마다 파일 하나를 체크하면 스템을 내보냅니다. 모든 파일의 시작점과 길이가 같아서 Logic Pro, Ableton Live, Cubase에서 1마디에 맞춰 놓으면 됩니다.
+Switch off Stems: keep master volume and limiter when the other program should do its own master processing. File > Export MIDI File also writes your tempo map, time signatures and markers.	다른 프로그램에서 마스터 처리를 직접 하려면 스템: 마스터 볼륨과 리미터 포함을 끄세요. 파일 > MIDI 파일 내보내기는 템포 맵, 박자, 마커도 함께 씁니다.
+This tutorial has 19 short pages. Use the Next and Back buttons or the Left and Right arrow keys. Esc closes it, and you can open it again any time from Help > Tutorial.	이 튜토리얼은 짧은 19페이지로 되어 있습니다. 다음/이전 버튼이나 왼쪽·오른쪽 화살표 키를 쓰세요. Esc로 닫을 수 있고, 도움말 > 튜토리얼에서 언제든 다시 열 수 있습니다.
+Welcome to MiniDAW	MiniDAW에 오신 것을 환영합니다
+MiniDAW is a light, fast music studio: record, sequence, edit and mix in one window.	MiniDAW는 가볍고 빠른 음악 스튜디오입니다. 한 창에서 녹음하고, 시퀀싱하고, 편집하고, 믹스하세요.
+You do not need to remember anything: Ctrl+K opens a palette that finds every command by name.	외울 필요는 없습니다. Ctrl+K를 누르면 이름으로 모든 명령을 찾아 주는 팔레트가 열립니다.
+The window at a glance	창 구성 한눈에 보기
+The menu bar and the transport (play, record, tempo, position) are at the top.	맨 위에는 메뉴 막대와 트랜스포트(재생, 녹음, 템포, 위치)가 있습니다.
+The big area in the middle is the arrangement: track headers on the left, the timeline with its regions on the right.	가운데의 큰 영역은 편곡 화면입니다. 왼쪽에 트랙 헤더, 오른쪽에 리전이 있는 타임라인이 있습니다.
+The browser (loops, instruments, effects) and the inspector sit at the sides, and the bottom panel switches between Mixer, Editor, Steps, Devices, Snapshots, Automation and Drummer.	브라우저(루프, 악기, 이펙트)와 인스펙터는 양옆에 있고, 아래 패널은 믹서, 에디터, 스텝, 디바이스, 스냅샷, 오토메이션, Drummer 사이를 전환합니다.
+Playing and moving around	재생하고 이동하기
+Space starts and stops playback. Click the ruler to move the playhead.	Space로 재생을 시작하고 멈춥니다. 눈금자를 클릭하면 재생 헤드가 이동합니다.
+Scroll with the mouse wheel to move through the song and hold Ctrl while scrolling to zoom. The Zoom to Fit Project command shows the whole song.	마우스 휠로 곡을 따라 이동하고, Ctrl을 누른 채 휠을 돌리면 확대/축소됩니다. 프로젝트에 맞게 확대/축소 명령은 곡 전체를 보여 줍니다.
+Turn Follow Playhead on to keep the playhead in view while the song plays.	재생 헤드 따라가기를 켜면 재생 중에 재생 헤드가 항상 화면 안에 있습니다.
+Adding tracks	트랙 추가하기
+Use the Track menu or the + Add Track button to add a track. There are four kinds: Audio (recordings and loops), Instrument (MIDI with a synth), Drums (a step-sequenced drum machine) and Drummer (a drummer that plays for you).	트랙 메뉴나 + 트랙 버튼으로 트랙을 추가합니다. 오디오(녹음과 루프), 악기(신스로 연주하는 MIDI), 드럼(스텝 시퀀서 드럼 머신), Drummer(알아서 연주하는 드러머) 네 종류가 있습니다.
+Click a track header to select it. Right-click it for more choices: rename, colour, duplicate or delete.	트랙 헤더를 클릭해 선택하세요. 오른쪽 클릭하면 이름 바꾸기, 색상, 복제, 삭제 등을 할 수 있습니다.
+Getting sound quickly: the browser	빠르게 소리 내기: 브라우저
+The browser on the right lists loops, instruments and effects. Type in the search box to filter them.	오른쪽 브라우저에는 루프, 악기, 이펙트가 나열됩니다. 검색창에 입력하면 걸러집니다.
+Drag a loop onto the arrangement to place it, drag an instrument onto a track to change its sound, or drag an effect onto a track to add it to its chain.	루프를 편곡 화면에 끌어다 놓으면 배치되고, 악기를 트랙에 끌어다 놓으면 소리가 바뀌며, 이펙트를 트랙에 끌어다 놓으면 이펙트 체인에 추가됩니다.
+Clicking an item previews it, so you can listen before you drag.	항목을 클릭하면 미리 들어 볼 수 있어서, 끌어다 놓기 전에 들어 볼 수 있습니다.
+The Drummer: instant drums	Drummer: 바로 만드는 드럼
+Add a Drummer track and double-click its lane to create a region. A drummer starts playing at once.	Drummer 트랙을 추가하고 그 레인을 더블클릭해 리전을 만드세요. 드러머가 바로 연주를 시작합니다.
+Open the Drummer tab (Ctrl+7) to choose a style and change the Complexity, Loudness, Swing and Fills. Roll New Variation gives you a new pattern with the same settings.	Drummer 탭(Ctrl+7)에서 스타일을 고르고 복잡도, 음량감, 스윙, 필인을 바꿔 보세요. 새 변주 만들기는 같은 설정으로 새 패턴을 만듭니다.
+Every change can be undone with Ctrl+Z.	모든 변경은 Ctrl+Z로 되돌릴 수 있습니다.
+Recording	녹음하기
+Select a track and arm it for recording, then press R. Audio tracks record from your audio input, instrument tracks record what you play on a MIDI keyboard.	트랙을 선택해 녹음 준비를 한 뒤 R을 누르세요. 오디오 트랙은 오디오 입력으로, 악기 트랙은 MIDI 키보드로 연주한 것을 녹음합니다.
+No MIDI keyboard? Musical typing turns the computer keys A W S E D F T G Y H U J K into piano keys, and Z and X change the octave.	MIDI 키보드가 없나요? 음악 타이핑을 쓰면 컴퓨터 키 A W S E D F T G Y H U J K가 피아노 건반이 되고, Z와 X로 옥타브를 바꿉니다.
+The metronome and the count-in are in the transport bar. Capture MIDI saves what you played even when you forgot to press record.	메트로놈과 카운트인은 트랜스포트 막대에 있습니다. MIDI 캡처는 녹음 버튼을 누르지 않았어도 연주한 내용을 저장해 줍니다.
+Editing regions: the five tools	리전 편집: 다섯 가지 도구
+Press 1 for the Pointer (select and move), 2 for the Pencil (draw), 3 for the Scissors (cut), 4 for the Eraser and 5 to Mute.	1은 포인터(선택과 이동), 2는 연필(그리기), 3은 가위(자르기), 4는 지우개, 5는 음소거입니다.
+With the Pointer, drag a region to move it, drag its right edge to change its length and hold Alt while dragging to copy it.	포인터로 리전을 끌면 이동하고, 오른쪽 가장자리를 끌면 길이가 바뀌며, Alt를 누른 채 끌면 복사됩니다.
+Snap keeps everything on the grid. Press G to turn it on or off.	스냅은 모든 것을 격자에 맞춰 줍니다. G를 눌러 켜고 끕니다.
+Working with several regions	여러 리전 다루기
+Shift-click or Ctrl-click adds regions to the selection. Drag on an empty part of a lane to draw a rubber band, or press Ctrl+A to select everything.	Shift+클릭이나 Ctrl+클릭으로 리전을 선택에 추가합니다. 레인의 빈 곳을 드래그하면 러버밴드로 선택하고, Ctrl+A는 전체를 선택합니다.
+Drag any selected region to move the whole group, even onto other tracks. Alt-drag duplicates the group.	선택한 리전 하나를 끌면 그룹 전체가 움직이고, 다른 트랙으로도 옮길 수 있습니다. Alt+드래그는 그룹을 복제합니다.
+Cut, copy, paste, delete, mute and ripple delete all work on the whole selection, and each one is a single undo step.	잘라내기, 복사, 붙여넣기, 삭제, 음소거, 리플 삭제가 모두 선택 전체에 적용되고, 각각 한 번에 되돌릴 수 있습니다.
+The piano roll	피아노 롤
+Select a MIDI region and press E to open the Editor tab. Draw notes with the Pencil, move them by dragging, and resize them at their edges.	MIDI 리전을 선택하고 E를 눌러 에디터 탭을 엽니다. 연필로 노트를 그리고, 드래그해서 옮기고, 가장자리에서 길이를 조절하세요.
+The velocity of each note is shown by its colour. Fold hides the keys you do not use, Highlight marks the notes of a scale, and ghost notes show the other regions of the track.	노트의 벨로시티는 색으로 표시됩니다. 접기는 쓰지 않는 건반을 숨기고, 강조는 스케일의 음을 표시하며, 고스트 노트는 같은 트랙의 다른 리전을 보여 줍니다.
+Stamps place chords, and the Riff Machine writes a new melody in a scale. Q quantizes the selected notes.	스탬프는 코드를 놓고, 리프 머신은 스케일에 맞는 새 멜로디를 씁니다. Q는 선택한 노트를 퀀타이즈합니다.
+The step sequencer	스텝 시퀀서
+A Drums track has a step grid instead of a piano roll. Click a step to switch it on, or drag across many steps to paint them.	드럼 트랙에는 피아노 롤 대신 스텝 격자가 있습니다. 스텝을 클릭하면 켜지고, 여러 스텝을 가로질러 드래그하면 칠해집니다.
+Each row is one drum sound. Drag in the velocity strip to make single hits louder or softer.	각 줄은 드럼 소리 하나입니다. 벨로시티 막대를 드래그해 개별 타격을 더 크게 또는 작게 만드세요.
+Open it with Ctrl+3.	Ctrl+3으로 엽니다.
+The mixer and effects	믹서와 이펙트
+The Mixer (Ctrl+1) has one strip per track: a fader for the volume, a pan control, mute and solo, two sends (reverb and echo) and a level meter. Narrow makes the strips thinner to fit more of them.	믹서(Ctrl+1)에는 트랙마다 채널이 하나씩 있습니다. 볼륨 페이더, 팬, 음소거와 솔로, 두 개의 센드(리버브와 에코), 레벨 미터가 있고, 좁게를 켜면 더 많은 채널이 한 화면에 들어옵니다.
+The Devices tab (Ctrl+4) shows the effect chain of the selected track as cards with knobs. Use + Add Effect to insert an effect, and drag a card to change the order.	디바이스 탭(Ctrl+4)은 선택한 트랙의 이펙트 체인을 노브가 있는 카드로 보여 줍니다. + 이펙트 추가로 이펙트를 넣고, 카드를 끌어 순서를 바꾸세요.
+Automation and tempo	오토메이션과 템포
+The Automation tab (Ctrl+6) draws a curve for the volume, pan or a send of the selected track. Click to add a point, drag to move it and right-click to delete it.	오토메이션 탭(Ctrl+6)은 선택한 트랙의 볼륨, 팬, 센드 곡선을 그립니다. 클릭하면 점이 추가되고, 드래그로 옮기고, 오른쪽 클릭으로 삭제합니다.
+Choose Tempo (BPM) to draw tempo changes for the whole song. Double-click a point to let the tempo glide to the next one.	템포 (BPM)를 고르면 곡 전체의 템포 변화를 그릴 수 있습니다. 점을 더블클릭하면 다음 점까지 템포가 서서히 변합니다.
+The curve is followed during playback.	곡선은 재생 중에 그대로 따라갑니다.
+Snapshots and workspaces	스냅샷과 워크스페이스
+A mixer snapshot remembers all levels, pans, sends, mutes and solos. Save one with Ctrl+Shift+Enter and bring it back with one click or Alt+1 to Alt+9. Open the tab with Ctrl+5.	믹서 스냅샷은 모든 레벨, 팬, 센드, 음소거, 솔로를 기억합니다. Ctrl+Shift+Enter로 저장하고, 클릭 한 번 또는 Alt+1 ~ Alt+9로 불러옵니다. 탭은 Ctrl+5로 엽니다.
+Workspaces change the whole layout with one key: F5 is for arranging, F6 for mixing and F7 for editing.	워크스페이스는 키 하나로 전체 레이아웃을 바꿉니다. F5는 편곡, F6은 믹싱, F7은 편집용입니다.
+Saving, exporting and what next	저장, 내보내기, 그리고 다음 단계
+Save your project with Ctrl+S. MiniDAW also keeps an automatic backup and offers to recover it if the program closes unexpectedly. Undo (Ctrl+Z) and Redo (Ctrl+Shift+Z) go back as far as you need.	Ctrl+S로 프로젝트를 저장하세요. MiniDAW는 자동 백업도 유지하며, 프로그램이 예기치 않게 종료되면 복구를 제안합니다. 되돌리기(Ctrl+Z)와 다시 실행(Ctrl+Shift+Z)은 필요한 만큼 되돌아갑니다.
+Use Bounce / Export Audio to render the song to a WAV file.	바운스 / 오디오 내보내기로 곡을 WAV 파일로 만듭니다.
+Remember the two helpers: Ctrl+K finds any command by name, and F1 shows every keyboard shortcut. Hover over a control and the status bar at the bottom explains it.	두 가지 도우미를 기억하세요. Ctrl+K는 이름으로 모든 명령을 찾고, F1은 모든 키보드 단축키를 보여 줍니다. 컨트롤 위에 마우스를 올리면 아래 상태 표시줄이 설명해 줍니다.
+Start with a Drummer, add a few loops from the browser, record an idea, and enjoy making music.	Drummer로 시작해서 브라우저에서 루프를 몇 개 더하고, 아이디어를 녹음하며 즐겁게 음악을 만들어 보세요.
+Tutorial	튜토리얼
+Tutorial...	튜토리얼...
+Close the tutorial (Esc)	튜토리얼 닫기 (Esc)
+Back	이전
+Next	다음
+Done	완료
+Try it	해 보기
+No Group	그룹 없음
+Mixer Group	믹서 그룹
+Group A	그룹 A
+Group B	그룹 B
+Group C	그룹 C
+Group D	그룹 D
+Group E	그룹 E
+Group F	그룹 F
+Group G	그룹 G
+Group H	그룹 H
+Track %1 is in this group now.	트랙 %1이(가) 이 그룹에 들어갔습니다.
+Mixer group: tracks in the same group move their faders, pans, sends, mute and solo together (hold Alt to change only one)	믹서 그룹: 같은 그룹의 트랙은 페이더, 팬, 센드, 음소거, 솔로가 함께 움직입니다(Alt를 누르면 하나만 바뀝니다)
+Settings are kept in %1.	설정은 %1에 저장됩니다.
+Portable mode: settings are kept in %1.	휴대용 모드: 설정은 %1에 저장됩니다.
+# Export and file types
+WAV 16-bit	WAV 16비트
+WAV 24-bit	WAV 24비트
+WAV 32-bit float	WAV 32비트 부동소수점
+AIFF 16-bit	AIFF 16비트
+AIFF 24-bit	AIFF 24비트
+MP3	MP3
+Sample rate	샘플레이트
+MP3 bit rate	MP3 비트레이트
+Title (MP3)	제목 (MP3)
+Artist (MP3)	아티스트 (MP3)
+Album (MP3)	앨범 (MP3)
+One file for every track (stems, all the same length)	트랙마다 파일 하나씩 (스템, 길이 모두 동일)
+Stems: keep master volume and limiter	스템: 마스터 볼륨과 리미터 포함
+Stems: keep reverb and echo sends	스템: 리버브·에코 센드 포함
+One file for every track (stems)	트랙마다 파일 하나씩 (스템)
+Stems start at the same point and have the same length.	스템은 같은 지점에서 시작하고 길이가 같습니다.
+Drop them into Logic Pro, Ableton Live or Cubase at bar 1.	Logic Pro, Ableton Live, Cubase의 1마디에 끌어다 놓으세요.
+Exported %1 files.	%1개 파일을 내보냈습니다.
+Export every track to a folder	모든 트랙을 폴더로 내보내기
+128 kbps	128 kbps
+160 kbps	160 kbps
+192 kbps	192 kbps
+224 kbps	224 kbps
+256 kbps	256 kbps
+320 kbps	320 kbps
+44.1 kHz	44.1 kHz
+48 kHz	48 kHz
+88.2 kHz	88.2 kHz
+96 kHz	96 kHz
+This file type is not supported (%1). Supported: %2	지원하지 않는 파일 형식입니다 (%1). 지원 형식: %2
+no extension	확장자 없음
+MP3 export is not available on this system.	이 컴퓨터에서는 MP3 내보내기를 쓸 수 없습니다.
+MP3 files can be 44.1 or 48 kHz.	MP3 파일은 44.1kHz 또는 48kHz만 가능합니다.
+The MP3 encoder failed.	MP3 인코더가 실패했습니다.
+This sample rate is not supported.	이 샘플레이트는 지원하지 않습니다.
+AIFF files are 16-bit or 24-bit.	AIFF 파일은 16비트 또는 24비트입니다.
+The project is too long to export in this format (90 minutes at most).	프로젝트가 너무 길어 이 형식으로 내보낼 수 없습니다(최대 90분).

@@ -1,27 +1,32 @@
-# 로드맵
+# Roadmap
 
-우선순위 순서입니다. 이 목록은 약속이 아니라 방향입니다.
+In order of priority. This list is a direction, not a promise.
 
-## 가까운 시일 (v0.12 전후)
-1. **CI 확인과 안정화**: 네이티브 빌드(특히 VST3)를 Windows에서 처음으로 컴파일해 오류를 고친다. 이 저장소의 `src/native/`는 Linux에서 컴파일되지 않는다.
-2. **고해상도(DPI) 지원**: 지금은 윈도우가 화면을 늘려 보여 줘서 약간 흐리다. DPI 인식을 켜고 `Canvas`와 상수에 배율을 도입한다.
-3. **Qt 버전 제거**: 더 이상 Qt에만 있는 기능이 없으므로 `src/*.cpp`, `src/Engine.*`, `src/vst3`, `qt` 빌드, `MiniDAW-Qt.iss`를 지우고 문서와 CI를 정리한다.
-4. **리전 드래그의 트랙 간 이동**과 리전 여러 개 선택.
+## Near term (around v0.12 / v0.13)
+1. **Build and run the Vulkan interface on Windows.** `VkMain.cpp`, `VkRenderer.cpp`, the shaders and the new `build.sh` / CI parts were only written and syntax-checked on Linux. Fix the errors, then compare a real GPU's output with the CPU screenshots.
+2. **Check CI and stabilise.** Compile the Native build (especially VST3) and the `win32` changes (portable paths, folder dialog) on Windows for the first time.
+3. **Native review of the translations.** All new texts have `ko`, `ja`, `zh_CN` and `es` entries; the `ja`, `zh_CN` and `es` ones were written without a native speaker and need a review.
+4. **Check on Windows what was written on Linux** (nothing below could be tried on a real machine, only tested headless): the Korean / Japanese IME in text fields and shortcuts in Hangul mode (`VkMain.cpp`, `imm32`), that Preferences and the tutorial open without a freeze (glyph budget and the device-list cache), the Material Symbols icon styles, and the gapless MP3 start delay of the Windows encoder.
+5. ~~Performance~~ done: playback refreshes only the meters; the whole project is copied when it changes.
+6. ~~Project file compatibility~~ done: the file version is 4 and a project from a newer version opens with a warning.
+7. **Decide the future of the Qt version** once nothing exists only in Qt (the Native and Vulkan versions already have its features).
 
-## 다음
-- **세션 뷰(클립 런처)**: 박자에 맞춰 클립을 시작/중지하는 엔진 기능과 격자 화면.
-- 오디오 리전의 **플렉스 편집**(박자 마커), 피치 보정.
-- 오토메이션의 더 많은 대상(플러그인 파라미터), 곡선 모양.
-- 메트로놈 소리 선택, 프리롤.
-- 프로젝트 안에 샘플을 포함하는 "패키지 저장".
-- 터치와 펜 입력.
+## Next
+- **Session view (clip launcher):** an engine function that starts and stops clips on the beat, and a grid screen.
+- **Audio editor, next steps:** a gain handle, trimming by dragging the region edges (and bringing a cut part back without undo), selection-based editing (cut, silence, fade a range), zoom with a scroll bar.
+- **Flex editing** of audio regions (beat markers), pitch correction.
+- A text-input IME that also shows candidate lists inside the program (today the system's windows are placed at the caret).
+- More automation targets (plug-in parameters), curve shapes.
+- Choice of metronome sound, pre-roll.
+- A "package save" that includes the samples in the project.
+- Touch and pen input, accessibility.
 
-## 장기
-- ASIO 또는 WASAPI 단독(exclusive) 모드로 지연 줄이기
-- macOS/Linux 포팅 (`platform`과 `native` 계층만 새로 쓰면 된다)
-- 악보 보기
-- 플러그인 SDK에 악기와 MIDI 이펙트 추가
+## Long term
+- ASIO or WASAPI exclusive mode for lower latency
+- Porting to macOS / Linux (only the `platform` and shell layers must be rewritten; Vulkan helps here)
+- Score view
+- Instruments and MIDI effects in the plug-in SDK
 
-## 하지 않기로 한 것
-- 외부 UI 프레임워크(Qt 등) 다시 도입
-- 클라우드 계정이나 온라인 기능
+## Decided against
+- Introducing an external UI framework (Qt and the like) again
+- Cloud accounts or online features

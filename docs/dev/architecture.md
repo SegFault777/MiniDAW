@@ -1,61 +1,74 @@
-# 구조
+# Architecture
 
-MiniDAW는 "Qt 프로그램"에서 **"엔진 위에 얹은 화면"** 으로 옮겨 왔습니다. 지금 제품은 Qt가 전혀 없는
-**네이티브 버전**(`MiniDAW.exe`)이고, 예전 Qt 버전은 비교와 이식을 위한 포터블 빌드로만 남아 있습니다.
+MiniDAW moved from "a Qt program" to **"screens on top of an engine"**. There are now three front ends over the same Qt-free engine:
+
+| Executable | Source | What it is |
+| --- | --- | --- |
+| `MiniDAW.exe` | `src/ui` + `src/native` | The **Native** version: software-rendered, Qt-free, installer and portable package |
+| `MiniDAWVulkan.exe` | `src/vulkan` | The **Vulkan** interface: written from scratch, drawn by the GPU, workspaces and a command palette |
+| `MiniDAWQt.exe` | `src/*.cpp`, `src/Engine.*`, `src/vst3/` | The old **Qt** version, kept as a portable build for comparison; no longer extended |
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ ui (Qt 없음)           src/ui/    Canvas, NativeUi, Dialog,    │
-│                        편집기(피아노 롤 ...), 브라우저, 번역    │
-├──────────────────────────────────────────────────────────────┤
-│ native (Windows)       src/native/Win32App.cpp  창, GDI 글꼴,  │
-│                        파일 대화상자, 설정 파일, 자동 저장     │
-│                        Vst3Native.cpp  VST3 호스트 + 편집 창    │
-├──────────────────────────────────────────────────────────────┤
-│ platform (Qt 없음)     src/platform/  WASAPI, winmm MIDI,      │
-│                        Media Foundation 디코드, MiniDAW 플러그인│
-├──────────────────────────────────────────────────────────────┤
-│ core::Session          src/core/  모델, 실행 취소, 템포, 전송,│
-│                        녹음, 렌더링, 프로젝트 파일, MIDI 연산 │
-├──────────────────────────────────────────────────────────────┤
-│ dsp                    src/dsp/  신스, 드럼킷, 이펙트, 템포 맵,│
-│                        타임 스트레치, 드러머, 분석, 플러그인 API│
-└──────────────────────────────────────────────────────────────┘
-(Qt 버전: src/*.cpp, src/Engine.*, src/vst3/ - 더 이상 늘리지 않습니다)
+┌─────────────────────────────────────────────────────────────────────┐
+│ ui (no Qt)        src/ui/      Canvas, NativeUi, Dialog, editors,    │
+│                                browser, translations                 │
+│ vulkan (no Qt)    src/vulkan/  DrawList, Fonts, Gui, Studio*, the     │
+│                                SoftRaster twin, VkRenderer, shaders   │
+├─────────────────────────────────────────────────────────────────────┤
+│ native (Windows)  src/native/Win32App.cpp  window, GDI fonts, file   │
+│                   dialogs, settings, autosave; Vst3Native.cpp         │
+│ VkMain (Windows)  src/vulkan/VkMain.cpp    window, input, GDI glyphs, │
+│                   audio / MIDI / plug-ins / settings                  │
+├─────────────────────────────────────────────────────────────────────┤
+│ platform (no Qt)  src/platform/  WASAPI, winmm MIDI, Media Foundation │
+│                                  decoding, MiniDAW plug-ins           │
+├─────────────────────────────────────────────────────────────────────┤
+│ core::Session     src/core/  model, undo, tempo, transport,           │
+│                              recording, rendering, project files,     │
+│                              MIDI operations, AppPaths                │
+├─────────────────────────────────────────────────────────────────────┤
+│ dsp               src/dsp/   synth, drum kit, effects, tempo map,     │
+│                              time stretch, Drummer, analysis, plug-in │
+│                              API                                      │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-## 규칙
-1. `src/dsp`, `src/core`, `src/platform`, `src/ui`는 **C++ 표준 라이브러리만** 씁니다(`src/platform`은 Windows 전용 파일에서
-   Windows API 사용 가능). `Q...` 타입 금지. `tests/run.sh`가 이 디렉터리들을 Qt 없는 `g++`로 컴파일하므로 규칙이 컴파일로 강제됩니다.
-2. 코어는 하드웨어와 창을 모릅니다. 바깥과는 `core::Session::Hooks`로만 이야기합니다.
-   (파일 디코드, 마이크 시작/중지, 이펙트/악기 만들기, 플러그인 상태 저장/복원, 메시지, "모델이 바뀌었다" 알림)
-3. UI는 `core::Session`의 공개 API만 호출합니다. UI가 `Session` 내부 구조를 건드리지 않습니다.
-4. 스레드: 오디오 스레드는 `Session::fillInt16`과 `pushRecorded`만 부릅니다. 나머지는 UI 스레드입니다.
-   모델은 뮤텍스 하나로 보호되고, 템포 맵은 변하지 않는 `shared_ptr`로 통째로 교체됩니다.
-   디코드 스레드와 플러그인 검색 스레드는 결과를 `PostMessage`로 UI 스레드에 넘깁니다.
+## Rules
+1. `src/dsp`, `src/core`, `src/platform`, `src/ui` and `src/vulkan` use **only the C++ standard library** (Windows-only files in `src/platform`, `src/native` and `src/vulkan/VkMain.cpp` / `VkRenderer.cpp` may use the Windows API / Vulkan). No `Q...` types. `tests/run.sh` compiles these directories with plain `g++`, so the rule is enforced by compilation.
+2. The core knows neither hardware nor windows. It talks to the outside only through `core::Session::Hooks` (file decoding, starting / stopping the microphone, creating effects and instruments, saving / restoring plug-in state, messages, the "model changed" notification).
+3. A UI calls only the public API of `core::Session`. It never touches the internals of `Session`.
+4. Threads: the audio thread calls only `Session::fillInt16` and `pushRecorded`; everything else runs on the UI thread. The model is protected by one mutex and the tempo map is replaced as a whole through an immutable `shared_ptr`. Decoding and plug-in scanning threads hand their results to the UI thread with `PostMessage`.
+5. **One command registry per UI.** In the Vulkan interface a feature is added once in `StudioCommands.cpp`; menus, palette, `F1` sheet and shortcuts are generated from it.
 
-## 디렉터리 지도
-| 위치 | 내용 |
+## Directory map
+| Location | Contents |
 | --- | --- |
-| `src/core/Base.h`, `Model.h` | 상수, `Text`, 트랙·리전·노트·마커 |
-| `src/core/Session.*` | 엔진 본체: 편집, 실행 취소/다시 하기, 전송, 녹음, `renderBlock`, 마스터 버스 |
-| `src/core/ProjectIO.cpp` | 프로젝트 파일(저장/불러오기/자동 저장), MIDI 파일, 오디오 가져오기, 바운스 |
-| `src/core/Features.cpp`, `MidiOps.*` | Bounce in Place, 아르페지에이터, 퀀타이즈, 스케일 퀀타이즈, 휴머나이즈, 코드 트리거, 레가토, 트랜스포즈, 벨로시티 램프, 반복/합치기, 템포 감지, 패턴→MIDI, 겹침 수정, 중복 제거, 고정 길이, 역행, 반전, 벨로시티 배율, 무음 제거, 라우드니스 |
-| `src/core/Json.*`, `Files.*`, `AudioIO.*`, `I18n.*` | JSON, UTF-8 파일, WAV/리샘플러/피크, 번역 표 |
-| `src/dsp/` | 신스, 이펙트, `TempoMap`, 스트레치, `Drummer`, `TempoDetect`, `AudioAnalysis`(라우드니스, 무음 구간), `NativeEffect`(플러그인 API 래퍼) |
-| `src/platform/` | `Audio*`(WASAPI/무음 장치), `Midi*`, `Decode*`, `PluginHost*`(MiniDAW 플러그인) |
-| `src/ui/` | `Canvas`, `FontData`, `Ui*`(NativeUi), `Dialog`, 자세히는 [ui-toolkit.md](ui-toolkit.md) |
+| `src/core/Base.h`, `Model.h` | Constants, `Text`, tracks, regions, notes, markers |
+| `src/core/Session.*` | The engine: editing, undo / redo, transport, recording, `renderBlock`, master bus |
+| `src/core/ProjectIO.cpp` | Project files (save / load / autosave, mix snapshots), MIDI files, audio import, bounce |
+| `src/core/Features.cpp`, `MidiOps.*` | Bounce in Place, arpeggiator, quantize, scale quantize, humanize, chord trigger, legato, transpose, velocity ramp, repeat / join, tempo detection, pattern to MIDI, fix overlaps, remove duplicates, fixed length, reverse, invert, velocity scale, strip silence, loudness; stamps, riffs, Logical Editor, groove, stretch, strum, double pattern, chord detection |
+| `src/core/Studio.cpp` | Session extensions of v0.12: adapt project tempo to region, groove templates, Capture MIDI, riff, Logical Editor, mix snapshots, Tab to Transient, Beat Detective |
+| `src/core/AppPaths.*` | Folder resolution for the installed and the portable mode (`MiniDAW.portable` marker) |
+| `src/core/Json.*`, `Files.*`, `AudioIO.*`, `I18n.*` | JSON, UTF-8 files, WAV / resampler / peaks, translation table |
+| `src/dsp/` | Synth, effects, `TempoMap`, stretch, `Drummer`, `TempoDetect`, `AudioAnalysis` (loudness, silence, transients), `NativeEffect` (plug-in API wrapper) |
+| `src/platform/` | `Audio*` (WASAPI / null device), `Midi*`, `Decode*`, `PluginHost*` (MiniDAW plug-ins) |
+| `src/ui/` | `Canvas`, `FontData`, `Ui*` (NativeUi), `Dialog`; see [ui-toolkit.md](ui-toolkit.md) |
 | `src/native/` | `Win32App.cpp`, `Vst3Native.*` |
-| `plugin-sdk/` | 플러그인 C API(`mdplugin.h`)와 예제 |
-| `translations/` | `ko`, `ja`, `zh_CN`, `es` (`*.tsv`, "영문<TAB>번역") |
-| `installer/` | Inno Setup 스크립트(`MiniDAW.iss` = 네이티브, `MiniDAW-Qt.iss` = 예전 Qt) |
-| `tests/` | Qt 없는 테스트 전부 (`run.sh`) |
-| `tools/` | `gen_font.py`(내장 글꼴 표 생성) |
+| `src/vulkan/` | `Draw`, `Text`, `SoftRaster`, `Gui`, `Theme.h`, `Icons.h`, `Studio*`, `VkRenderer`, `VkMain`, `shaders/` |
+| `plugin-sdk/` | The plug-in C API (`mdplugin.h`) and examples |
+| `translations/` | `ko`, `ja`, `zh_CN`, `es` (`*.tsv`, "English<TAB>translation") |
+| `installer/` | Inno Setup scripts (`MiniDAW.iss` = Native, `MiniDAW-Qt.iss` = old Qt) |
+| `tests/` | All Qt-free tests (`run.sh`); `tests/mock/vulkan/` holds a fake `vulkan.h` for compile checks |
+| `tools/` | `gen_font.py` (generates the built-in font table) |
 
-## 데이터 흐름 한눈에
+## The project file
+A project is one JSON file (`ProjectIO.cpp`, `save` / `load`), with the audio next to it. The top-level `version` is `kProjectVersion` (**4** since v0.12; `Session::projectFileVersion()`). New optional fields (`group`, `snapshots`, `midiChannel`) are written only when they differ from the default and are ignored by older programs, which is why the number only moves when a new program should *warn*: `Session::loadedFromNewerVersion()` is true when the file's number is higher than the program's, and both UIs say that some settings may be missing. A file without `version` reads as 0 (very old). Raise `kProjectVersion` when a change would make an older program misread a file, not for every new optional field, and change the `projectFileVersion() == 4` check in `core_tests.cpp` with it.
+
+## Data flow at a glance
 ```
-마우스/키 (Win32) → NativeUi::mouseDown ... → Session::setVolume / moveRegion / ...
-                                              ↓ (모델 변경, Hooks::changed)
-타이머(30 fps) → NativeUi::tick() → paint(Canvas) → SetDIBitsToDevice
-오디오 장치 스레드 → Session::fillInt16 (소리) / pushRecorded (녹음)
+mouse / keys (Win32) -> NativeUi::mouseDown ... / Studio frame loop -> Session::setVolume / moveRegion / ...
+                                                  | (model changes, Hooks::changed)
+timer (30 fps) -> NativeUi::tick() -> paint(Canvas) -> SetDIBitsToDevice        (Native)
+frame loop     -> Studio -> DrawList -> VkRenderer (GPU)  /  SoftRaster (tests) (Vulkan)
+audio device thread -> Session::fillInt16 (sound) / pushRecorded (recording)
 ```

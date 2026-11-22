@@ -1,34 +1,35 @@
-# 프로젝트 개요
+# Project overview
 
-## 한 줄 소개
-**MiniDAW**는 Logic Pro의 작업 방식에서 영감을 받은, 가볍고 빠른 Windows용 오픈소스(GPL-3.0-or-later) 디지털 오디오 워크스테이션입니다.
+## In one line
+**MiniDAW** is a light and fast open-source (GPL-3.0-or-later) digital audio workstation for Windows, inspired by the way Logic Pro works and borrowing the best ideas of four other DAWs.
 
-## 누구를 위한 것인가
-- 처음 곡을 만들어 보는 사람: 드러머, 루프, 브라우저로 빨리 소리를 내고 싶은 사람
-- 가벼운 도구를 원하는 사람: 설치가 작고 빨리 뜨고, 구형 PC에서도 도는 것
-- 직접 고쳐 쓰고 싶은 사람: 소스가 작고 계층이 분명한 것 (개발 문서 참고)
+## Who it is for
+- People making their first song: those who want sound quickly with the Drummer, loops and the browser
+- People who want a light tool: a small installer, a fast start, and it runs on old PCs
+- People who want to modify it: the source is small and the layers are clear (see the developer documents)
 
-## 목표
-1. **가볍다**: 외부 UI 프레임워크 없이 Win32와 직접 만든 UI 툴킷만 쓴다.
-2. **바로 소리가 난다**: 악기, 드럼, 이펙트, 루프가 처음부터 들어 있다.
-3. **믿을 수 있다**: 자동 저장과 복구, 되돌리기, 코어를 Linux에서 자동 테스트한다.
-4. **열려 있다**: 플러그인 SDK와 VST3를 지원하고, 프로젝트 파일은 사람이 읽을 수 있는 JSON이다.
-5. **누구나 쓴다**: 한국어, 영어, 일본어, 중국어(간체), 스페인어.
+## Goals
+1. **Light:** no external UI framework, only Win32 / Vulkan and our own UI toolkits.
+2. **Sound at once:** instruments, drums, effects and loops are included from the start.
+3. **Trustworthy:** autosave and recovery, undo, and the core and the screens are tested automatically on Linux.
+4. **Open:** a plug-in SDK and VST3 are supported, and the project file is human-readable JSON.
+5. **For everyone:** Korean, English, Japanese, Chinese (Simplified) and Spanish.
+6. **Portable:** the Native and Vulkan versions run from a folder or a USB stick (`MiniDAW.portable`).
 
-## 하지 않는 것 (지금은)
-- 악보(스코어) 편집
-- 비디오 싱크
-- macOS/Linux용 화면 (엔진은 이식 가능하지만 창, 오디오 장치 코드는 Windows 전용)
-- 32비트 플러그인 호스팅
+## What it does not do (for now)
+- Score editing
+- Video sync
+- Screens for macOS / Linux (the engine is portable, but the window and audio device code is Windows-only)
+- Hosting 32-bit plug-ins
 
-## 이름과 상표
-Logic Pro는 Apple Inc.의 상표이고 Ableton Live는 Ableton AG의 상표입니다. MiniDAW는 이 회사들과 관계가 없고, 그들의 제품을 복제하지 않으며
-([ui-design.md](ui-design.md)에서 어떤 아이디어를 어떻게 다르게 풀었는지 설명합니다) 이름, 아이콘, 코드를 쓰지 않습니다.
-VST는 Steinberg Media Technologies GmbH의 상표입니다.
+## Name and trademarks
+Logic Pro and macOS are trademarks of Apple Inc.; Ableton Live of Ableton AG; FL Studio of Image-Line; Cubase and VST of Steinberg Media Technologies GmbH; Pro Tools of Avid Technology; Windows of Microsoft Corporation.
+MiniDAW has no relation to these companies, does not copy their products (see [ui-design.md](ui-design.md) for which ideas were taken and how they were solved differently) and uses none of their names, icons or code.
 
-## 구성
-| 부분 | 위치 | 상태 |
+## Parts
+| Part | Location | Status |
 | --- | --- | --- |
-| 엔진(코어, DSP, 플랫폼) | `src/core`, `src/dsp`, `src/platform` | Qt 없음, Linux에서 테스트 |
-| **네이티브 앱** (제품) | `src/ui`, `src/native` | 설치 프로그램으로 배포 |
-| 예전 Qt 앱 | `src/*.cpp`, `src/Engine.*`, `src/vst3` | 포터블 zip으로만 배포, 더 늘리지 않음 |
+| Engine (core, DSP, platform) | `src/core`, `src/dsp`, `src/platform` | No Qt, tested on Linux |
+| **Native app** `MiniDAW.exe` | `src/ui`, `src/native` | Installer and portable zip |
+| **Vulkan app** `MiniDAWVulkan.exe` | `src/vulkan` | Portable zip; GPU parts not yet verified on Windows |
+| Old Qt app `MiniDAWQt.exe` | `src/*.cpp`, `src/Engine.*`, `src/vst3` | Portable zip only, no longer extended |

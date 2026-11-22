@@ -1,24 +1,26 @@
-# 녹음
+# Recording
 
-## 오디오 녹음
-1. **Preferences**(`Ctrl+,`)에서 *Input device*를 고릅니다. 기본값은 시스템 기본 장치입니다.
-2. 녹음할 Audio 트랙 머리의 **R**을 눌러 빨갛게 만듭니다.
-3. 필요하면 **Count-in**(1 2)을 켜 두면 녹음 전에 한 마디를 세어 줍니다. 메트로놈은 `K`.
-4. **●**(`R`)를 누르면 녹음이 시작되고, 정지(스페이스)하면 리전이 만들어집니다.
+## Recording audio
+1. Pick the *Input device* in **Preferences** (`Ctrl+,`). The default is the system default device.
+2. Press **R** on the header of the Audio track you want to record so that it turns red.
+3. If you like, switch on **Count-in** (it counts one bar before recording). The metronome is `K`.
+4. Press **record** (`R`) to start; press stop (space) and the region is created.
 
-### 녹음이 조금 늦게 들어갈 때
-오디오 장치는 약간의 지연이 있어 녹음된 소리가 박자보다 늦게 들어갈 수 있습니다.
-**Preferences > Recording latency compensation**에 밀리초 값을 넣으면 녹음 리전의 위치를 그만큼 당겨 줍니다.
-메트로놈에 맞춰 손뼉을 한 번 녹음해 보고 파형이 박자보다 얼마나 늦는지 보고 값을 정하세요.
+### When the recording lands a little late
+Audio devices have some latency, so the recorded sound can arrive after the beat. Enter a millisecond value in **Preferences > Recording latency compensation** and recorded regions are moved earlier by that amount.
+Record one hand clap against the metronome, look at how late the waveform is, and use that value.
 
-## MIDI 키보드로 녹음
-1. **Preferences > MIDI input**에서 키보드를 고릅니다.
-2. Software Instrument 트랙을 선택하고 R로 녹음 대기시킵니다.
-3. 녹음 버튼을 누르고 연주합니다. 선택한 트랙의 악기로 소리가 나고, 녹음 중이면 MIDI 리전에 기록됩니다.
+## Recording with a MIDI keyboard
+1. Choose the keyboard in **Preferences > MIDI input**.
+2. Select a Software Instrument track and arm it with R.
+3. Press record and play. The keyboard plays the instrument of the selected track, and while recording the notes are written into a MIDI region.
 
-## 컴퓨터 키보드로 연주 (음악 타이핑)
-**View > Musical Typing**을 켜면 `A W S E D F T G Y H U J K`가 건반(도 ~ 높은 도)이 됩니다.
-`Z` / `X`로 옥타브를 내리고 올립니다. 이 모드에서는 글자 단축키 대신 연주가 우선합니다.
+## Playing with the computer keyboard (musical typing)
+Native: **View > Musical Typing**. Vulkan: `Ctrl+Shift+K`. With it on, `A W S E D F T G Y H U J K` become the keys of a piano (C to the C above); `Z` / `X` lower and raise the octave. In this mode playing has priority over letter shortcuts.
 
-## 사이클 녹음
-**C**로 사이클을 켜고 **Shift+드래그**로 범위를 정한 뒤 녹음하면 같은 구간을 반복해서 연습할 수 있습니다.
+## Cycle recording
+Switch on cycle with **C** and set the range (Native: **Shift+drag** on the ruler; Vulkan: drag in the strip above the ruler), then record to practise the same section over and over.
+
+## Capture MIDI (Vulkan version)
+You played something great but were not recording? Select the instrument track and press `Ctrl+Shift+C` (**MIDI > Capture MIDI**). MiniDAW keeps what you played on the track during the last minute, even when the transport was stopped, and
+puts it into a new MIDI region at the playhead with the original timing - the idea of Ableton Live's *Capture MIDI*.

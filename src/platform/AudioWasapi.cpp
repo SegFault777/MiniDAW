@@ -7,7 +7,9 @@
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include <windows.h>
 #include <initguid.h>
 #include <audioclient.h>
@@ -166,13 +168,37 @@ private:
         else hr = client->GetService(__uuidof(IAudioRenderClient), reinterpret_cast<void**>(render.GetAddressOf()));
         if (FAILED(hr)) { fail(hrText("Audio device setup failed", hr)); return; }
 
-        if (render) {   // start with silence so the first period does not click
+        // Latency: WASAPI may hand out a larger buffer than requested. Keep only as many frames queued as were asked for
+        // (but never less than two engine periods, or the device would run dry), instead of filling the whole buffer.
+        REFERENCE_TIME defPeriod = 0, minPeriod = 0;
+        UINT32 target = bufferFrames;
+        if (render && SUCCEEDED(client->GetDevicePeriod(&defPeriod, &minPeriod)) && defPeriod > 0) {
+            const UINT32 periodFrames = UINT32((defPeriod * kRate + 9999999) / 10000000);
+            target = std::min<UINT32>(bufferFrames, std::max<UINT32>(UINT32(std::max(m_buffer, 64)), 2 * periodFrames));
+        }
+        if (render) {   // start with a little silence so the first period does not click
             BYTE* p = nullptr;
-            if (SUCCEEDED(render->GetBuffer(bufferFrames, &p))) render->ReleaseBuffer(bufferFrames, AUDCLNT_BUFFERFLAGS_SILENT);
+            if (SUCCEEDED(render->GetBuffer(target, &p))) render->ReleaseBuffer(target, AUDCLNT_BUFFERFLAGS_SILENT);
         }
         hr = client->Start();
         if (FAILED(hr)) { fail(hrText("Could not start the audio device", hr)); return; }
         SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+        // MMCSS "Pro Audio": the scheduler keeps this thread running on time (avrt.dll is loaded at run time, so no extra import library)
+        struct Mmcss {
+            HMODULE dll = LoadLibraryA("avrt.dll");
+            HANDLE task = nullptr;
+            using Begin = HANDLE(WINAPI*)(LPCSTR, LPDWORD);
+            using End = BOOL(WINAPI*)(HANDLE);
+            End end = nullptr;
+            Mmcss() {
+                if (!dll) return;
+                auto begin = reinterpret_cast<Begin>(reinterpret_cast<void*>(GetProcAddress(dll, "AvSetMmThreadCharacteristicsA")));
+                end = reinterpret_cast<End>(reinterpret_cast<void*>(GetProcAddress(dll, "AvRevertMmThreadCharacteristics")));
+                DWORD idx = 0;
+                if (begin) task = begin("Pro Audio", &idx);
+            }
+            ~Mmcss() { if (task && end) end(task); if (dll) FreeLibrary(dll); }
+        } mmcss;
 
         m_status = name + " — " + std::to_string(kRate) + " Hz, " + (m_capture ? "float" : "16-bit") + ", " +
                    std::to_string(int(bufferFrames) * 1000 / kRate) + " ms";
@@ -187,7 +213,7 @@ private:
                 UINT32 padding = 0;
                 hr = client->GetCurrentPadding(&padding);
                 if (FAILED(hr)) { m_failed = true; break; }   // for example AUDCLNT_E_DEVICE_INVALIDATED
-                const UINT32 avail = bufferFrames > padding ? bufferFrames - padding : 0;
+                const UINT32 avail = target > padding ? target - padding : 0;
                 BYTE* p = nullptr;
                 if (avail > 0 && SUCCEEDED(render->GetBuffer(avail, &p))) {
                     m_render(reinterpret_cast<std::int16_t*>(p), int(avail));

@@ -1,6 +1,8 @@
 // Tests and screenshots of the Qt-free user interface (src/ui) on a fake project, rendered headless.
 #include <cmath>
+#include <regex>
 #include <cstdio>
+#include <fstream>
 #include <string>
 #include "../src/core/Files.h"
 #include "../src/core/Session.h"
@@ -288,9 +290,115 @@ int main(int argc, char** argv) {
     u.showTab(ui::NativeUi::TabDrummer); u.paint(c); c.savePpm("/tmp/minidaw_ui_drummer.ppm");
     u.key(',', ui::ModCtrl); CHECK(u.dialogOpen()); u.paint(c); c.savePpm("/tmp/minidaw_ui_prefs.ppm"); u.key(ui::KeyEscape, 0); CHECK(!u.dialogOpen());
     u.paint(c);
+    {   // v0.12: features that only the Qt version had
+        auto hasField = [&](const char* label) {
+            if (!u.dialog()) return false;
+            for (const auto& f : u.dialog()->values()) if (f.label == label) return true;
+            return false;
+        };
+        u.key(',', ui::ModCtrl);
+        CHECK(hasField("Play Test Tone") && hasField("Choose Loops Folder...") && hasField("Add VST3 Folder..."));
+        u.key(ui::KeyEscape, 0);
+        // Aux A / Aux B parameter dialogs list every parameter of the effect, OK stores them
+        u.openAuxDialog(0);
+        CHECK(u.dialogOpen() && hasField("Reset to Defaults"));
+        const auto fx = s.auxEffect(0);
+        CHECK(fx && u.dialog()->values().size() == fx->params.size() + 1);
+        u.paint(c); c.savePpm("/tmp/minidaw_ui_aux.ppm");
+        u.key(ui::KeyEscape, 0);
+        CHECK(!u.dialogOpen());
+        u.openAuxDialog(1);
+        CHECK(u.dialogOpen());
+        u.key(ui::KeyEnter, 0);   // OK
+        CHECK(!u.dialogOpen());
+        // the MIDI channel of an instrument track (exported MIDI file): choose 7, then back to Auto
+        {
+            int inst = -1;
+            for (int i = 0; i < s.trackCount(); ++i) if (s.snapshot()[size_t(i)].type == core::TrackType::Instrument) { inst = i; break; }
+            CHECK(inst >= 0);
+            clickAt(60, laneY0 + inst * 60 + 20);   // the track header
+            clickAt(127, 54 + 16);   // the Track menu
+            CHECK(u.menuOpen());
+            u.paint(c); c.savePpm("/tmp/minidaw_ui_trackmenu.ppm");
+            u.key(ui::KeyEscape, 0); CHECK(!u.menuOpen());
+            u.openMidiChannelDialog(inst);
+            CHECK(u.dialogOpen() && hasField("Channel") && u.dialog()->values()[0].index == 0);
+            u.dialog()->values();   // the choice list is Auto, 1 .. 16
+            CHECK(u.dialog()->values()[0].choices.size() == 17);
+            u.paint(c); c.savePpm("/tmp/minidaw_ui_midich.ppm");
+            u.key(ui::KeyEscape, 0);
+            CHECK(!u.dialogOpen() && s.snapshot()[size_t(inst)].midiChannel == 0);
+            s.setTrackMidiChannel(inst, 7);
+            u.openMidiChannelDialog(inst);
+            CHECK(u.dialogOpen() && u.dialog()->values()[0].index == 7);
+            u.paint(c); c.savePpm("/tmp/minidaw_ui_midich7.ppm");
+            u.key(ui::KeyEnter, 0);                       // OK keeps 7
+            CHECK(!u.dialogOpen() && s.snapshot()[size_t(inst)].midiChannel == 7);
+            s.setTrackMidiChannel(inst, 0);
+            s.clearAutosave();
+        }
+        // unsaved changes: New Project asks first, Escape keeps the project
+        s.setVolume(0, 0.33f);   // marks the project dirty
+        const int tracksBefore = s.trackCount();
+        CHECK(s.isDirty());
+        u.key('N', ui::ModCtrl);
+        CHECK(u.dialogOpen() && hasField("Discard Changes"));
+        u.paint(c); c.savePpm("/tmp/minidaw_ui_unsaved.ppm");
+        u.key(ui::KeyEscape, 0);
+        CHECK(!u.dialogOpen() && s.trackCount() == tracksBefore);
+        // a clean project starts over right away
+        s.clearAutosave();
+        std::string e; s.saveProject("/tmp/minidaw_ui_clean.mdaw", &e);
+        CHECK(!s.isDirty());
+        u.key('N', ui::ModCtrl);
+        CHECK(!u.dialogOpen() && s.trackCount() == 2);
+    }
     clickAt(60, laneY0 + 2 * 60 + 20);
     CHECK(!u.typingOn());
     CHECK(u.key(ui::KeyEscape, 0) || true);
+    // -- opening other file types (Native): MIDI is imported, unknown types get a clear message
+    {
+        std::string err;
+        core::Session sm;                                               // a project with one MIDI note to export
+        const int mt = sm.addTrack(core::TrackType::Instrument, "Keys");
+        const int mr = sm.addMidiRegion(mt, 0, 4);
+        sm.setRegionNotes(mt, mr, {{60, 0.0, 1.0, 100}});
+        CHECK(sm.exportMidiFile("/tmp/ui_open.mid", &err));
+        core::Session sx;
+        ui::Host hx;
+        hx.loopFolder = "../loops";
+        ui::NativeUi ux(sx, hx);
+        ux.resize(1280, 780);
+        ui::Canvas cx(1280, 780);
+        ux.paint(cx);
+        const int base = sx.trackCount();
+        ux.openAny("/tmp/readme.txt");
+        CHECK(ux.lastMessage().find("not supported") != std::string::npos && sx.trackCount() == base);
+
+        {   // a project saved by a newer MiniDAW still opens, with a warning; one saved by this version says "Opened"
+            std::string e;
+            CHECK(sx.saveProject("/tmp/ui_ver.mdaw", &e));
+            std::string text;
+            { FILE* f = std::fopen("/tmp/ui_ver.mdaw", "rb"); CHECK(f != nullptr); if (f) { int ch; while ((ch = std::fgetc(f)) != EOF) text.push_back(char(ch)); std::fclose(f); } }
+            const std::regex re("\"version\"\\s*:\\s*4");
+            CHECK(std::regex_search(text, re));
+            ux.openAny("/tmp/ui_ver.mdaw");
+            ux.paint(cx);
+            CHECK(ux.lastMessage().find("Opened") != std::string::npos && ux.lastMessage().find("newer") == std::string::npos);
+            cx.savePpm("/tmp/ui_open_ok.ppm");
+            { std::string t2 = std::regex_replace(text, re, "\"version\": 99"); FILE* f = std::fopen("/tmp/ui_ver99.mdaw", "wb"); CHECK(f != nullptr); if (f) { std::fwrite(t2.data(), 1, t2.size(), f); std::fclose(f); } }
+            ux.openAny("/tmp/ui_ver99.mdaw");
+            ux.paint(cx);
+            CHECK(ux.lastMessage().find("newer MiniDAW") != std::string::npos && sx.loadedFromNewerVersion());
+            cx.savePpm("/tmp/ui_open_newer.ppm");
+        }
+        ux.openAny("/tmp/ui_open.mid");
+        CHECK(sx.trackCount() > base);
+        { std::ifstream in("/tmp/ui_open.mid", std::ios::binary); std::ofstream out("/tmp/ui_open_upper.MID", std::ios::binary); out << in.rdbuf(); }
+        ux.openAny("/tmp/ui_open_upper.MID");                           // the extension is case-insensitive
+        CHECK(ux.lastMessage().find("Imported") != std::string::npos);
+    }
+
     std::printf("ui fails=%d\n", fails);
     return fails ? 1 : 0;
 }

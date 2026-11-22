@@ -5,3 +5,7 @@ installer-out/
 CMakeLists.txt.user
 .vs/
 .idea/
+
+# Material Symbols fonts downloaded by tools/fetch-material-symbols.sh (Apache-2.0, not part of the repository)
+resources/fonts/*
+!resources/fonts/.gitkeep

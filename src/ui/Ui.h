@@ -33,6 +33,8 @@ struct Host {
     /// Native open / save dialog. Returns the chosen path or "" when cancelled. 'filter' is "Name|*.ext;*.ext".
     std::function<std::string(const std::string& title, const std::string& filter, bool save)> fileDialog;
     std::function<void()> quit;
+    /// Folder picker ("Choose Loops Folder", "Add VST3 Folder"). Returns the chosen folder or "" when cancelled.
+    std::function<std::string(const std::string& title)> folderDialog;
     std::function<void(const std::string& title)> setTitle;
     std::string loopFolder = "loops";
     // preferences
@@ -76,14 +78,21 @@ public:
 
     void message(const std::string& text);
     /// A translatable message with one placeholder: msg("Saved %1", path).
-    static std::string msg(const std::string& pattern, const std::string& arg = {}) {
+    static std::string msg(const std::string& pattern, const std::string& arg = {}, const std::string& arg2 = {}) {
         std::string t = Canvas::translate(pattern);
         const size_t at = t.find("%1");
         if (at != std::string::npos) t.replace(at, 2, arg);
+        const size_t at2 = t.find("%2");
+        if (at2 != std::string::npos) t.replace(at2, 2, arg2);
         return t;
     }
     /// Opens a project file (used for "open with" and file associations).
     void openFile(const std::string& path) { openProject(path); m_dirty = true; }
+    /// Opens any supported file: a project (after the unsaved-changes question), an audio file or a MIDI file (imported). Used by
+    /// File > Open, drag and drop and "open with".
+    void openAny(const std::string& path);
+    void openAuxDialog(int bus) { dlgAux(bus); m_dirty = true; }   // View menu: Aux A: Reverb / Aux B: Echo
+    void openMidiChannelDialog(int track) { dlgMidiChannel(track); }   ///< Track > MIDI Channel...
     void setDeviceStatus(const std::string& text) { m_device = text; m_dirty = true; }
     void invalidate() { m_dirty = true; }
 
@@ -188,12 +197,16 @@ private:
     void tapTempo();
     void gotoMarker(int dir);
     void dlgPreferences();
+    void dlgAux(int bus);                                  // Aux A: Reverb / Aux B: Echo parameters
+    void guardUnsaved(std::function<void()> proceed);     // "Save changes to the project before continuing?"
+    bool previewOnClick() const;
+    bool m_reopenPrefs = false;
     // dialogs (UiDialogs.cpp)
     void openDialog(std::unique_ptr<Dialog> d);
     double last(const std::string& key, double def) const { auto it = m_last.find(key); return it == m_last.end() ? def : it->second; }
     void dlgTranspose(); void dlgVelocityRamp(); void dlgRepeat(); void dlgQuantize(); void dlgScale(); void dlgHumanize(); void dlgArpeggiate();
     void dlgChord(); void dlgFixedLength(); void dlgScaleVelocity(); void dlgStripSilence(); void dlgDetectTempo(); void dlgPatternToMidi();
-    void dlgTimeSignature(); void dlgTempo(); void dlgBounce(); void dlgAbout(); void dlgRename();
+    void dlgTimeSignature(); void dlgTempo(); void dlgBounce(); void dlgImportMidi(); void dlgAbout(); void dlgRename(); void dlgMidiChannel(int t);
     void applyFader(int track, int y, const Rect& r);
     static float faderToGain(double pos);
     static double gainToFader(float gain);

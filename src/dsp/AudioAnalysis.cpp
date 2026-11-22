@@ -100,4 +100,44 @@ std::vector<std::pair<size_t, size_t>> findSoundRanges(const float* st, size_t f
     return out;
 }
 
+std::vector<size_t> findTransients(const float* stereo, size_t frames, double sensitivity, size_t minGapFrames) {
+    std::vector<size_t> out;
+    constexpr size_t kHop = 128;
+    const size_t blocks = frames / kHop;
+    if (blocks < 8) return out;
+    std::vector<double> db(blocks);
+    for (size_t b = 0; b < blocks; ++b) {
+        double e = 0;
+        for (size_t i = 0; i < kHop; ++i) {
+            const size_t f = b * kHop + i;
+            const double m = 0.5 * (double(stereo[2 * f]) + double(stereo[2 * f + 1]));
+            e += m * m;
+        }
+        db[b] = 10.0 * std::log10(e / double(kHop) + 1e-10);
+    }
+    const double threshold = 14.0 - 10.0 * std::clamp(sensitivity, 0.0, 1.0);   // dB of rise over the preceding blocks
+    std::vector<double> rise(blocks, 0.0);
+    for (size_t b = 4; b < blocks; ++b) {
+        const double before = (db[b - 1] + db[b - 2] + db[b - 3] + db[b - 4]) / 4.0;
+        rise[b] = db[b] > -55.0 ? db[b] - before : 0.0;
+    }
+    if (std::max(db[0], db[1]) > -45.0) out.push_back(0);   // the region starts right on a hit (a loop, a cut sample)
+    for (size_t b = 4; b + 1 < blocks; ++b) {
+        if (rise[b] < threshold || rise[b] < rise[b - 1] || rise[b] < rise[b + 1]) continue;
+        // walk back to where the rise starts (the onset itself, a few blocks before the loudest jump)
+        size_t s = b;
+        while (s > 4 && b - s < 4 && db[s - 1] < db[s] - 1.5) --s;
+        size_t pos = s * kHop;
+        // refine inside the block to the first sample that is clearly above the noise before it
+        double peak = 0;
+        const size_t from = pos > kHop ? pos - kHop : 0, to = std::min(frames, pos + 2 * kHop);
+        for (size_t f = from; f < to; ++f) peak = std::max(peak, std::fabs(0.5 * (double(stereo[2 * f]) + double(stereo[2 * f + 1]))));
+        for (size_t f = from; f < to; ++f)
+            if (std::fabs(0.5 * (double(stereo[2 * f]) + double(stereo[2 * f + 1]))) > peak * 0.25) { pos = f; break; }
+        if (!out.empty() && pos < out.back() + minGapFrames) continue;
+        out.push_back(pos);
+    }
+    return out;
+}
+
 }  // namespace dsp

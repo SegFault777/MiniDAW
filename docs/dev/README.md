@@ -1,13 +1,13 @@
-# 개발자 문서
+# Developer documentation
 
-| 문서 | 내용 |
+| Document | Contents |
 | --- | --- |
-| [architecture.md](architecture.md) | 전체 구조와 계층 규칙, 스레드, 디렉터리 지도 |
-| [building.md](building.md) | Windows에서 빌드하기, `build.sh`의 대상(target), CI |
-| [testing.md](testing.md) | 테스트 구성, 실행 방법, 스크린샷 테스트 |
-| [ui-toolkit.md](ui-toolkit.md) | Qt 없는 UI 툴킷(`src/ui`)의 설계: 캔버스, 즉시 모드 히트 테스트, 다이얼로그, 번역 |
-| [plugin-hosting.md](plugin-hosting.md) | MiniDAW 플러그인(SDK)과 VST3 호스팅 |
-| [adding-features.md](adding-features.md) | 새 편집 기능, 대화상자, 번역 문구를 추가하는 순서 |
-| [coding-rules.md](coding-rules.md) | 코딩 규칙, 스레드 규칙, MSVC에서 자주 나는 오류 |
+| [architecture.md](architecture.md) | Overall structure, layer rules, threads, directory map |
+| [building.md](building.md) | Building on Windows, the targets of `build.sh`, portable packages, CI |
+| [testing.md](testing.md) | Test suites, how to run them, screenshot tests |
+| [ui-toolkit.md](ui-toolkit.md) | The two Qt-free UI toolkits: software `src/ui` (Native) and GPU `src/vulkan` (Vulkan) |
+| [plugin-hosting.md](plugin-hosting.md) | MiniDAW plug-ins (SDK) and VST3 hosting |
+| [adding-features.md](adding-features.md) | The order of work for a new edit function, dialog or translation |
+| [coding-rules.md](coding-rules.md) | Coding rules, thread rules, frequent MSVC errors |
 
-시작하려면: `git clone` -> [building.md](building.md)의 "Linux에서 테스트만" -> `bash tests/run.sh`.
+To start: `git clone`, then "Tests only on Linux" in [building.md](building.md), then `bash tests/run.sh`.

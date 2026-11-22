@@ -13,6 +13,8 @@ Save	保存
 Save As…	另存为…
 Import Audio…	导入音频…
 Import MIDI File…	导入 MIDI 文件…
+Import Logic Pro Project Folder…	导入 Logic Pro 工程文件夹…
+Choose a Logic Pro project (.logicx folder)	选择 Logic Pro 工程（.logicx 文件夹）
 Export MIDI File…	导出 MIDI 文件…
 Bounce to WAV…	混音导出为 WAV…
 Preferences…	偏好设置…
@@ -167,7 +169,6 @@ Normalize	标准化
 Automation	自动化
 Automation Parameter	自动化参数
 Volume	音量
-Pan	声像
 Send A	发送 A
 Send B	发送 B
 Marker %1	标记 %1
@@ -500,3 +501,355 @@ Click to toggle a step, drag to paint	点击切换步进,拖动涂抹
 Click to add a point, drag to move it, right-click to delete it	点击添加点,拖动移动,右键删除
 Click to add a point, drag to move it, right-click to delete it.	点击添加点,拖动移动,右键删除。
 %1 notes copied.	已复制 %1 个音符。
+# v0.12 Vulkan interface
+   from	从
+   to	到
++ Add Effect	+ 添加效果器
++ Add Track	+ 添加轨道
++ FX	+ FX
++ Insert	+ 插入
++ Save Snapshot	+ 保存快照
++ Track	+ 轨道
+%1 note changed.	已更改 %1 个音符。
+%1 notes changed.	已更改 %1 个音符。
+Action	动作
+Adapt Tempo...	适应速度...
+Add condition 2	添加条件 2
+Also snap note lengths	同时吸附音符长度
+Apply	应用
+Apply Groove...	应用律动...
+Apply to the notes that do NOT match	应用于不匹配的音符
+Arm Record	录音准备
+Audio Region	音频区域
+Auto	自动
+Auto: %1	自动: %1
+Auto: Bar	自动: 小节
+Aux A: Reverb	Aux A: 混响
+Aux A: Reverb...	Aux A: 混响...
+Aux B: Echo	Aux B: 回声
+Aux B: Echo...	Aux B: 回声...
+BROWSER	浏览器
+Bar	小节
+Beat Detective...	节拍侦探...
+Beat unit	节拍单位
+Bounce / Export Audio...	导出 / 渲染音频...
+Capture MIDI	捕获 MIDI
+Clear Lane	清除轨道通道
+Click to add a point - drag to move - right-click to delete - the line is followed during playback	单击添加点 - 拖动移动 - 右键删除 - 播放时按该曲线变化
+Colour: Velocity	颜色: 力度
+Command Palette	命令面板
+Command Palette...	命令面板...
+Condition 1	条件 1
+Condition 2	条件 2
+Cycle Track Height	切换轨道高度
+Damping	阻尼
+Density	密度
+Discard Changes	放弃更改
+Drum Machine - click the steps, drag to paint	鼓机 - 单击步进,拖动涂抹
+Eraser	橡皮擦
+Eraser Tool	橡皮擦工具
+Esc or F1 closes - Ctrl+K searches every command	按 Esc 或 F1 关闭 - Ctrl+K 搜索所有命令
+Feedback	反馈
+Filter: every condition must match. Action: applied to the notes that match.	筛选: 必须满足所有条件。动作: 应用于匹配的音符。
+Fold	折叠
+Fold Notes	折叠音符
+Follow Playhead	跟随播放头
+Functions v	功能 v
+Ghost	幽灵音符
+Go to End	转到结尾
+Go to Start	转到开头
+Grid: %1	网格: %1
+Help	帮助
+Highlight	高亮
+Keyboard Shortcuts	键盘快捷键
+Keyboard Shortcuts...	键盘快捷键...
+Keyboard shortcuts	键盘快捷键
+Largest leap	最大跳进
+Lock	锁定
+Logical Editor	逻辑编辑器
+Logical Editor...	逻辑编辑器...
+Lowest octave	最低八度
+MIDI Region	MIDI 区域
+Make Groove	生成律动
+Marker added.	已添加标记。
+Maximize Bottom Panel	最大化底部面板
+Mix	混音
+MixConsole Snapshots	MixConsole 快照
+Musical typing on: A W S E D F T G Y H U J K play notes, Z / X change the octave.	音乐键盘已开启: A W S E D F T G Y H U J K 演奏, Z / X 切换八度。
+Mute Region	静音区域
+Mute Tool	静音工具
+Mute Track	静音轨道
+Next Grid Size	下一个网格大小
+No next marker.	没有下一个标记。
+Not following the playhead.	未跟随播放头。
+Note length	音符长度
+Nothing to bounce.	没有可导出的内容。
+Nudge Region Left	区域左移
+Nudge Region Right	区域右移
+OK	确定
+Parameter	参数
+Pattern doubled to %1 beats.	图案已加倍为 %1 拍。
+Pencil	铅笔
+Pencil Tool	铅笔工具
+Pitch	音高
+Playhead Back One Bar	播放头后退一小节
+Playhead Forward One Bar	播放头前进一小节
+Pointer	指针
+Pointer Tool	指针工具
+Preview	试听
+Put the playhead inside a region to split it.	将播放头放在区域内即可分割。
+Recall	调用
+Recall Previous Snapshot	调用上一个快照
+Recalled %1	已调用 %1
+Recalled mixer snapshot %1	已调用混音快照 %1
+Rename Region...	重命名区域...
+Riff Machine	Riff 机
+Riff Machine...	Riff 机...
+Riff written (seed %1).	已写入 riff(种子 %1)。
+Riff...	Riff...
+Ripple Delete Region	波纹删除区域
+Ripple delete: the following regions moved %1 beats earlier.	波纹删除: 后面的区域前移了 %1 拍。
+Roll New Riff	生成新 riff
+Save Mixer Snapshot	保存混音快照
+Saved mixer snapshot %1 (Alt+%2 recalls it)	已保存混音快照 %1(Alt+%2 调用)
+Scissors	剪刀
+Scissors Tool	剪刀工具
+Search commands	搜索命令
+Search loops, instruments, effects	搜索循环、乐器、效果器
+Seed (new number = new riff)	种子(换数字 = 新 riff)
+Select Next Track	选择下一个轨道
+Select Previous Track	选择上一个轨道
+Select a Drum Machine track to program its steps.	选择鼓机轨道以编写步进。
+Select a MIDI region to edit its notes - or double-click an instrument lane to create one.	选择 MIDI 区域以编辑音符 - 或双击乐器轨道创建一个。
+Select a region to see its properties.	选择区域以查看其属性。
+Select an audio region (or put the playhead inside one) to tab to its transients.	选择音频区域(或把播放头放进去)以跳到瞬态。
+Settings are kept in %LOCALAPPDATA%\MiniDAW.	设置保存在 %LOCALAPPDATA%\MiniDAW。
+Show / Hide Bottom Panel	显示 / 隐藏底部面板
+Show / Hide Browser	显示 / 隐藏浏览器
+Show / Hide Inspector	显示 / 隐藏检查器
+Show Automation	显示自动化
+Show Devices	显示设备
+Show Editor	显示编辑器
+Show Mixer	显示混音台
+Show Snapshots	显示快照
+Show Step Sequencer	显示步进音序器
+Size	大小
+Snap	吸附
+Snap off.	吸附已关闭。
+Snap on: %1	吸附已开启: %1
+Snapshots	快照
+Solo Track	独奏轨道
+Sound	声音
+Space: play  -  R: record  -  1-5: tools  -  Tab: next transient  -  Ctrl+K: search every command  -  F1: shortcuts	Space: 播放  -  R: 录音  -  1-5: 工具  -  Tab: 下一个瞬态  -  Ctrl+K: 搜索所有命令  -  F1: 快捷键
+Stamp	图章
+Steps	步进
+Stop and Return to Start	停止并回到开头
+Store levels, pans, sends, mutes and solos under a name and bring them back with one click or Alt+1 ... 9.	按名称保存电平、声像、发送、静音和独奏,一键或 Alt+1 ... 9 即可调用。
+Tab to Next Transient	跳到下一个瞬态
+Tab to Previous Transient	跳到上一个瞬态
+Tap	点击
+Time	时间
+Transport	走带
+Typing Octave Down	键盘八度下移
+Typing Octave Up	键盘八度上移
+Use + Add Effect in the Devices panel or drag an effect from the browser.	使用设备面板中的 + 添加效果器,或从浏览器拖入效果器。
+Value	值
+Velocity from	力度从
+Velocity to	力度到
+Vulkan user interface. GPL-3.0-or-later.	Vulkan 用户界面。GPL-3.0-or-later。
+Width	宽度
+Workspace: Arrange	工作区: 编曲
+Workspace: Edit	工作区: 编辑
+Workspace: Edit - the editor gets most of the window	工作区: 编辑 - 编辑器占据窗口大部分
+Workspace: Mix	工作区: 混音
+Workspace: Mix - the mixer gets most of the window	工作区: 混音 - 混音台占据窗口大部分
+Write Riff	写入 riff
+Writes a new melody in the scale into this region (replaces its notes).	在此区域写入符合音阶的新旋律(会替换其中的音符)。
+Zoom to Fit Project	缩放以适应项目
+Zoom to Selected Region	缩放到所选区域
+Zoomed to fit the project.	已缩放以适应项目。
+%1 regions selected.	已选择 %1 个区域。
+Select All Regions	选择所有区域
+Nothing fits the tracks at this place.	此处的轨道都放不下这些内容。
+Tempo (BPM)	速度 (BPM)
+Click to add a tempo change - drag to move - double-click a point to ramp to the next - right-click to delete	单击添加速度变化 - 拖动移动 - 双击点可渐变到下一个点 - 右键删除
+Select a Drummer region to shape its groove - or double-click a Drummer track's lane to create one.	选择 Drummer 区域来调整律动 - 或双击 Drummer 轨道的通道创建一个。
+Seed	种子
+Add fills at the end	在结尾添加过门
+Roll New Variation	生成新变化
+This region has no notes yet.	此区域还没有音符。
+Show Drummer	显示 Drummer
+Side Stick	边击
+Tom	通鼓
+Closed Hat	闭镲
+Pedal Hat	踏板镲
+Open Hat	开镲
+Crash	强音镲
+Ride	叮叮镲
+Ride Bell	叮叮镲钟
+Tambourine	铃鼓
+Cowbell	牛铃
+Percussion	打击乐
+Tempo and time signature	速度和拍号
+Adopt if the project is empty	工程为空时采用
+Use the file's	使用文件的
+Keep the project's	保留工程的
+One track for every MIDI channel	每个 MIDI 通道一条轨道
+The notes start at bar 1. Markers of the file are added.	音符从第 1 小节开始。文件中的标记也会添加。
+Import	导入
+Icon style	图标样式
+Classic	经典
+Material Symbols needs its font files in the fonts folder.	Material Symbols 需要在 fonts 文件夹中放置字体文件。
+Without them the classic icons are used.	没有字体时使用经典图标。
+MIDI Ch	MIDI 通道
+MIDI Channel...	MIDI 通道...
+MIDI Channel	MIDI 通道
+Channel	通道
+The channel of this track in an exported MIDI file.	导出的 MIDI 文件中此轨道使用的通道。
+Opened a project saved by a newer MiniDAW: some settings may be missing.	已打开由较新版本 MiniDAW 保存的项目，部分设置可能缺失。
+Preferences and handy extras	偏好设置与实用功能
+Preferences (Ctrl+,) chooses the audio output and input, the buffer size, the language, the interface scale and the icon style. A smaller buffer lowers the delay, a larger one is safer on a slow computer.	在偏好设置（Ctrl+,）中可以选择音频输出和输入、缓冲区大小、语言、界面缩放和图标样式。缓冲区越小延迟越低，越大则在较慢的电脑上越稳妥。
+For another program you can choose the MIDI channel of an instrument track: select the track and use MIDI Ch in the inspector. Auto numbers the channels for you, and the drums always use channel 10.	为了在其他程序中使用，可以为乐器轨道选择 MIDI 通道：选中轨道，在检查器中使用“MIDI 通道”。“自动”会为你编号，鼓始终使用 10 号通道。
+The layout of the window is remembered for the next start. Ctrl+K finds any command by name, also the ones that have no menu entry.	窗口布局会在下次启动时保留。按 Ctrl+K 可以按名称查找任何命令，包括没有菜单项的命令。
+Looking for audio devices... open Preferences again in a moment.	正在查找音频设备... 请稍后再打开偏好设置。
+Drag the round handles to set the fades. Double-click a handle to remove its fade. Click the waveform to move the playhead. Ctrl + wheel zooms, the wheel scrolls.	拖动圆形手柄来设置淡入淡出。双击手柄可移除该淡化。点击波形可移动播放头。 Ctrl+滚轮缩放，滚轮滚动。
+Zoom in (Ctrl + wheel)	放大 (Ctrl+滚轮)
+Zoom out (Ctrl + wheel)	缩小 (Ctrl+滚轮)
+Trim Start to Playhead	在播放头处裁剪开头
+Trim End to Playhead	在播放头处裁剪结尾
+Trim Start	裁剪开头
+Trim End	裁剪结尾
+Cut the start of the region at the playhead	在播放头处裁剪区域的开头
+Cut the end of the region at the playhead	在播放头处裁剪区域的结尾
+Stretched or transposed audio cannot be trimmed here.	已拉伸或移调的音频无法在此裁剪。
+Put the playhead inside the audio region first.	请先把播放头放到音频区域内。
+# Tutorial
+Mixer groups	混音器分组
+Bringing files in	导入文件
+Exporting for other DAWs	导出给其他 DAW
+Tracks in the same mixer group move together: faders, pans, sends, mute and solo. A drum kit recorded on six tracks is the classic example.	同一混音器分组的轨道会一起变化：推子、声像、发送、静音和独奏。录在六条轨道上的鼓组就是典型例子。
+In the mixer, click the small circle at the top of a channel strip and choose a group from A to H, or right-click a track in the arrangement and use Mixer Group. Every group has its own colour.	在混音器中点击通道条顶部的小圆圈，从 A 到 H 选择分组；或在编排视图中右键点击轨道，选择“混音器分组”。每个分组都有自己的颜色。
+Hold Alt while you change a control to change only that track. Ctrl+K and typing group b also puts the selected track in group B.	按住 Alt 操作时只会改变该轨道。按 Ctrl+K 并输入 group b，也可以把选中的轨道放入 B 组。
+Drag an audio or MIDI file onto the window, or use File > Open. MiniDAW reads WAV, AIFF, MP3, M4A and FLAC audio and Standard MIDI Files.	把音频或 MIDI 文件拖到窗口上，或使用“文件 > 打开”。MiniDAW 可读取 WAV、AIFF、MP3、M4A、FLAC 音频和标准 MIDI 文件。
+File > Import MIDI File asks what to do with the tempo map of the file, and whether a track that uses several channels becomes one track per channel.	“文件 > 导入 MIDI 文件”会询问如何处理文件的速度图，以及使用多个通道的轨道是否按通道拆分成多条轨道。
+A Logic Pro project is a folder ending in .logicx: File > Import Logic Pro Project Folder brings in its tempo, markers, track names, audio regions and MIDI regions. Plug-ins, automation and the mixer are not read.	Logic Pro 工程是以 .logicx 结尾的文件夹。“文件 > 导入 Logic Pro 工程文件夹”会导入速度、标记、轨道名称、音频区域和 MIDI 区域。插件、自动化和混音器不会被读取。
+Bounce / Export Audio (Ctrl+B) writes WAV, AIFF or MP3 from 44.1 to 96 kHz. MP3 files get title, artist and album tags.	“混音导出 / 导出音频”（Ctrl+B）可写出 44.1 到 96 kHz 的 WAV、AIFF 或 MP3。MP3 文件会带有标题、艺术家和专辑标签。
+Tick One file for every track to export stems. All files start at the same point and have the same length, so they line up at bar 1 in Logic Pro, Ableton Live or Cubase.	勾选“每条轨道一个文件”即可导出分轨。所有文件起点和长度相同，可在 Logic Pro、Ableton Live 或 Cubase 中对齐到第 1 小节。
+Switch off Stems: keep master volume and limiter when the other program should do its own master processing. File > Export MIDI File also writes your tempo map, time signatures and markers.	如果希望在其他软件中自行做母带处理，请关闭“分轨：包含主音量和限制器”。“文件 > 导出 MIDI 文件”还会写入速度图、拍号和标记。
+This tutorial has 19 short pages. Use the Next and Back buttons or the Left and Right arrow keys. Esc closes it, and you can open it again any time from Help > Tutorial.	本教程共 19 个简短页面。使用“下一步”和“返回”按钮或左右方向键。按 Esc 关闭，随时可从“帮助 > 教程”再次打开。
+Welcome to MiniDAW	欢迎使用 MiniDAW
+MiniDAW is a light, fast music studio: record, sequence, edit and mix in one window.	MiniDAW 是一个轻巧快速的音乐工作室:在一个窗口中完成录音、编曲、编辑和混音。
+You do not need to remember anything: Ctrl+K opens a palette that finds every command by name.	无需记忆:按 Ctrl+K 会打开命令面板,可按名称查找所有命令。
+The window at a glance	窗口一览
+The menu bar and the transport (play, record, tempo, position) are at the top.	顶部是菜单栏和走带控制(播放、录音、速度、位置)。
+The big area in the middle is the arrangement: track headers on the left, the timeline with its regions on the right.	中间的大区域是编排视图:左侧是轨道头,右侧是带区域的时间线。
+The browser (loops, instruments, effects) and the inspector sit at the sides, and the bottom panel switches between Mixer, Editor, Steps, Devices, Snapshots, Automation and Drummer.	浏览器(循环、乐器、效果器)和检查器位于两侧,底部面板可在混音台、编辑器、步进、设备、快照、自动化和 Drummer 之间切换。
+Playing and moving around	播放与移动
+Space starts and stops playback. Click the ruler to move the playhead.	按空格键开始或停止播放。单击标尺可移动播放头。
+Scroll with the mouse wheel to move through the song and hold Ctrl while scrolling to zoom. The Zoom to Fit Project command shows the whole song.	用鼠标滚轮在歌曲中移动,按住 Ctrl 滚动可缩放。“缩放以适应项目”命令会显示整首歌曲。
+Turn Follow Playhead on to keep the playhead in view while the song plays.	开启“跟随播放头”后,播放时播放头会始终保持在视野内。
+Adding tracks	添加轨道
+Use the Track menu or the + Add Track button to add a track. There are four kinds: Audio (recordings and loops), Instrument (MIDI with a synth), Drums (a step-sequenced drum machine) and Drummer (a drummer that plays for you).	通过“轨道”菜单或“+ 轨道”按钮添加轨道。共有四种:音频(录音和循环)、乐器(用合成器演奏的 MIDI)、鼓(步进式鼓机)和 Drummer(自动演奏的鼓手)。
+Click a track header to select it. Right-click it for more choices: rename, colour, duplicate or delete.	单击轨道头即可选中。右键单击可重命名、改颜色、复制或删除。
+Getting sound quickly: the browser	快速出声:浏览器
+The browser on the right lists loops, instruments and effects. Type in the search box to filter them.	右侧的浏览器列出循环、乐器和效果器。在搜索框中输入即可筛选。
+Drag a loop onto the arrangement to place it, drag an instrument onto a track to change its sound, or drag an effect onto a track to add it to its chain.	把循环拖到编排视图即可放置,把乐器拖到轨道可更换音色,把效果器拖到轨道可添加到其效果链。
+Clicking an item previews it, so you can listen before you drag.	单击项目即可试听,拖放之前可以先听一听。
+The Drummer: instant drums	Drummer:即时鼓点
+Add a Drummer track and double-click its lane to create a region. A drummer starts playing at once.	添加 Drummer 轨道,双击其通道创建区域,鼓手会立刻开始演奏。
+Open the Drummer tab (Ctrl+7) to choose a style and change the Complexity, Loudness, Swing and Fills. Roll New Variation gives you a new pattern with the same settings.	在 Drummer 标签页(Ctrl+7)中选择风格,并调整复杂度、响度、摇摆和过门。“生成新变化”会用相同设置生成新的节奏型。
+Every change can be undone with Ctrl+Z.	所有更改都可以用 Ctrl+Z 撤销。
+Recording	录音
+Select a track and arm it for recording, then press R. Audio tracks record from your audio input, instrument tracks record what you play on a MIDI keyboard.	选中轨道并开启录音准备,然后按 R。音频轨道从音频输入录音,乐器轨道录制你在 MIDI 键盘上的演奏。
+No MIDI keyboard? Musical typing turns the computer keys A W S E D F T G Y H U J K into piano keys, and Z and X change the octave.	没有 MIDI 键盘?使用音乐键盘功能,电脑键 A W S E D F T G Y H U J K 就是钢琴键,Z 和 X 切换八度。
+The metronome and the count-in are in the transport bar. Capture MIDI saves what you played even when you forgot to press record.	节拍器和预备拍在走带栏中。即使忘了按录音,“捕获 MIDI”也会保存你演奏的内容。
+Editing regions: the five tools	编辑区域:五种工具
+Press 1 for the Pointer (select and move), 2 for the Pencil (draw), 3 for the Scissors (cut), 4 for the Eraser and 5 to Mute.	按 1 为指针(选择和移动),2 为铅笔(绘制),3 为剪刀(剪切),4 为橡皮擦,5 为静音。
+With the Pointer, drag a region to move it, drag its right edge to change its length and hold Alt while dragging to copy it.	用指针拖动区域可移动,拖动右边缘可改变长度,按住 Alt 拖动可复制。
+Snap keeps everything on the grid. Press G to turn it on or off.	吸附会让所有内容对齐网格。按 G 开关。
+Working with several regions	处理多个区域
+Shift-click or Ctrl-click adds regions to the selection. Drag on an empty part of a lane to draw a rubber band, or press Ctrl+A to select everything.	Shift+单击或 Ctrl+单击可把区域加入选择。在通道空白处拖动会画出选框,按 Ctrl+A 全选。
+Drag any selected region to move the whole group, even onto other tracks. Alt-drag duplicates the group.	拖动任意选中的区域即可移动整组,甚至可以移到其他轨道。Alt+拖动会复制整组。
+Cut, copy, paste, delete, mute and ripple delete all work on the whole selection, and each one is a single undo step.	剪切、复制、粘贴、删除、静音和波纹删除都作用于整个选择,且每个操作只需一次撤销。
+The piano roll	钢琴卷帘
+Select a MIDI region and press E to open the Editor tab. Draw notes with the Pencil, move them by dragging, and resize them at their edges.	选中 MIDI 区域并按 E 打开编辑器标签页。用铅笔绘制音符,拖动移动,在边缘调整长度。
+The velocity of each note is shown by its colour. Fold hides the keys you do not use, Highlight marks the notes of a scale, and ghost notes show the other regions of the track.	音符的力度以颜色显示。折叠会隐藏不用的琴键,高亮标出音阶中的音,幽灵音符显示同一轨道上的其他区域。
+Stamps place chords, and the Riff Machine writes a new melody in a scale. Q quantizes the selected notes.	图章可放置和弦,Riff 机会按音阶写出新旋律。按 Q 量化所选音符。
+The step sequencer	步进音序器
+A Drums track has a step grid instead of a piano roll. Click a step to switch it on, or drag across many steps to paint them.	鼓轨道用步进网格代替钢琴卷帘。单击步进即可开启,横向拖动可连续涂抹多个步进。
+Each row is one drum sound. Drag in the velocity strip to make single hits louder or softer.	每一行是一种鼓声。在力度条上拖动,可让单个敲击更响或更轻。
+Open it with Ctrl+3.	按 Ctrl+3 打开。
+The mixer and effects	混音台与效果器
+The Mixer (Ctrl+1) has one strip per track: a fader for the volume, a pan control, mute and solo, two sends (reverb and echo) and a level meter. Narrow makes the strips thinner to fit more of them.	混音台(Ctrl+1)为每个轨道提供一个通道条:音量推子、声像、静音和独奏、两个发送(混响和回声)以及电平表。“窄”可让更多通道条显示在屏幕上。
+The Devices tab (Ctrl+4) shows the effect chain of the selected track as cards with knobs. Use + Add Effect to insert an effect, and drag a card to change the order.	设备标签页(Ctrl+4)以带旋钮的卡片显示所选轨道的效果链。用“+ 添加效果器”插入效果器,拖动卡片可调整顺序。
+Automation and tempo	自动化与速度
+The Automation tab (Ctrl+6) draws a curve for the volume, pan or a send of the selected track. Click to add a point, drag to move it and right-click to delete it.	自动化标签页(Ctrl+6)可为所选轨道的音量、声像或发送绘制曲线。单击添加点,拖动移动,右键删除。
+Choose Tempo (BPM) to draw tempo changes for the whole song. Double-click a point to let the tempo glide to the next one.	选择“速度 (BPM)”可为整首歌绘制速度变化。双击某个点可让速度平滑过渡到下一个点。
+The curve is followed during playback.	曲线会在播放时被执行。
+Snapshots and workspaces	快照与工作区
+A mixer snapshot remembers all levels, pans, sends, mutes and solos. Save one with Ctrl+Shift+Enter and bring it back with one click or Alt+1 to Alt+9. Open the tab with Ctrl+5.	混音快照会记住所有电平、声像、发送、静音和独奏。用 Ctrl+Shift+Enter 保存,单击一下或按 Alt+1 到 Alt+9 即可调用。按 Ctrl+5 打开该标签页。
+Workspaces change the whole layout with one key: F5 is for arranging, F6 for mixing and F7 for editing.	工作区一键切换整个布局:F5 用于编曲,F6 用于混音,F7 用于编辑。
+Saving, exporting and what next	保存、导出与下一步
+Save your project with Ctrl+S. MiniDAW also keeps an automatic backup and offers to recover it if the program closes unexpectedly. Undo (Ctrl+Z) and Redo (Ctrl+Shift+Z) go back as far as you need.	按 Ctrl+S 保存项目。MiniDAW 还会自动备份,并在程序意外关闭后提示恢复。撤销(Ctrl+Z)和重做(Ctrl+Shift+Z)可回退任意多步。
+Use Bounce / Export Audio to render the song to a WAV file.	使用“导出 / 渲染音频”把歌曲渲染为 WAV 文件。
+Remember the two helpers: Ctrl+K finds any command by name, and F1 shows every keyboard shortcut. Hover over a control and the status bar at the bottom explains it.	记住两个小帮手:Ctrl+K 按名称查找任何命令,F1 显示所有键盘快捷键。把鼠标悬停在控件上,底部状态栏会给出说明。
+Start with a Drummer, add a few loops from the browser, record an idea, and enjoy making music.	先从 Drummer 开始,从浏览器添加几个循环,录下你的想法,尽情享受创作音乐的乐趣吧。
+Tutorial	教程
+Tutorial...	教程...
+Close the tutorial (Esc)	关闭教程 (Esc)
+Back	上一页
+Next	下一页
+Done	完成
+Try it	试一试
+No Group	无分组
+Mixer Group	混音分组
+Group A	分组 A
+Group B	分组 B
+Group C	分组 C
+Group D	分组 D
+Group E	分组 E
+Group F	分组 F
+Group G	分组 G
+Group H	分组 H
+Track %1 is in this group now.	轨道 %1 已加入此分组。
+Mixer group: tracks in the same group move their faders, pans, sends, mute and solo together (hold Alt to change only one)	混音分组:同一分组的轨道会一起调整推子、声像、发送、静音和独奏(按住 Alt 只改变一个)
+Settings are kept in %1.	设置保存在 %1。
+Portable mode: settings are kept in %1.	便携模式:设置保存在 %1。
+# Export and file types
+WAV 16-bit	WAV 16 位
+WAV 24-bit	WAV 24 位
+WAV 32-bit float	WAV 32 位浮点
+AIFF 16-bit	AIFF 16 位
+AIFF 24-bit	AIFF 24 位
+MP3	MP3
+Sample rate	采样率
+MP3 bit rate	MP3 比特率
+Title (MP3)	标题 (MP3)
+Artist (MP3)	艺术家 (MP3)
+Album (MP3)	专辑 (MP3)
+One file for every track (stems, all the same length)	每个轨道一个文件(分轨,长度相同)
+Stems: keep master volume and limiter	分轨：包含主音量和限制器
+Stems: keep reverb and echo sends	分轨：包含混响和回声发送
+One file for every track (stems)	每个轨道一个文件(分轨)
+Stems start at the same point and have the same length.	分轨从同一位置开始,长度相同。
+Drop them into Logic Pro, Ableton Live or Cubase at bar 1.	把它们拖到 Logic Pro、Ableton Live 或 Cubase 的第 1 小节即可。
+Exported %1 files.	已导出 %1 个文件。
+Export every track to a folder	将所有轨道导出到文件夹
+128 kbps	128 kbps
+160 kbps	160 kbps
+192 kbps	192 kbps
+224 kbps	224 kbps
+256 kbps	256 kbps
+320 kbps	320 kbps
+44.1 kHz	44.1 kHz
+48 kHz	48 kHz
+88.2 kHz	88.2 kHz
+96 kHz	96 kHz
+This file type is not supported (%1). Supported: %2	不支持此文件类型 (%1)。支持:%2
+no extension	无扩展名
+MP3 export is not available on this system.	此系统无法导出 MP3。
+MP3 files can be 44.1 or 48 kHz.	MP3 文件只能是 44.1 或 48 kHz。
+The MP3 encoder failed.	MP3 编码器出错。
+This sample rate is not supported.	不支持此采样率。
+AIFF files are 16-bit or 24-bit.	AIFF 文件为 16 位或 24 位。
+The project is too long to export in this format (90 minutes at most).	项目太长,无法以此格式导出(最长 90 分钟)。

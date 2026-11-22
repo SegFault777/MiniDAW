@@ -32,6 +32,11 @@
 #include "public.sdk/source/vst/hosting/hostclasses.h"
 #include "public.sdk/source/vst/hosting/module.h"
 
+#ifdef MINIDAW_DEFINE_PLUGFRAME_IID
+// Some SDK versions declare IPlugFrame::iid but no compiled SDK file defines it (build.sh sets this flag when it finds none).
+namespace Steinberg { DEF_CLASS_IID (IPlugFrame) }
+#endif
+
 using namespace Steinberg;
 using namespace Steinberg::Vst;
 

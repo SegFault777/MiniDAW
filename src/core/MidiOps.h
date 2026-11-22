@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 // Pure MIDI note transformations (v0.7): arpeggiator and quantize with swing / strength.
+#include <string>
 #include <vector>
 #include "Model.h"
 
@@ -91,5 +92,76 @@ std::vector<Note> invertPitches(const std::vector<Note>& notes);
 
 /// velocity = velocity * percent / 100 + offset, kept in 1 .. 127.
 std::vector<Note> scaleVelocity(const std::vector<Note>& notes, int percent, int offset);
+
+// ---- v0.12: Ableton / FL Studio / Cubase / Logic style note tools ----
+
+/// True when the pitch belongs to the scale (used for Fold / Scale Mode highlighting in the piano roll).
+bool inScale(int pitch, int root, int scale);
+const char* scaleName(int scale);
+const char* chordName(int type);
+const char* noteName(int pitchClass);   // "C", "C#", ...
+
+/// FL Studio style chord stamp: one click puts a whole chord into the piano roll.
+struct StampParams {
+    int type = ChordParams::Major;   // fixed chord shape (ignored when 'diatonic')
+    int inversion = 0;
+    bool diatonic = false;           // stack thirds on the scale degrees of the key instead
+    int size = 3;                    // diatonic chord size: 3 = triad, 4 = seventh chord
+    int keyRoot = 0;
+    int scale = ScaleParams::Major;
+};
+std::vector<Note> stampChord(int rootPitch, double start, double length, int velocity, const StampParams& p);
+
+/// FL Studio style Riff Machine: a random but musical melody inside a scale.
+struct RiffParams {
+    int root = 0;                    // pitch class of the key
+    int scale = ScaleParams::Minor;
+    int octave = 4;                  // octave of the lowest note (4 -> C4 = 60)
+    int range = 12;                  // semitones available above the lowest note
+    double stepLength = 0.25;        // beats per step
+    double density = 0.7;            // 0..1 chance that a step has a note
+    int leap = 2;                    // largest jump in scale degrees between two notes
+    int velocityMin = 70, velocityMax = 112;
+    int seed = 1;
+};
+std::vector<Note> generateRiff(const RiffParams& p, double regionBeats);
+
+/// Cubase style Logical Editor: every condition must hold (or none must, with 'invert'); the action is applied to the hits.
+struct LogicalCondition {
+    enum Property { Pitch, Velocity, Length, Position };
+    int property = Pitch;
+    double lo = 0, hi = 127;         // inclusive; Length and Position are in beats
+};
+struct LogicalParams {
+    enum Action { Delete, Transpose, SetVelocity, AddVelocity, ScaleVelocity, SetLength, ScaleLength, SetPitch, Move };
+    std::vector<LogicalCondition> conditions;
+    bool invert = false;
+    int action = Transpose;
+    double value = 0;                // semitones, velocity, percent, beats ...
+};
+std::vector<Note> logicalEdit(const std::vector<Note>& notes, const LogicalParams& p, int* affected = nullptr);
+const char* logicalPropertyName(int property);
+const char* logicalActionName(int action);
+
+/// Logic Pro style groove template: the timing and velocity feel of one region, applicable to another.
+struct Groove {
+    double grid = 0.25;
+    std::vector<double> timing;      // offset in beats of each grid slot inside a 4 beat cycle
+    std::vector<double> velocity;    // velocity factor of each slot
+    bool valid() const { return !timing.empty(); }
+};
+Groove makeGroove(const std::vector<Note>& notes, double grid);
+std::vector<Note> applyGroove(const std::vector<Note>& notes, const Groove& g, double strength);
+
+// ---- v0.12: Ableton Live "Transform" tools and Logic Pro chord display ----
+
+/// Multiplies every start and length by 'factor' (Ableton Live Stretch: 2 = twice as slow, 0.5 = twice as fast).
+std::vector<Note> stretchNotes(const std::vector<Note>& notes, double factor);
+/// Ableton Live Strum: notes that start together are spread out in pitch order, 'spacing' beats apart (down = from the lowest note).
+std::vector<Note> strumNotes(const std::vector<Note>& notes, double spacing, bool down);
+/// Ableton Live "Duplicate Loop": the notes followed by a copy shifted by 'regionBeats' (the region has to grow to twice its length).
+std::vector<Note> doublePattern(const std::vector<Note>& notes, double regionBeats);
+/// Name of the chord the pitches form ("C", "Am", "G7", "Cmaj7", "C/E"), or "" when they do not form a known chord.
+std::string detectChord(const std::vector<int>& pitches);
 
 }  // namespace core

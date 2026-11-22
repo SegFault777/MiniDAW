@@ -1,6 +1,7 @@
 // MiniDAW - a lightweight Logic Pro-inspired digital audio workstation
 // Copyright (C) 2026 MiniDAW contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
+#include "FileTypes.h"
 #include "Session.h"
 
 #include <algorithm>
@@ -45,11 +46,16 @@ Track Session::makeTrack(TrackType type, const std::string& name) {
 }
 
 void Session::changed(bool structural) {
-    m_dirty = true;
+    markDirty();
     if (m_hooks.changed) m_hooks.changed(structural);
 }
 
 std::vector<Track> Session::snapshot() const { std::lock_guard<std::mutex> l(m_mutex); return m_tracks; }
+void Session::trackPeaks(std::vector<std::pair<float, float>>& out) const {
+    std::lock_guard<std::mutex> l(m_mutex);
+    out.resize(m_tracks.size());
+    for (size_t i = 0; i < m_tracks.size(); ++i) out[i] = {m_tracks[i].peakL, m_tracks[i].peakR};
+}
 int Session::trackCount() const { std::lock_guard<std::mutex> l(m_mutex); return int(m_tracks.size()); }
 
 DrumPattern Session::drumPattern(int track) const {
@@ -84,6 +90,7 @@ void Session::newProject() {
         std::lock_guard<std::mutex> l(m_mutex);
         m_tracks.clear();
         m_markers.clear();
+        m_snapshots.clear();
         m_undo.clear();
         m_redo.clear();
         m_nextId = 1;
@@ -142,13 +149,72 @@ void Session::renameTrack(int i, const std::string& name) {
     changed(true);
 }
 
-#define TRACK_SET(...) { std::lock_guard<std::mutex> l(m_mutex); if (i < 0 || i >= int(m_tracks.size())) return; Track& t = m_tracks[size_t(i)]; __VA_ARGS__; } m_dirty = true;
-void Session::setVolume(int i, float v) { TRACK_SET(t.volume = std::clamp(v, 0.f, 1.5f)) }
-void Session::setPan(int i, float p) { TRACK_SET(t.pan = std::clamp(p, -1.f, 1.f)) }
-void Session::setSendA(int i, float v) { TRACK_SET(t.sendA = std::clamp(v, 0.f, 1.f)) }
-void Session::setSendB(int i, float v) { TRACK_SET(t.sendB = std::clamp(v, 0.f, 1.f)) }
-void Session::setMute(int i, bool on) { TRACK_SET(t.mute = on) }
-void Session::setSolo(int i, bool on) { TRACK_SET(t.solo = on) }
+#define TRACK_SET(...) { std::lock_guard<std::mutex> l(m_mutex); if (i < 0 || i >= int(m_tracks.size())) return; Track& t = m_tracks[size_t(i)]; __VA_ARGS__; } markDirty();
+namespace {
+struct MixBefore { float volume, pan, sendA, sendB; };
+// Runs f on the track and on every other member of its mixer group (when linking is on). f(track, before, isPrimary).
+template <class F> void forGroup(std::vector<Track>& tracks, int i, bool linked, F f) {
+    if (i < 0 || i >= int(tracks.size())) return;
+    const Track& p = tracks[size_t(i)];
+    const MixBefore before{p.volume, p.pan, p.sendA, p.sendB};
+    const int group = p.group;
+    for (int j = 0; j < int(tracks.size()); ++j)
+        if (j == i || (linked && group > 0 && tracks[size_t(j)].group == group)) f(tracks[size_t(j)], before, j == i);
+}
+}  // namespace
+
+void Session::setVolume(int i, float v) {
+    { std::lock_guard<std::mutex> l(m_mutex);
+      const float nv = std::clamp(v, 0.f, 1.5f);
+      forGroup(m_tracks, i, m_groupLink, [&](Track& t, const MixBefore& b, bool primary) {
+          if (primary || b.volume < 1e-4f) t.volume = nv; else t.volume = std::clamp(t.volume * (nv / b.volume), 0.f, 1.5f);
+      }); }
+    markDirty();
+}
+void Session::setPan(int i, float p) {
+    { std::lock_guard<std::mutex> l(m_mutex);
+      const float np = std::clamp(p, -1.f, 1.f);
+      forGroup(m_tracks, i, m_groupLink, [&](Track& t, const MixBefore& b, bool primary) { t.pan = primary ? np : std::clamp(t.pan + (np - b.pan), -1.f, 1.f); }); }
+    markDirty();
+}
+void Session::setSendA(int i, float v) {
+    { std::lock_guard<std::mutex> l(m_mutex);
+      const float nv = std::clamp(v, 0.f, 1.f);
+      forGroup(m_tracks, i, m_groupLink, [&](Track& t, const MixBefore& b, bool primary) { t.sendA = primary ? nv : std::clamp(t.sendA + (nv - b.sendA), 0.f, 1.f); }); }
+    markDirty();
+}
+void Session::setSendB(int i, float v) {
+    { std::lock_guard<std::mutex> l(m_mutex);
+      const float nv = std::clamp(v, 0.f, 1.f);
+      forGroup(m_tracks, i, m_groupLink, [&](Track& t, const MixBefore& b, bool primary) { t.sendB = primary ? nv : std::clamp(t.sendB + (nv - b.sendB), 0.f, 1.f); }); }
+    markDirty();
+}
+void Session::setMute(int i, bool on) {
+    { std::lock_guard<std::mutex> l(m_mutex); forGroup(m_tracks, i, m_groupLink, [&](Track& t, const MixBefore&, bool) { t.mute = on; }); }
+    markDirty();
+}
+void Session::setSolo(int i, bool on) {
+    { std::lock_guard<std::mutex> l(m_mutex); forGroup(m_tracks, i, m_groupLink, [&](Track& t, const MixBefore&, bool) { t.solo = on; }); }
+    markDirty();
+}
+void Session::setTrackGroup(int i, int group) {
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        if (i < 0 || i >= int(m_tracks.size())) return;
+    }
+    checkpoint();
+    { std::lock_guard<std::mutex> l(m_mutex); m_tracks[size_t(i)].group = std::clamp(group, 0, 8); }
+    changed(false);
+}
+void Session::setTrackMidiChannel(int i, int channel) {
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        if (i < 0 || i >= int(m_tracks.size())) return;
+    }
+    checkpoint();
+    { std::lock_guard<std::mutex> l(m_mutex); m_tracks[size_t(i)].midiChannel = std::clamp(channel, 0, 16); }
+    changed(false);
+}
 #undef TRACK_SET
 
 void Session::setArmed(int i, bool on) {
@@ -185,7 +251,7 @@ void Session::setInsertBypass(int track, int slot, bool bypass) {
     if (track < 0 || track >= int(m_tracks.size())) return;
     auto& v = m_tracks[size_t(track)].inserts;
     if (slot >= 0 && slot < int(v.size())) v[size_t(slot)]->bypass = bypass;
-    m_dirty = true;
+    markDirty();
 }
 
 void Session::setInstrument(int track, const std::string& instrumentId) {
@@ -207,7 +273,7 @@ void Session::setInstrumentPreset(int track, int preset) {
     if (track < 0 || track >= int(m_tracks.size()) || !m_tracks[size_t(track)].instrument) return;
     m_tracks[size_t(track)].instrument->setPreset(preset);
     m_tracks[size_t(track)].preset = preset;
-    m_dirty = true;
+    markDirty();
 }
 
 void Session::regenDrummer(Region& r, const dsp::TempoMap& tm) const {
@@ -303,6 +369,54 @@ void Session::removeRegion(int t, int r) {
     checkpoint();
     REGION_OP(regs.erase(regs.begin() + r);)
     changed(false);
+}
+
+bool Session::trimRegionStart(int t, int r, double atBeat) {
+    const auto tm = tempoMap();
+    i64 d = 0;
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        if (t < 0 || t >= int(m_tracks.size()) || r < 0 || r >= int(m_tracks[size_t(t)].regions.size())) return false;
+        const Region& rg = m_tracks[size_t(t)].regions[size_t(r)];
+        if (rg.midi || !rg.audio || rg.flexed()) return false;
+        d = i64(std::llround(tm->beatToFrame(atBeat) - tm->beatToFrame(rg.start)));
+        if (d <= 0 || d >= rg.frames) return false;
+    }
+    checkpoint();
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        Region& rg = m_tracks[size_t(t)].regions[size_t(r)];
+        const double sf = tm->beatToFrame(rg.start);
+        rg.offset += d;
+        rg.frames -= d;
+        rg.srcFrames = rg.frames;
+        rg.start = tm->frameToBeat(sf + double(d));
+        rg.fadeIn = std::max<i64>(0, rg.fadeIn - d);
+        rg.fadeOut = std::min(rg.fadeOut, rg.frames);
+    }
+    changed(false);
+    return true;
+}
+
+bool Session::trimRegionEnd(int t, int r, double atBeat) {
+    double length = 0;
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        if (t < 0 || t >= int(m_tracks.size()) || r < 0 || r >= int(m_tracks[size_t(t)].regions.size())) return false;
+        const Region& rg = m_tracks[size_t(t)].regions[size_t(r)];
+        if (rg.midi || !rg.audio || rg.flexed()) return false;
+        length = atBeat - rg.start;
+        if (length <= 0 || atBeat >= tempoMap()->frameToBeat(tempoMap()->beatToFrame(rg.start) + double(rg.frames)) - 1e-9) return false;
+    }
+    checkpoint();
+    resizeRegion(t, r, length);
+    {
+        std::lock_guard<std::mutex> l(m_mutex);
+        Region& rg = m_tracks[size_t(t)].regions[size_t(r)];
+        rg.fadeIn = std::min(rg.fadeIn, rg.frames);
+        rg.fadeOut = std::min(rg.fadeOut, rg.frames);
+    }
+    return true;
 }
 
 void Session::splitRegion(int t, int r, double atBeat) {
@@ -463,8 +577,8 @@ int Session::duplicateTrack(int i) {
     return idx;
 }
 
-void Session::setRegionAudio(int t, int r, float gainDb, i64 fadeInFrames, i64 fadeOutFrames) {
-    checkpoint();
+void Session::setRegionAudio(int t, int r, float gainDb, i64 fadeInFrames, i64 fadeOutFrames, bool undoStep) {
+    if (undoStep) checkpointCoalesced("regionAudio:" + std::to_string(t) + ":" + std::to_string(r));
     REGION_OP(
         if (rg.midi) return;
         rg.gainDb = std::clamp(gainDb, -60.f, 24.f);
@@ -585,7 +699,7 @@ void Session::setStep(int track, int row, int step, bool on) {
     std::lock_guard<std::mutex> l(m_mutex);
     if (track < 0 || track >= int(m_tracks.size())) return;
     m_tracks[size_t(track)].steps[size_t(row)][size_t(step)] = on;
-    m_dirty = true;
+    markDirty();
 }
 
 void Session::setDrumPattern(int track, const DrumPattern& p) {
@@ -677,7 +791,7 @@ void Session::setTempoMap(std::shared_ptr<const dsp::TempoMap> map, bool commit)
     const double beat = positionBeats();   // keep the playhead at the same musical position
     { std::lock_guard<std::mutex> l(m_tempoMutex); m_tempo = map; }
     { std::lock_guard<std::mutex> l(m_mutex); m_pos = i64(std::llround(map->beatToFrame(beat))); }
-    m_dirty = true;
+    markDirty();
     if (m_hooks.tempoChanged) m_hooks.tempoChanged();
     if (commit) commitTempo();
 }
@@ -736,6 +850,14 @@ void Session::commitTempo() {
 }
 
 // ------------------------------------------------------------------ undo / redo
+void Session::checkpointCoalesced(const std::string& tag) {
+    const auto now = std::chrono::steady_clock::now();
+    if (tag == m_undoTag && now - m_undoTagTime < std::chrono::milliseconds(600)) { m_undoTagTime = now; markDirty(); return; }
+    pushUndo();
+    m_undoTag = tag;
+    m_undoTagTime = now;
+}
+
 void Session::pushUndo() {
     UndoState s{{}, tempoMap(), {}};
     std::lock_guard<std::mutex> l(m_mutex);
@@ -744,7 +866,7 @@ void Session::pushUndo() {
     m_undo.push_back(std::move(s));
     if (m_undo.size() > 60) m_undo.erase(m_undo.begin());
     m_redo.clear();
-    m_dirty = true;
+    markDirty();
 }
 
 void Session::restore(UndoState s) {
@@ -762,6 +884,7 @@ void Session::restore(UndoState s) {
 }
 
 void Session::undo() {
+    m_undoTag.clear();
     UndoState cur{{}, tempoMap(), {}};
     UndoState prev;
     {
@@ -777,6 +900,7 @@ void Session::undo() {
 }
 
 void Session::redo() {
+    m_undoTag.clear();
     UndoState cur{{}, tempoMap(), {}};
     UndoState next;
     {
@@ -825,7 +949,7 @@ void Session::seekBeats(double beat) {
 void Session::setLoop(bool on, double a, double b) {
     if (a >= 0 && b > a) { m_loopA = a; m_loopB = b; }
     m_loopOn = on;
-    m_dirty = true;
+    markDirty();
     if (m_hooks.loopChanged) m_hooks.loopChanged();
 }
 
@@ -838,6 +962,7 @@ void Session::masterPeaks(float& l, float& r) const {
 // ------------------------------------------------------------------ live notes and recording
 void Session::noteOn(int track, int pitch, int velocity) {
     bool onRecTrack = false;
+    int trackId = -1;
     {
         std::lock_guard<std::mutex> l(m_mutex);
         if (track < 0 || track >= int(m_tracks.size())) return;
@@ -845,19 +970,24 @@ void Session::noteOn(int track, int pitch, int velocity) {
         if (!t.instrument) return;
         t.instrument->noteOn(pitch, velocity);
         m_idle = i64(kSampleRate) * 6;
+        trackId = t.id;
         onRecTrack = (t.id == m_recTrackId.load());
     }
+    captureEvent(trackId, pitch, velocity, true);   // Capture MIDI remembers what was played even when nothing was recording
     if (onRecTrack && m_recording && m_playing && m_countRemain == 0 && !m_recAudio)
         m_recPending[pitch] = {positionBeats(), velocity};
 }
 
 void Session::noteOff(int track, int pitch) {
+    int trackId = -1;
     {
         std::lock_guard<std::mutex> l(m_mutex);
         if (track < 0 || track >= int(m_tracks.size())) return;
         Track& t = m_tracks[size_t(track)];
         if (t.instrument) t.instrument->noteOff(pitch);
+        trackId = t.id;
     }
+    captureEvent(trackId, pitch, 0, false);
     auto it = m_recPending.find(pitch);
     if (it != m_recPending.end()) {
         const double end = positionBeats();
@@ -1105,7 +1235,7 @@ void Session::renderBlock(i64 pos, int frames, float* out, bool running) {
         t.peakR = peakR;
     }
 
-    for (size_t bus = 0; bus < m_aux.size() && m_only < 0; ++bus) {   // sends are not part of a bounce in place
+    for (size_t bus = 0; bus < m_aux.size() && m_only < 0 && !m_noSends; ++bus) {   // sends are not part of a bounce in place, nor of dry stems
         if (!m_aux[bus]->bypass) m_aux[bus]->process(m_auxBuf[bus].data(), frames);
         for (size_t i = 0; i < n2; ++i) out[i] += m_auxBuf[bus][i];
     }
@@ -1245,12 +1375,14 @@ std::shared_ptr<dsp::Instrument> Session::makeInstrument(const std::string& id) 
 
 void Session::decodeAsync(const std::string& path, DecodeDone done) {
     if (m_hooks.decode) { m_hooks.decode(path, std::move(done)); return; }
-    // Without a platform decoder only WAV files can be read; the result arrives immediately.
+    // Without a platform decoder only WAV and AIFF files can be read; the result arrives immediately.
     auto data = std::make_shared<AudioData>();
     data->name = baseName(path);
     data->path = path;
     std::string err;
-    if (!readWavFile(path, data->pcm, &err) || data->frames() == 0) {
+    const std::string ext = fileExtension(path);
+    const bool aiff = ext == ".aif" || ext == ".aiff" || ext == ".aifc";
+    if (!(aiff ? readAiffFile(path, data->pcm, &err) : readWavFile(path, data->pcm, &err)) || data->frames() == 0) {
         done(nullptr, tr("Could not decode %1").arg(data->name).str());
         return;
     }

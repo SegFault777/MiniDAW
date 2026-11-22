@@ -21,10 +21,18 @@ struct MidiTrack {
     std::vector<MidiNote> notes;
 };
 
-/// The parts of a Standard MIDI File that MiniDAW cares about.
+struct MidiTempoChange { double beat = 0; double bpm = 120; };
+struct MidiMeterChange { double beat = 0; int num = 4, den = 4; };
+struct MidiMarker { double beat = 0; std::string name; };
+
+/// The parts of a Standard MIDI File that MiniDAW cares about: notes, the tempo map, time signature changes and markers
+/// (what Logic Pro, Ableton Live, Cubase and the others write into the conductor track).
 struct MidiSong {
-    double bpm = 120;
-    int num = 4, den = 4;
+    double bpm = 120;                        ///< the tempo at the start
+    int num = 4, den = 4;                    ///< the time signature at the start
+    std::vector<MidiTempoChange> tempos;     ///< every tempo change in beat order (the first one is at beat 0); empty = only 'bpm'
+    std::vector<MidiMeterChange> meters;     ///< every time signature change (the first one is at beat 0); empty = only 'num' / 'den'
+    std::vector<MidiMarker> markers;
     std::vector<MidiTrack> tracks;
 };
 

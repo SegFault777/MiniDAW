@@ -1,26 +1,28 @@
-# 테스트
+# Testing
 
-`bash tests/run.sh` 하나로 전부 빌드하고 실행합니다(`g++` 또는 `clang++`, Qt 불필요). `set -e`이므로 앞 단계가 실패하면 뒤는 돌지 않습니다.
+`bash tests/run.sh` builds and runs everything (`g++` or `clang++`, no Qt). It uses `set -e`, so if an early step fails the later ones do not run.
 
-| 파일 | 대상 |
+| File | Target |
 | --- | --- |
-| `dsp_timing_tests.cpp`, `dsp_music_tests.cpp`, `dsp_audioops_tests.cpp`, `dsp_effects_tests.cpp` | 템포 맵, 스트레치, 신스, 드러머, 이펙트, 오디오 연산 |
-| `native_plugin_tests.cpp` | 플러그인 API(`plugin-sdk`)와 예제 플러그인 |
-| `core_tests.cpp` | `Session` 전체: 편집, 실행 취소, 프로젝트 파일, MIDI 연산, 템포 감지, 라우드니스, 무음 제거 |
-| `platform_tests.cpp` | 무음 오디오 장치와 `Session`, 녹음, 디코드, 번역 표, MiniDAW 플러그인 호스트 |
-| `ui_tests.cpp` | 화면: 그리기, 마우스/키 입력, 대화상자, 편집기, 브라우저, 노브, 자동화 |
+| `dsp_timing_tests.cpp`, `dsp_music_tests.cpp`, `dsp_audioops_tests.cpp`, `dsp_effects_tests.cpp` | Tempo map, stretch, synth, Drummer, effects, audio operations |
+| `native_plugin_tests.cpp` | The plug-in API (`plugin-sdk`) and example plug-ins |
+| `core_tests.cpp` | The whole `Session`: editing, undo (including coalesced steps), project files (including snapshots, MIDI channels and the file version), MIDI operations and export channels, trimming audio regions, tempo detection, loudness, strip silence, the ten v0.12 functions, `AppPaths` |
+| `platform_tests.cpp` | The null audio device with `Session`, recording, decoding, the translation table, the MiniDAW plug-in host |
+| `ui_tests.cpp` | The Native screen: drawing, mouse / key input, dialogs, editors, browser, knobs, automation, the parity features |
+| `vulkan_tests.cpp` | The Vulkan UI headless: tools, drags, palette, dialogs, piano roll, steps, snapshots, workspaces, the audio editor (fade handles, zoom, trim), IME composition in a text field, the glyph atlas and the glyph time budget, the Preferences device cache, a smoke run of every command, CPU-rendered screenshots |
 
-## 화면 테스트의 원리
-`NativeUi`는 `Canvas`(메모리 속 픽셀)에 그리므로 창 없이 돌릴 수 있습니다. 테스트는 가짜 프로젝트를 만들고
-`mouseDown`, `mouseMove`, `key` 같은 이벤트를 직접 넣은 뒤 `Session`의 상태를 확인합니다.
-같은 방식으로 PPM 스크린샷을 저장하므로, **Windows 없이 화면 모양을 눈으로 확인**할 수 있습니다.
+## How the screen tests work
+`NativeUi` draws into a `Canvas` (pixels in memory), so it can run without a window. A test builds a fake project, feeds events such as `mouseDown`, `mouseMove` and `key` directly and checks the state of the `Session`.
+The Vulkan UI works the same way: `Studio` produces a `DrawList`, and `SoftRaster` renders it on the CPU with the same formulas as `shaders/ui.frag`. Both save PPM screenshots, so you can **see the screens without Windows or a GPU**.
 
-테스트 작성 요령
-- 좌표는 레이아웃 상수에서 계산합니다(`kControlH`, `kToolbarH`, `kRulerH`, `kHeaderW`, 트랙 높이 60).
-- 편집 뒤에 화면 상태가 필요하면 `u.paint(c)`를 부른 다음 확인합니다(`mouseDown`은 모델을 새로 읽지만 키 입력은 마지막 `paint`의 스냅샷을 씁니다).
-- 영역이 필요하면 `pianoGridRect()`, `stepGridRect()`, `autoLaneRect()`, `browserRowRect(i)` 같은 접근자를 씁니다.
+Tips for writing tests
+- Compute coordinates from the layout constants (Native: `kControlH`, `kToolbarH`, `kRulerH`, `kHeaderW`, track height 60). In the Vulkan tests use the same `Theme.h` values.
+- If you need the screen state after an edit, call `u.paint(c)` first (`mouseDown` rereads the model but key input uses the snapshot of the last `paint`).
+- For areas use accessors such as `pianoGridRect()`, `stepGridRect()`, `autoLaneRect()`, `browserRowRect(i)`.
+- Vulkan: a test that opens a tab or panel that changes the layout (the Editor tab raises the bottom dock) should use its own `Rig`, otherwise the coordinates of every later test shift.
+- Do not keep `const T& x = session.snapshot()[i]...`: `snapshot()` returns a copy, so the reference dangles. Copy the element.
+- To test code that is slow only on Windows (GDI glyphs), wrap `FontSource` in a source that sleeps (see the *slow glyph source* tests) and set `Fonts::setFrameBudgetMs`.
+- Vulkan: the double-click detector lives in `Gui` (0.4 s, 5 px). Two quick presses at one spot become a double click, so call `wait()` between them when you want two single clicks.
 
-## 하지 못하는 것
-Windows 전용 코드(`src/native/`, `src/platform/AudioWasapi.cpp`, `Midi.cpp`, `Decode.cpp`)는 Linux에서 컴파일되지 않습니다.
-이 코드를 바꿀 때는 CI의 `native` 작업 로그가 유일한 검증입니다. 그래서 이 파일들은 **작고 단순하게** 유지하고,
-판단이 필요한 로직은 `src/ui`나 `src/core`에 두어 테스트할 수 있게 합니다.
+## What cannot be tested
+Windows-only code (`src/native/`, `src/vulkan/VkMain.cpp`, `src/vulkan/VkRenderer.cpp`, `src/platform/AudioWasapi.cpp`, `Midi.cpp`, `Decode.cpp`) is not run on Linux. `VkRenderer.cpp` is only syntax-checked against the mock header; the GLSL shaders are only checked to exist. For these files the CI log (and running on a real GPU) is the only verification. So keep them **small and simple** and put decision logic in `src/ui`, `src/vulkan` (non-Windows files) or `src/core`, where it can be tested.

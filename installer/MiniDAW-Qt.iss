@@ -1,12 +1,12 @@
 ; Installer of the old Qt version (legacy; the native version is installed by MiniDAW.iss).
-; Build:  ISCC.exe /DMyAppVersion=0.11 installer\MiniDAW-Qt.iss
-; Expects the deployed application (exe + Qt runtime) in dist\MiniDAW.
+; Build:  ISCC.exe /DMyAppVersion=0.12 installer\MiniDAW-Qt.iss
+; Expects the deployed application (MiniDAWQt.exe + Qt runtime) in dist\MiniDAWQt.
 
 #define MyAppName "MiniDAW"
 #ifndef MyAppVersion
   #define MyAppVersion "0.10_1"
 #endif
-#define MyAppExe "MiniDAW.exe"
+#define MyAppExe "MiniDAWQt.exe"
 
 [Setup]
 AppId={{3D4F1A70-5B2E-4C8A-9E61-0A7B8C2D5E19}
@@ -31,7 +31,7 @@ ChangesAssociations=no
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; Flags: unchecked
 
 [Files]
-Source: "..\dist\MiniDAW\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\dist\MiniDAWQt\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 

@@ -18,6 +18,10 @@ struct Resampler {
     void process(const std::vector<float>& in, int srcRate, std::vector<float>& out);
 };
 
+/// High quality conversion of interleaved stereo float between any two sample rates (windowed sinc, anti-aliased when the rate
+/// goes down). Used for export at 48 / 88.2 / 96 kHz.
+std::vector<float> resampleStereo(const std::vector<float>& in, int srcRate, int dstRate);
+
 /// Fills AudioData::peaks from AudioData::pcm.
 void computePeaks(AudioData& d);
 
@@ -27,5 +31,9 @@ bool writeWavFile(const std::string& path, const std::vector<float>& pcm, std::s
 /// Reads a RIFF/WAVE file (8/16/24/32-bit PCM or 32-bit float, any channel count and sample rate) as
 /// 44.1 kHz stereo float. Other formats (MP3, FLAC, ...) are decoded by the platform layer.
 bool readWavFile(const std::string& path, std::vector<float>& pcm, std::string* error);
+
+/// Reads an AIFF / AIFF-C file (8/16/24/32-bit PCM, 32-bit float, 'sowt' little-endian PCM; any channel count and sample rate) as
+/// 44.1 kHz stereo float. Works on every platform, no codec needed.
+bool readAiffFile(const std::string& path, std::vector<float>& pcm, std::string* error);
 
 }  // namespace core

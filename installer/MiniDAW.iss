@@ -1,11 +1,11 @@
 ; MiniDAW installer script for Inno Setup 6 (the native, Qt-free version).
-; Build:  ISCC.exe /DMyAppVersion=0.11 installer\MiniDAW.iss
+; Build:  ISCC.exe /DMyAppVersion=0.12 installer\MiniDAW.iss
 ; Expects the deployed application in dist-native\MiniDAW (build.sh native-deploy).
 ; The AppId is the one of the old Qt installer on purpose: installing this version over a Qt installation upgrades it.
 
 #define MyAppName "MiniDAW"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.11"
+  #define MyAppVersion "0.12"
 #endif
 #define MyAppExe "MiniDAW.exe"
 
@@ -38,6 +38,7 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop shortcut"; Flags: unchecked
 Name: "fileassoc"; Description: "Associate .mdaw project files with {#MyAppName}"
+Name: "openwith"; Description: "Add {#MyAppName} to the ""Open with"" list of audio and MIDI files (mp3, wav, aiff, flac, m4a, ogg, mid)"
 Name: "plugindirs"; Description: "Create the folder for your own MiniDAW plug-ins (%LOCALAPPDATA%\MiniDAW\plugins)"
 
 [InstallDelete]
@@ -70,6 +71,26 @@ Root: HKA; Subkey: "Software\Classes\.mdaw"; ValueType: string; ValueName: ""; V
 Root: HKA; Subkey: "Software\Classes\{#MyAppName}.Project"; ValueType: string; ValueName: ""; ValueData: "{#MyAppName} Project"; Flags: uninsdeletekey; Tasks: fileassoc
 Root: HKA; Subkey: "Software\Classes\{#MyAppName}.Project\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExe},0"; Tasks: fileassoc
 Root: HKA; Subkey: "Software\Classes\{#MyAppName}.Project\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExe}"" ""%1"""; Tasks: fileassoc
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}"; ValueType: string; ValueName: "FriendlyAppName"; ValueData: "{#MyAppName}"; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExe}"" ""%1"""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".mp3"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.mp3\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".wav"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.wav\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".aif"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.aif\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".aiff"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.aiff\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".flac"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.flac\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".m4a"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.m4a\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".ogg"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.ogg\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".mid"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.mid\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\Applications\{#MyAppExe}\SupportedTypes"; ValueType: string; ValueName: ".midi"; ValueData: ""; Tasks: openwith
+Root: HKA; Subkey: "Software\Classes\.midi\OpenWithList\{#MyAppExe}"; ValueType: none; Flags: uninsdeletekey; Tasks: openwith
 
 [Run]
 Filename: "{app}\{#MyAppExe}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
